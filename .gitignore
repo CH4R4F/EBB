@@ -48,9 +48,10 @@ proguard/
 *.ipr
 *.iws
 
-# Keystore files
+# Keystore files (release / local only — committed debug keystore is intentional)
 *.jks
 *.keystore
+!app/debug.keystore
 
 # External native build folder generated in Android Studio 2.2 and later
 .externalNativeBuild

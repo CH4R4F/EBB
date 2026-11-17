@@ -9,15 +9,30 @@ plugins {
 val ebbApplicationId = providers.gradleProperty("ebb.applicationId").get()
 val ebbNamespace = providers.gradleProperty("ebb.namespace").get()
 
+val ciVersionCode: Int =
+    providers.environmentVariable("GITHUB_RUN_NUMBER")
+        .map { it.toIntOrNull() ?: 1 }
+        .orElse(1)
+        .get()
+
 android {
     namespace = ebbNamespace
     compileSdk = 35
+
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
 
     defaultConfig {
         applicationId = ebbApplicationId
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
+        versionCode = ciVersionCode
         versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -25,6 +40,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
