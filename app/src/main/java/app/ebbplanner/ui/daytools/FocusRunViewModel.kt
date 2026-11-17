@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ebbplanner.data.repository.TaskRepository
 import app.ebbplanner.domain.focus.FocusPhase
+import app.ebbplanner.domain.focus.FocusTickDelayer
 import app.ebbplanner.domain.focus.FocusTimerController
 import app.ebbplanner.domain.time.EbbClock
 import app.ebbplanner.reminders.FocusNotifier
@@ -13,10 +14,10 @@ import app.ebbplanner.ui.focus.FocusVisualMode
 import app.ebbplanner.ui.time.ClockFormat
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
@@ -29,6 +30,7 @@ class FocusRunViewModel
         private val taskRepository: TaskRepository,
         private val clock: EbbClock,
         private val focusNotifier: FocusNotifier,
+        private val tickDelayer: FocusTickDelayer,
     ) : ViewModel() {
         private val taskId: String = savedStateHandle.get<String>("taskId").orEmpty()
         private val timer = FocusTimerController()
@@ -98,6 +100,7 @@ class FocusRunViewModel
 
         fun resume() {
             timer.resume(clock.millis())
+            startTicking()
             mergeTimerIntoState()
         }
 
@@ -159,18 +162,23 @@ class FocusRunViewModel
             tickJob?.cancel()
             tickJob =
                 viewModelScope.launch {
-                    while (timer.phase() == FocusPhase.Running || timer.phase() == FocusPhase.Paused) {
-                        delay(1_000)
+                    var done = false
+                    while (!done && isActive && timer.phase() == FocusPhase.Running) {
+                        tickDelayer.delayMs(TICK_INTERVAL_MS)
                         if (timer.phase() == FocusPhase.Running) {
                             val timesUp = timer.tick(clock.millis())
                             mergeTimerIntoState()
                             if (timesUp) {
                                 onTimesUp()
-                                break
+                                done = true
                             }
                         }
                     }
                 }
+        }
+
+        companion object {
+            private const val TICK_INTERVAL_MS = 1_000L
         }
 
         private fun onTimesUp() {

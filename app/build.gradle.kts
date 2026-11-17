@@ -1,3 +1,5 @@
+import java.time.Duration
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -138,6 +140,11 @@ kapt {
 }
 
 val onboardingComparisonsDir = layout.buildDirectory.dir("onboarding-comparisons")
+
+tasks.withType<Test>().configureEach {
+    timeout.set(Duration.ofMinutes(10))
+    maxParallelForks = 4
+}
 
 tasks.register<Copy>("collectOnboardingComparisons") {
     group = "verification"

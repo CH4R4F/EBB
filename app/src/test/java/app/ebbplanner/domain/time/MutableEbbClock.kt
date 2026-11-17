@@ -7,6 +7,8 @@ class MutableEbbClock(
     private var instant: Instant,
     private val zone: ZoneId = ZoneId.of("UTC"),
 ) : EbbClock {
+    private var millisProvider: (() -> Long)? = null
+
     fun setInstant(value: Instant) {
         instant = value
     }
@@ -15,9 +17,17 @@ class MutableEbbClock(
         instant = instant.plusSeconds(minutes * 60L)
     }
 
-    override fun instant(): Instant = instant
+    fun setMillisProvider(provider: () -> Long) {
+        millisProvider = provider
+    }
+
+    fun clearMillisProvider() {
+        millisProvider = null
+    }
+
+    override fun instant(): Instant = Instant.ofEpochMilli(millis())
 
     override fun zoneId(): ZoneId = zone
 
-    override fun millis(): Long = instant.toEpochMilli()
+    override fun millis(): Long = millisProvider?.invoke() ?: instant.toEpochMilli()
 }

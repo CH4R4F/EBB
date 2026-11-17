@@ -1,5 +1,7 @@
 package app.ebbplanner.di
 
+import app.ebbplanner.domain.focus.CoroutineFocusTickDelayer
+import app.ebbplanner.domain.focus.FocusTickDelayer
 import app.ebbplanner.domain.time.EbbClock
 import app.ebbplanner.domain.time.SystemEbbClock
 import dagger.Binds
@@ -14,4 +16,8 @@ abstract class TimeModule {
     @Binds
     @Singleton
     abstract fun bindClock(impl: SystemEbbClock): EbbClock
+
+    @Binds
+    @Singleton
+    abstract fun bindFocusTickDelayer(impl: CoroutineFocusTickDelayer): FocusTickDelayer
 }

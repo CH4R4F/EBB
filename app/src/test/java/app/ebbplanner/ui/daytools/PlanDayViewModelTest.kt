@@ -3,6 +3,7 @@ package app.ebbplanner.ui.daytools
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import app.cash.turbine.test
 import app.ebbplanner.MainDispatcherRule
 import app.ebbplanner.data.local.EbbDatabase
 import app.ebbplanner.data.local.entity.TaskEntity
@@ -23,6 +24,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.time.Instant
+import kotlin.time.Duration.Companion.seconds
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -63,7 +65,7 @@ class PlanDayViewModelTest {
 
     @Test
     fun emptySelection_placesNothing() =
-        runTest {
+        runTest(timeout = 10.seconds) {
             val now = System.currentTimeMillis()
             database.taskDao().insert(
                 TaskEntity(
@@ -77,9 +79,16 @@ class PlanDayViewModelTest {
             )
             val vm = PlanDayViewModel(repository, useCase, prefs, clock)
             advanceUntilIdle()
-            assertFalse(vm.uiState.value.tasks.first().selected)
+            vm.uiState.test {
+                var state = awaitItem()
+                while (state.tasks.none { it.id == "inbox1" }) {
+                    state = awaitItem()
+                }
+                val row = state.tasks.single { it.id == "inbox1" }
+                assertFalse(row.selected)
+                cancelAndIgnoreRemainingEvents()
+            }
             vm.applyPlan {}
-            advanceUntilIdle()
             assertEquals(TaskEntity.PLACEMENT_INBOX, repository.getTask("inbox1")?.placement)
         }
 }
