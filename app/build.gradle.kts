@@ -143,7 +143,8 @@ val onboardingComparisonsDir = layout.buildDirectory.dir("onboarding-comparisons
 
 tasks.withType<Test>().configureEach {
     timeout.set(Duration.ofMinutes(10))
-    maxParallelForks = 4
+    maxParallelForks =
+        (Runtime.getRuntime().availableProcessors() / 2).coerceIn(1, 4)
 }
 
 tasks.register<Copy>("collectOnboardingComparisons") {
