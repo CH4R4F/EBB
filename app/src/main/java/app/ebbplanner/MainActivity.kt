@@ -32,7 +32,11 @@ class MainActivity : ComponentActivity() {
                 initialValue = false,
             )
             EbbTheme(dynamicColor = useMaterialYou) {
-                Surface(modifier = Modifier.fillMaxSize()) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.background,
+                    contentColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                ) {
                     EbbNavHost()
                 }
             }

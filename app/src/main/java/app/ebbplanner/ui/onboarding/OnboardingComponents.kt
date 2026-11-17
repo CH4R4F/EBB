@@ -170,7 +170,11 @@ fun OnboardingPrimaryButton(
                 modifier = Modifier.padding(end = EbbSpacing.s2),
             )
         }
-        Text(text = text, style = EbbTypography.titleM)
+        Text(
+            text = text,
+            style = EbbTypography.titleM,
+            color = MaterialTheme.colorScheme.onPrimary,
+        )
     }
 }
 
@@ -192,7 +196,11 @@ fun OnboardingTextButton(
                 modifier = Modifier.padding(end = EbbSpacing.s2),
             )
         }
-        Text(text = text, style = EbbTypography.titleM)
+        Text(
+            text = text,
+            style = EbbTypography.titleM,
+            color = MaterialTheme.colorScheme.primary,
+        )
     }
 }
 
@@ -243,7 +251,11 @@ fun OnboardingPromiseRow(
             )
         }
         Column {
-            Text(text = title, style = EbbTypography.titleM)
+            Text(
+                text = title,
+                style = EbbTypography.titleM,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
             Text(
                 text = subtitle,
                 style = EbbTypography.bodyM,
@@ -291,6 +303,7 @@ fun DayShapeTimeCard(
             Text(
                 text = timeLabel,
                 style = EbbTypography.display,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = EbbSpacing.s2),
             )
         }
@@ -298,14 +311,17 @@ fun DayShapeTimeCard(
 }
 
 @Composable
+@Suppress("LongMethod")
 fun DayShapeBar(
     wakeMinutes: Int,
     bedMinutes: Int,
     modifier: Modifier = Modifier,
 ) {
+    val wrapsMidnight = bedMinutes <= wakeMinutes
     val daySpan = daySpanMinutes(wakeMinutes, bedMinutes)
     val startFrac = wakeMinutes / (24 * 60f)
     val widthFrac = daySpan / (24 * 60f)
+    val bedFrac = bedMinutes / (24 * 60f)
     Column(
         modifier =
             modifier
@@ -332,29 +348,76 @@ fun DayShapeBar(
                     .background(MaterialTheme.colorScheme.surface)
                     .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp)),
         ) {
-            val barWidth = maxWidth * widthFrac
-            val offsetX = maxWidth * startFrac
-            Box(
-                modifier =
-                    Modifier
-                        .offset(x = offsetX)
-                        .width(barWidth)
-                        .height(28.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer),
+            if (!wrapsMidnight) {
+                val barWidth = maxWidth * widthFrac
+                val offsetX = maxWidth * startFrac
+                Box(
+                    modifier =
+                        Modifier
+                            .offset(x = offsetX)
+                            .width(barWidth)
+                            .height(28.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                )
+            } else {
+                val eveningWidth = maxWidth * (1f - startFrac)
+                Box(
+                    modifier =
+                        Modifier
+                            .offset(x = maxWidth * startFrac)
+                            .width(eveningWidth)
+                            .height(28.dp)
+                            .clip(RoundedCornerShape(topStart = 14.dp, bottomStart = 14.dp))
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                )
+                val morningWidth = maxWidth * bedFrac
+                Box(
+                    modifier =
+                        Modifier
+                            .width(morningWidth)
+                            .height(28.dp)
+                            .clip(RoundedCornerShape(topEnd = 14.dp, bottomEnd = 14.dp))
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                )
+            }
+        }
+        if (wrapsMidnight) {
+            Row(
+                modifier = Modifier.padding(top = EbbSpacing.s2),
+                horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                EbbSymbol(
+                    name = "nights_stay",
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    filled = true,
+                )
+                Text(
+                    text =
+                        stringResource(
+                            R.string.onboarding_day_span_after_midnight,
+                            daySpan / 60,
+                        ),
+                    style = EbbTypography.bodyM,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        } else {
+            Text(
+                text =
+                    stringResource(
+                        R.string.onboarding_day_span_summary,
+                        formatMinutes(wakeMinutes),
+                        formatMinutes(bedMinutes),
+                        daySpan / 60,
+                    ),
+                style = EbbTypography.bodyM,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(top = EbbSpacing.s2),
             )
         }
-        Text(
-            text =
-                stringResource(
-                    R.string.onboarding_day_span_summary,
-                    formatMinutes(wakeMinutes),
-                    formatMinutes(bedMinutes),
-                    daySpan / 60,
-                ),
-            style = EbbTypography.bodyM,
-            modifier = Modifier.padding(top = EbbSpacing.s2),
-        )
     }
 }
 

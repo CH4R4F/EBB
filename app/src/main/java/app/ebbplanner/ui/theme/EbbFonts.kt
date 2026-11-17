@@ -1,9 +1,12 @@
+@file:OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
+
 package app.ebbplanner.ui.theme
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import app.ebbplanner.R
 
@@ -25,8 +28,31 @@ object EbbFonts {
             Font(R.font.atkinson_mono_500, weight = FontWeight.W500),
         )
 
-    val symbols =
+    const val SYMBOL_FILL_AXIS = "FILL"
+
+    val symbolsOutlined =
         FontFamily(
-            Font(R.font.material_symbols_rounded, weight = FontWeight.Normal, style = FontStyle.Normal),
+            Font(
+                R.font.material_symbols_rounded,
+                weight = FontWeight.Normal,
+                style = FontStyle.Normal,
+                variationSettings =
+                    FontVariation.Settings(
+                        FontVariation.Setting(SYMBOL_FILL_AXIS, 0f),
+                    ),
+            ),
+        )
+
+    val symbolsFilled =
+        FontFamily(
+            Font(
+                R.font.material_symbols_rounded,
+                weight = FontWeight.Normal,
+                style = FontStyle.Normal,
+                variationSettings =
+                    FontVariation.Settings(
+                        FontVariation.Setting(SYMBOL_FILL_AXIS, 1f),
+                    ),
+            ),
         )
 }

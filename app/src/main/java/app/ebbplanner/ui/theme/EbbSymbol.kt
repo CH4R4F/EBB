@@ -19,16 +19,17 @@ fun EbbSymbol(
     color: Color = LocalContentColor.current,
     @Suppress("UNUSED_PARAMETER") filled: Boolean = true,
 ) {
+    val family = if (filled) EbbFonts.symbolsFilled else EbbFonts.symbolsOutlined
     Text(
         text = name,
         modifier = modifier,
         color = color,
         fontSize = fontSize,
-        fontFamily = EbbFonts.symbols,
+        fontFamily = family,
         textAlign = TextAlign.Center,
         style =
             TextStyle(
-                fontFamily = EbbFonts.symbols,
+                fontFamily = family,
                 fontSize = fontSize,
                 platformStyle = PlatformTextStyle(includeFontPadding = false),
             ),

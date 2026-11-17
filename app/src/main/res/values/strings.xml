@@ -24,6 +24,7 @@
     <string name="onboarding_wake_label">Wake up</string>
     <string name="onboarding_bed_label">Bedtime</string>
     <string name="onboarding_day_span_summary">Your day: %1$s–%2$s · %3$d hours</string>
+    <string name="onboarding_day_span_after_midnight">Your day ends after midnight · %1$d hours</string>
     <string name="onboarding_change_anytime">You can change these anytime in Settings.</string>
 
     <string name="onboarding_prefs_title">A few preferences</string>
@@ -35,6 +36,11 @@
     <string name="onboarding_celebration_off">Off</string>
 
     <string name="onboarding_try_it_step">Try it · 1 of 2</string>
+    <string name="onboarding_try_it_step2">Try it · 2 of 2</string>
+    <string name="onboarding_try_it_drag_title">Drop one onto today</string>
+    <string name="onboarding_try_it_drag_hint">Long-press, then drag it to a time. Or tap Schedule.</string>
+    <string name="onboarding_try_it_success_title">That’s the whole idea.</string>
+    <string name="onboarding_try_it_success_hint">Dump thoughts. Drop them on your day. Shift when things change.</string>
     <string name="onboarding_try_it_title">Type 3 things on your mind</string>
     <string name="onboarding_try_it_hint">Anything at all. Press Enter after each one.</string>
     <string name="onboarding_try_it_field_label">Thought 1</string>
@@ -44,6 +50,11 @@
     <string name="onboarding_notifications_title">Want a gentle nudge when it’s time?</string>
     <string name="onboarding_notifications_body">Ebb only notifies you about your own plans. Without it, everything still works — you just won’t get reminders.</string>
     <string name="onboarding_notifications_allow">Allow notifications</string>
+    <string name="onboarding_notifications_title_granted">Notifications are on ✓</string>
+    <string name="onboarding_notifications_title_denied">Notifications are off</string>
+    <string name="onboarding_notifications_body_granted">You’ll get gentle nudges when plans start. Change this anytime in Settings.</string>
+    <string name="onboarding_notifications_body_denied">Reminders won’t buzz. You can turn them on later in Settings → Reminders.</string>
+    <string name="onboarding_notifications_open_settings">Open notification settings</string>
 
     <string name="onboarding_alarms_title">So reminders arrive on time</string>
     <string name="onboarding_alarms_body">Android needs your OK for “Alarms &amp; reminders” — otherwise reminders can arrive 10 minutes late. Without it, Ebb still works; timing is just looser.</string>
@@ -53,6 +64,8 @@
     <string name="onboarding_calendar_title">See your calendar on your day?</string>
     <string name="onboarding_calendar_body">Ebb can show events from your phone’s calendars as fixed blocks. It only reads them, never changes them. Skip it and Ebb works the same.</string>
     <string name="onboarding_calendar_allow">Show my calendar events</string>
+    <string name="onboarding_calendar_chooser_title">Which calendars?</string>
+    <string name="onboarding_calendar_chooser_subtitle">Pick the ones that shape your day.</string>
 
     <string name="onboarding_done_title">You’re set.</string>
     <string name="onboarding_done_subtitle">Your day is ready. Start small.</string>

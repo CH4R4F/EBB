@@ -2,7 +2,10 @@
 
 package app.ebbplanner.ui.onboarding
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -47,6 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.ebbplanner.R
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
+import app.ebbplanner.ui.theme.EbbTaskColors
 import app.ebbplanner.ui.theme.EbbTypography
 
 @Composable
@@ -110,6 +116,7 @@ fun OnboardingWelcomeScreen(
             Text(
                 text = stringResource(R.string.app_name),
                 style = EbbTypography.display,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = EbbSpacing.s8),
             )
             Text(
@@ -151,7 +158,7 @@ fun OnboardingPromiseScreen(onContinue: () -> Unit) {
             )
             Text(
                 text = stringResource(R.string.onboarding_promise_title),
-                style = EbbTypography.onboardingTitle,
+                style = onboardingTitleStyle(),
                 modifier = Modifier.padding(top = EbbSpacing.s6),
             )
             Column(
@@ -233,7 +240,7 @@ fun OnboardingDayShapeScreen(
             }
         },
     ) {
-        Text(stringResource(R.string.onboarding_day_shape_title), style = EbbTypography.onboardingTitle)
+        Text(stringResource(R.string.onboarding_day_shape_title), style = onboardingTitleStyle())
         Text(
             text = stringResource(R.string.onboarding_day_shape_hint),
             style = EbbTypography.bodyL,
@@ -286,7 +293,7 @@ fun OnboardingPreferencesScreen(
             }
         },
     ) {
-        Text(stringResource(R.string.onboarding_prefs_title), style = EbbTypography.onboardingTitle)
+        Text(stringResource(R.string.onboarding_prefs_title), style = onboardingTitleStyle())
         Text(
             text = stringResource(R.string.onboarding_prefs_subtitle),
             style = EbbTypography.bodyL,
@@ -362,72 +369,152 @@ fun OnboardingPreferencesScreen(
     }
 }
 
+enum class TryItStep {
+    Step1Empty,
+    Step1Typed,
+    Step2Drag,
+    Success,
+}
+
+enum class NotificationPrimerState {
+    Default,
+    Granted,
+    Denied,
+}
+
 @Composable
 fun OnboardingTryItScreen(
+    step: TryItStep = TryItStep.Step1Empty,
     onSkip: () -> Unit,
     onNext: () -> Unit,
 ) {
+    val stepLabel =
+        when (step) {
+            TryItStep.Step2Drag, TryItStep.Success -> stringResource(R.string.onboarding_try_it_step2)
+            else -> stringResource(R.string.onboarding_try_it_step)
+        }
+    val title =
+        when (step) {
+            TryItStep.Step2Drag -> stringResource(R.string.onboarding_try_it_drag_title)
+            TryItStep.Success -> stringResource(R.string.onboarding_try_it_success_title)
+            else -> stringResource(R.string.onboarding_try_it_title)
+        }
+    val hint =
+        when (step) {
+            TryItStep.Step2Drag -> stringResource(R.string.onboarding_try_it_drag_hint)
+            TryItStep.Success -> stringResource(R.string.onboarding_try_it_success_hint)
+            else -> stringResource(R.string.onboarding_try_it_hint)
+        }
     OnboardingScreenScaffold(
         topBar = {
             OnboardingTopBar(
                 activeSteps = 4,
-                subtitle = stringResource(R.string.onboarding_try_it_step),
+                subtitle = stepLabel,
                 showSkip = true,
                 onSkip = onSkip,
             )
         },
         bottomBar = {
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s2),
-                horizontalArrangement = Arrangement.End,
-            ) {
+            OnboardingBottomActions {
                 OnboardingPrimaryButton(
-                    text = stringResource(R.string.onboarding_try_it_next),
+                    text =
+                        when (step) {
+                            TryItStep.Success -> stringResource(R.string.action_continue)
+                            else -> stringResource(R.string.onboarding_try_it_next)
+                        },
                     onClick = onNext,
-                    enabled = false,
-                    modifier = Modifier.fillMaxWidth(0.45f),
+                    enabled = step != TryItStep.Step1Empty,
                 )
             }
         },
     ) {
-        Text(stringResource(R.string.onboarding_try_it_title), style = EbbTypography.headlineL)
+        Text(title, style = EbbTypography.headlineL, color = MaterialTheme.colorScheme.onSurface)
         Text(
-            text = stringResource(R.string.onboarding_try_it_hint),
+            text = hint,
             style = EbbTypography.bodyM,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = EbbSpacing.s2),
         )
-        OutlinedTextField(
-            value = "",
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(stringResource(R.string.onboarding_try_it_field_label)) },
-            placeholder = { Text(stringResource(R.string.onboarding_try_it_placeholder)) },
-            modifier = Modifier.fillMaxWidth().padding(top = EbbSpacing.s6),
-            shape = RoundedCornerShape(12.dp),
-        )
+        when (step) {
+            TryItStep.Step1Empty, TryItStep.Step1Typed ->
+                OutlinedTextField(
+                    value = if (step == TryItStep.Step1Typed) "Buy stamps" else "",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.onboarding_try_it_field_label)) },
+                    placeholder = { Text(stringResource(R.string.onboarding_try_it_placeholder)) },
+                    modifier = Modifier.fillMaxWidth().padding(top = EbbSpacing.s6),
+                    shape = RoundedCornerShape(12.dp),
+                )
+            TryItStep.Step2Drag, TryItStep.Success -> TryItMiniTimeline()
+        }
+    }
+}
+
+@Composable
+private fun TryItMiniTimeline() {
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(top = EbbSpacing.s4),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+    ) {
+        Column(modifier = Modifier.padding(EbbSpacing.s3)) {
+            Text("09:00", style = EbbTypography.labelL, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Surface(
+                modifier = Modifier.fillMaxWidth().padding(top = EbbSpacing.s2),
+                shape = RoundedCornerShape(12.dp),
+                color = EbbTaskColors.tint("slate", isSystemInDarkTheme()),
+            ) {
+                Text(
+                    "Buy stamps",
+                    style = EbbTypography.titleM,
+                    modifier = Modifier.padding(EbbSpacing.s3),
+                )
+            }
+        }
     }
 }
 
 @Composable
 fun OnboardingNotificationsScreen(
+    state: NotificationPrimerState = NotificationPrimerState.Default,
     onAllow: () -> Unit,
     onSkip: () -> Unit,
 ) {
+    val title =
+        when (state) {
+            NotificationPrimerState.Granted ->
+                stringResource(R.string.onboarding_notifications_title_granted)
+            NotificationPrimerState.Denied ->
+                stringResource(R.string.onboarding_notifications_title_denied)
+            else -> stringResource(R.string.onboarding_notifications_title)
+        }
+    val body =
+        when (state) {
+            NotificationPrimerState.Granted ->
+                stringResource(R.string.onboarding_notifications_body_granted)
+            NotificationPrimerState.Denied ->
+                stringResource(R.string.onboarding_notifications_body_denied)
+            else -> stringResource(R.string.onboarding_notifications_body)
+        }
+    val primary =
+        when (state) {
+            NotificationPrimerState.Denied ->
+                stringResource(R.string.onboarding_notifications_open_settings)
+            else -> stringResource(R.string.onboarding_notifications_allow)
+        }
     OnboardingPermissionPrimer(
         activeSteps = 5,
-        symbolName = "notifications",
+        symbolName = if (state == NotificationPrimerState.Granted) "check_circle" else "notifications",
         containerColor = MaterialTheme.colorScheme.primaryContainer,
         accentColor = MaterialTheme.colorScheme.primary,
-        title = stringResource(R.string.onboarding_notifications_title),
-        body = stringResource(R.string.onboarding_notifications_body),
-        primaryLabel = stringResource(R.string.onboarding_notifications_allow),
+        title = title,
+        body = body,
+        primaryLabel = primary,
         onPrimary = onAllow,
         secondaryLabel = stringResource(R.string.onboarding_not_now),
         onSecondary = onSkip,
+        statusBanner = state != NotificationPrimerState.Default,
     )
 }
 
@@ -460,7 +547,7 @@ fun OnboardingExactAlarmsScreen(
             )
             Text(
                 text = stringResource(R.string.onboarding_alarms_title),
-                style = EbbTypography.onboardingTitle,
+                style = onboardingTitleStyle(),
                 modifier = Modifier.padding(top = EbbSpacing.s4),
             )
             Text(
@@ -480,6 +567,80 @@ fun OnboardingExactAlarmsScreen(
                 ) {
                     EbbSymbol("touch_app", fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
                     Text(stringResource(R.string.onboarding_alarms_tip), style = EbbTypography.bodyM)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun OnboardingCalendarChooserScreen(onContinue: () -> Unit) {
+    OnboardingScreenScaffold(
+        topBar = { OnboardingTopBar(activeSteps = 6) },
+        bottomBar = {
+            OnboardingBottomActions {
+                OnboardingPrimaryButton(
+                    text = stringResource(R.string.action_continue),
+                    onClick = onContinue,
+                )
+            }
+        },
+    ) {
+        Text(
+            stringResource(R.string.onboarding_calendar_chooser_title),
+            style = onboardingTitleStyle(),
+        )
+        Text(
+            stringResource(R.string.onboarding_calendar_chooser_subtitle),
+            style = EbbTypography.bodyL,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = EbbSpacing.s3),
+        )
+        CalendarChooserList(modifier = Modifier.padding(top = EbbSpacing.s6))
+    }
+}
+
+@Composable
+private fun CalendarChooserList(modifier: Modifier = Modifier) {
+    val rows =
+        listOf(
+            Triple("Personal", "Google account", "blue"),
+            Triple("University", "Shared", "sky"),
+            Triple("Work", "Exchange", "green"),
+            Triple("Holidays in Morocco", "Subscribed", "amber"),
+        )
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+    ) {
+        Column {
+            rows.forEachIndexed { index, (name, sub, color) ->
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s3),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s3),
+                ) {
+                    EbbSymbol(
+                        name = if (index < 2) "check_box" else "check_box_outline_blank",
+                        fontSize = 22.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        filled = index < 2,
+                    )
+                    Box(
+                        modifier =
+                            Modifier
+                                .size(12.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(EbbTaskColors.strong(color)),
+                    )
+                    Column {
+                        Text(name, style = EbbTypography.titleM, color = MaterialTheme.colorScheme.onSurface)
+                        Text(sub, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
         }
@@ -517,6 +678,7 @@ private fun OnboardingPermissionPrimer(
     onPrimary: () -> Unit,
     secondaryLabel: String,
     onSecondary: () -> Unit,
+    statusBanner: Boolean = false,
 ) {
     OnboardingScreenScaffold(
         topBar = { OnboardingTopBar(activeSteps = activeSteps) },
@@ -533,7 +695,7 @@ private fun OnboardingPermissionPrimer(
                 accentColor = accentColor,
                 symbolName = symbolName,
             )
-            Text(text = title, style = EbbTypography.onboardingTitle, modifier = Modifier.padding(top = EbbSpacing.s4))
+            Text(text = title, style = onboardingTitleStyle(), modifier = Modifier.padding(top = EbbSpacing.s4))
             Text(
                 text = body,
                 style = EbbTypography.bodyL,
@@ -572,7 +734,7 @@ fun OnboardingDoneScreen(
             )
             Text(
                 text = stringResource(R.string.onboarding_done_title),
-                style = EbbTypography.onboardingTitle,
+                style = onboardingTitleStyle(),
                 modifier = Modifier.padding(top = EbbSpacing.s4),
             )
             Text(
