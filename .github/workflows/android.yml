@@ -49,12 +49,20 @@ jobs:
         run: |
           python3 -m pip install --quiet Pillow
           python3 tools/generate_onboarding_comparisons.py
+          python3 tools/generate_screen_comparisons.py
 
       - name: Upload onboarding comparisons
         uses: actions/upload-artifact@v4
         with:
           name: onboarding-comparisons
           path: build/onboarding-comparisons/
+          retention-days: 30
+
+      - name: Upload screen comparisons
+        uses: actions/upload-artifact@v4
+        with:
+          name: screen-comparisons
+          path: build/screen-comparisons/
           retention-days: 30
 
       - name: Upload debug APK
