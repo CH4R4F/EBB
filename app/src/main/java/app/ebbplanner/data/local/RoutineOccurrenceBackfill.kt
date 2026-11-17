@@ -1,45 +1,163 @@
 package app.ebbplanner.data.local
 
+import android.database.Cursor
+import android.util.Log
 import androidx.sqlite.db.SupportSQLiteDatabase
 import java.time.DayOfWeek
 import java.time.LocalDate
 
 /**
- * Conservative repair for routine instance keys and skip rows. Never soft-deletes tasks.
+ * Conservative repair for routine instance keys and skip rows.
  */
 internal object RoutineOccurrenceBackfill {
+    private const val TAG = "RoutineOccurrenceBackfill"
     private const val WINDOW_PAST = 13L
     private const val WINDOW_FUTURE = 13L
 
+    private const val TASK_SNAPSHOT_COLUMNS =
+        """
+        id, sourceRoutineId, date, routineOccurrenceDate, title, startLocalTime,
+        durationMin, routineInstanceDetached, status, createdAt, updatedAt, deletedAt
+        """
+
     fun run(db: SupportSQLiteDatabase) {
+        try {
+            runOrThrow(db)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Routine occurrence backfill failed; opening DB without backfill.", t)
+        }
+    }
+
+    private fun runOrThrow(db: SupportSQLiteDatabase) {
         val routines = loadRoutines(db)
         if (routines.isEmpty()) return
         val liveByRoutineDate = loadLiveTasksGrouped(db)
-        val allRoutineTasks = loadAllRoutineTasks(db)
 
         liveByRoutineDate.forEach { (key, tasks) ->
             val routine = routines[key.routineId] ?: return@forEach
             val scheduled = key.date
             if (!appliesOn(routine, scheduled)) {
-                tasks.forEach { id -> markUnkeyedDetached(db, id) }
+                tasks.forEach { id -> markUnkeyedDetached(db, id, routines) }
                 return@forEach
             }
             if (tasks.size > 1) {
-                tasks.forEach { id -> markUnkeyedDetached(db, id) }
+                tasks.forEach { id -> markUnkeyedDetached(db, id, routines) }
                 return@forEach
             }
             val task = loadTask(db, tasks.first()) ?: return@forEach
             if (isUnambiguousMatch(task, routine, scheduled)) {
+                if (task.occurrenceDate == scheduled.toString() && !task.detached) {
+                    return@forEach
+                }
                 db.execSQL(
                     "UPDATE tasks SET routineOccurrenceDate = ?, routineInstanceDetached = 0 WHERE id = ?",
                     arrayOf(scheduled.toString(), task.id),
                 )
             } else {
-                markUnkeyedDetached(db, task.id)
+                if (!hasValidKey(task, routine, scheduled)) {
+                    markUnkeyedDetached(db, task.id, routines)
+                }
             }
         }
 
-        allRoutineTasks.filter { it.deletedAt != null }.forEach { deleted ->
+        val allAfterKeying = loadAllRoutineTasks(db)
+        removeGeneratorDuplicates(db, routines, allAfterKeying)
+        writeProvableSkips(db, routines, loadAllRoutineTasks(db))
+    }
+
+    private fun hasValidKey(
+        task: TaskSnapshot,
+        routine: RoutineRow,
+        scheduled: LocalDate,
+    ): Boolean {
+        val occ = task.occurrenceDate ?: return false
+        val occDate = parseDateOrNull(occ) ?: return false
+        return occDate == scheduled && isUnambiguousMatch(task.copy(occurrenceDate = occ), routine, scheduled)
+    }
+
+    private fun removeGeneratorDuplicates(
+        db: SupportSQLiteDatabase,
+        routines: Map<String, RoutineRow>,
+        tasks: List<TaskSnapshot>,
+    ) {
+        val live = tasks.filter { it.deletedAt == null }
+        val bySchedule =
+            live.groupBy { task ->
+                val d = task.date?.let { parseDateOrNull(it) } ?: return@groupBy null
+                task.routineId to d
+            }
+        bySchedule.forEach { (key, group) ->
+            if (key == null) return@forEach
+            val (routineId, _) = key
+            val routine = routines[routineId] ?: return@forEach
+            val done = group.any { it.status == STATUS_DONE }
+            if (!done) return@forEach
+            group.filter { it.status != STATUS_DONE }.forEach { open ->
+                if (!open.detached && isUntouchedGenerator(open, routine)) {
+                    softDeleteTask(db, open.id)
+                }
+            }
+        }
+        val byOccurrence =
+            live.groupBy { task ->
+                val occ =
+                    task.occurrenceDate?.let { parseDateOrNull(it) }
+                        ?: task.date?.let { parseDateOrNull(it) }
+                        ?: return@groupBy null
+                task.routineId to occ
+            }
+        byOccurrence.forEach { (key, group) ->
+            if (key == null) return@forEach
+            val (routineId, _) = key
+            val routine = routines[routineId] ?: return@forEach
+            resolveDeletedVsLiveGenerator(db, group, routine, key.second, routines)
+            val done = group.any { it.status == STATUS_DONE }
+            if (!done) return@forEach
+            group.filter { it.status != STATUS_DONE }.forEach { open ->
+                if (!open.detached && isUntouchedGenerator(open, routine)) {
+                    softDeleteTask(db, open.id)
+                }
+            }
+        }
+    }
+
+    private fun resolveDeletedVsLiveGenerator(
+        db: SupportSQLiteDatabase,
+        liveOnOccurrence: List<TaskSnapshot>,
+        routine: RoutineRow,
+        occ: LocalDate,
+        routines: Map<String, RoutineRow>,
+    ) {
+        val deleted =
+            queryTaskSnapshots(
+                db,
+                """
+                SELECT $TASK_SNAPSHOT_COLUMNS FROM tasks
+                WHERE sourceRoutineId = ? AND deletedAt IS NOT NULL
+                AND (routineOccurrenceDate = ? OR date = ?)
+                """.trimIndent(),
+                arrayOf(routine.id, occ.toString(), occ.toString()),
+            )
+        if (deleted.isEmpty()) return
+        val deletedAtMax = deleted.maxOf { it.deletedAt ?: it.updatedAt }
+        liveOnOccurrence.forEach { liveTask ->
+            if (liveTask.detached) return@forEach
+            val generatorEcho =
+                liveTask.createdAt > deletedAtMax &&
+                    isUntouchedGenerator(liveTask, routine)
+            if (generatorEcho) {
+                softDeleteTask(db, liveTask.id)
+                insertSkip(db, routine.id, occ.toString())
+            }
+        }
+    }
+
+    private fun writeProvableSkips(
+        db: SupportSQLiteDatabase,
+        routines: Map<String, RoutineRow>,
+        tasks: List<TaskSnapshot>,
+    ) {
+        tasks.filter { it.deletedAt != null }.forEach { deleted ->
             val routine = routines[deleted.routineId] ?: return@forEach
             val occ =
                 deleted.occurrenceDate?.let { parseDateOrNull(it) }
@@ -47,102 +165,24 @@ internal object RoutineOccurrenceBackfill {
                     ?: return@forEach
             if (!appliesOn(routine, occ)) return@forEach
             insertSkip(db, deleted.routineId, occ.toString())
-            resolveDeletedVsLiveGenerator(db, deleted, routine, occ)
         }
-
-        writeConservativeSkips(db, routines, allRoutineTasks)
-    }
-
-    private fun resolveDeletedVsLiveGenerator(
-        db: SupportSQLiteDatabase,
-        deleted: TaskSnapshot,
-        routine: RoutineRow,
-        occ: LocalDate,
-    ) {
-        val live =
-            db.query(
-                """
-                SELECT id, title, startLocalTime, durationMin, routineInstanceDetached,
-                       routineOccurrenceDate, createdAt, updatedAt, status
-                FROM tasks
-                WHERE deletedAt IS NULL AND sourceRoutineId = ? AND date = ?
-                """.trimIndent(),
-                arrayOf(deleted.routineId, occ.toString()),
-            ).use { cursor ->
-                val rows = mutableListOf<TaskSnapshot>()
-                while (cursor.moveToNext()) {
-                    rows += rowToSnapshot(cursor, deleted.routineId)
-                }
-                rows
-            }
-        if (live.isEmpty()) return
-        live.forEach { liveTask ->
-            val generatorEcho =
-                liveTask.createdAt > (deleted.deletedAt ?: deleted.updatedAt) &&
-                    !liveTask.detached &&
-                    liveTask.title == routine.title &&
-                    liveTask.startLocalTime == routine.startLocalTime &&
-                    liveTask.durationMin == routine.durationMin &&
-                    liveTask.status != "done"
-            if (generatorEcho) {
-                markUnkeyedDetached(db, liveTask.id)
-                insertSkip(db, deleted.routineId, occ.toString())
+        tasks.filter { it.deletedAt == null }.forEach { live ->
+            val occ = live.occurrenceDate ?: return@forEach
+            val sched = live.date ?: return@forEach
+            if (occ != sched) {
+                insertSkip(db, live.routineId, occ)
             }
         }
     }
 
-    private fun writeConservativeSkips(
-        db: SupportSQLiteDatabase,
-        routines: Map<String, RoutineRow>,
-        allTasks: List<TaskSnapshot>,
-    ) {
-        val today = LocalDate.now()
-        val start = today.minusDays(WINDOW_PAST)
-        val end = today.plusDays(WINDOW_FUTURE)
-        routines.values.filter { it.enabled }.forEach { routine ->
-            var day = start
-            while (!day.isAfter(end)) {
-                if (!appliesOn(routine, day)) {
-                    day = day.plusDays(1)
-                    continue
-                }
-                val occ = day.toString()
-                val onDay =
-                    allTasks.filter { task ->
-                        task.routineId == routine.id && taskMatchesDay(task, day)
-                    }
-                if (onDay.isNotEmpty()) {
-                    insertSkip(db, routine.id, occ)
-                } else {
-                    val near =
-                        allTasks.any { task ->
-                            task.routineId == routine.id &&
-                                task.deletedAt == null &&
-                                (
-                                    task.detached ||
-                                        task.occurrenceDate.isNullOrBlank() ||
-                                        task.status == "done"
-                                ) &&
-                                task.date?.let { parseDateOrNull(it) }?.let { d ->
-                                    kotlin.math.abs(day.toEpochDay() - d.toEpochDay()) <= 1
-                                } == true
-                        }
-                    if (near) insertSkip(db, routine.id, occ)
-                }
-                day = day.plusDays(1)
-            }
-        }
-    }
-
-    private fun taskMatchesDay(
+    private fun isUntouchedGenerator(
         task: TaskSnapshot,
-        day: LocalDate,
-    ): Boolean {
-        val d = task.date?.let { parseDateOrNull(it) } ?: return false
-        if (d == day) return true
-        val occ = task.occurrenceDate?.let { parseDateOrNull(it) }
-        return occ == day
-    }
+        routine: RoutineRow,
+    ): Boolean =
+        task.title == routine.title &&
+            task.startLocalTime == routine.startLocalTime &&
+            task.durationMin == routine.durationMin &&
+            !task.detached
 
     private fun isUnambiguousMatch(
         task: TaskSnapshot,
@@ -159,10 +199,32 @@ internal object RoutineOccurrenceBackfill {
     private fun markUnkeyedDetached(
         db: SupportSQLiteDatabase,
         taskId: String,
+        routines: Map<String, RoutineRow>,
     ) {
+        val task = loadTask(db, taskId) ?: return
+        val routine = routines[task.routineId] ?: return
+        val scheduled = task.date?.let { parseDateOrNull(it) }
+        if (scheduled != null && hasValidKey(task, routine, scheduled)) {
+            db.execSQL(
+                "UPDATE tasks SET routineInstanceDetached = 1 WHERE id = ?",
+                arrayOf(taskId),
+            )
+            return
+        }
         db.execSQL(
             "UPDATE tasks SET routineOccurrenceDate = NULL, routineInstanceDetached = 1 WHERE id = ?",
             arrayOf(taskId),
+        )
+    }
+
+    private fun softDeleteTask(
+        db: SupportSQLiteDatabase,
+        taskId: String,
+    ) {
+        val now = System.currentTimeMillis()
+        db.execSQL(
+            "UPDATE tasks SET deletedAt = ?, updatedAt = ? WHERE id = ?",
+            arrayOf(now, now, taskId),
         )
     }
 
@@ -248,55 +310,55 @@ internal object RoutineOccurrenceBackfill {
         return map
     }
 
-    private fun loadAllRoutineTasks(db: SupportSQLiteDatabase): List<TaskSnapshot> {
-        val list = mutableListOf<TaskSnapshot>()
-        db.query(
-            """
-            SELECT id, sourceRoutineId, date, routineOccurrenceDate, title, startLocalTime,
-                   durationMin, routineInstanceDetached, status, createdAt, updatedAt, deletedAt
-            FROM tasks WHERE sourceRoutineId IS NOT NULL
-            """.trimIndent(),
-        ).use { c ->
-            while (c.moveToNext()) {
-                list += rowToSnapshot(c, c.getString(1))
-            }
-        }
-        return list
-    }
+    private fun loadAllRoutineTasks(db: SupportSQLiteDatabase): List<TaskSnapshot> =
+        queryTaskSnapshots(
+            db,
+            "SELECT $TASK_SNAPSHOT_COLUMNS FROM tasks WHERE sourceRoutineId IS NOT NULL",
+        )
 
     private fun loadTask(
         db: SupportSQLiteDatabase,
         id: String,
     ): TaskSnapshot? =
-        db.query(
-            """
-            SELECT id, sourceRoutineId, date, routineOccurrenceDate, title, startLocalTime,
-                   durationMin, routineInstanceDetached, status, createdAt, updatedAt, deletedAt
-            FROM tasks WHERE id = ?
-            """.trimIndent(),
+        queryTaskSnapshots(
+            db,
+            "SELECT $TASK_SNAPSHOT_COLUMNS FROM tasks WHERE id = ?",
             arrayOf(id),
-        ).use { c ->
-            if (!c.moveToFirst()) null else rowToSnapshot(c, c.getString(1))
-        }
+        ).firstOrNull()
 
-    private fun rowToSnapshot(
-        c: android.database.Cursor,
-        routineId: String,
-    ): TaskSnapshot =
-        TaskSnapshot(
-            id = c.getString(0),
-            routineId = routineId,
-            date = if (c.isNull(2)) null else c.getString(2),
-            occurrenceDate = if (c.isNull(3)) null else c.getString(3),
-            title = c.getString(4),
-            startLocalTime = if (c.isNull(5)) null else c.getString(5),
-            durationMin = c.getInt(6),
-            detached = c.getInt(7) != 0,
-            status = c.getString(8),
-            createdAt = c.getLong(9),
-            updatedAt = c.getLong(10),
-            deletedAt = if (c.isNull(11)) null else c.getLong(11),
+    private fun queryTaskSnapshots(
+        db: SupportSQLiteDatabase,
+        sql: String,
+        args: Array<String>? = null,
+    ): List<TaskSnapshot> {
+        val list = mutableListOf<TaskSnapshot>()
+        db.query(sql, args ?: emptyArray()).use { c ->
+            while (c.moveToNext()) {
+                list += rowToSnapshot(c)
+            }
+        }
+        return list
+    }
+
+    private fun rowToSnapshot(c: Cursor): TaskSnapshot {
+        fun col(name: String): Int = c.getColumnIndexOrThrow(name)
+        fun stringOrNull(index: Int): String? = if (c.isNull(index)) null else c.getString(index)
+        fun longOrNull(index: Int): Long? = if (c.isNull(index)) null else c.getLong(index)
+        return TaskSnapshot(
+            id = c.getString(col("id")),
+            routineId = c.getString(col("sourceRoutineId")),
+            date = stringOrNull(col("date")),
+            occurrenceDate = stringOrNull(col("routineOccurrenceDate")),
+            title = c.getString(col("title")),
+            startLocalTime = stringOrNull(col("startLocalTime")),
+            durationMin = c.getInt(col("durationMin")),
+            detached = c.getInt(col("routineInstanceDetached")) != 0,
+            status = c.getString(col("status")),
+            createdAt = c.getLong(col("createdAt")),
+            updatedAt = c.getLong(col("updatedAt")),
+            deletedAt = longOrNull(col("deletedAt")),
         )
+    }
 
     private fun parseDateOrNull(raw: String): LocalDate? = runCatching { LocalDate.parse(raw) }.getOrNull()
 
@@ -316,4 +378,6 @@ internal object RoutineOccurrenceBackfill {
             }
             else -> false
         }
+
+    private const val STATUS_DONE = "done"
 }
