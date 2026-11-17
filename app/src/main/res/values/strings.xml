@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ebb</string>
+
+    <string name="onboarding_welcome_tagline">A calm plan for a busy brain</string>
+    <string name="onboarding_get_started">Get started</string>
+    <string name="onboarding_restore_backup">I\'ve used Ebb before — Restore backup</string>
+    <string name="onboarding_promise_title">Our promise</string>
+    <string name="promise_free_forever">Free forever</string>
+    <string name="promise_free_forever_detail">Every feature, no ads, no paywall.</string>
+    <string name="promise_no_account">No account</string>
+    <string name="promise_no_account_detail">Open it and start. Nothing to sign up for.</string>
+    <string name="promise_private_offline">Private &amp; offline</string>
+    <string name="promise_private_offline_detail">Your plan stays on this device.</string>
+    <string name="promise_open_source">Open source</string>
+    <string name="promise_open_source_detail">Inspect the code, or fork it anytime.</string>
+    <string name="onboarding_preferences_title">Your day shape</string>
+    <string name="onboarding_day_shape_hint">Set when your day usually starts and ends — this shapes your timeline.</string>
+    <string name="onboarding_wake_label">Wake time</string>
+    <string name="onboarding_bed_label">Sleep time</string>
+    <string name="onboarding_change_anytime">You can change these anytime in Settings.</string>
+    <string name="onboarding_done_title">You\'re set</string>
+    <string name="onboarding_done_summary">Day %1$s–%2$s</string>
+    <string name="onboarding_add_sample_tasks">Add sample tasks</string>
+    <string name="onboarding_open_my_day">Open my day</string>
+
+    <string name="action_continue">Continue</string>
+    <string name="action_save">Save</string>
+
+    <string name="tab_today">Today</string>
+    <string name="tab_inbox">Inbox</string>
+    <string name="tab_week">Week</string>
+    <string name="tab_routines">Routines</string>
+    <string name="tab_inbox_placeholder">Inbox — coming in a later milestone</string>
+    <string name="tab_week_placeholder">Week — coming in a later milestone</string>
+    <string name="tab_routines_placeholder">Routines — coming in a later milestone</string>
+
+    <string name="today_summary_title">Today</string>
+    <string name="today_summary_minutes">%1$d minutes planned</string>
+    <string name="today_anytime_title">Anytime</string>
+    <string name="today_anytime_empty">Drop tasks here when there\'s no set time.</string>
+    <string name="today_timeline_title">Timeline</string>
+
+    <string name="quick_capture_title">Quick capture</string>
+    <string name="quick_capture_hint">What\'s on your mind?</string>
+</resources>
