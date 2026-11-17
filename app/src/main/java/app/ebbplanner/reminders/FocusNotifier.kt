@@ -84,6 +84,40 @@ class FocusNotifier
             notificationManager.notify(NOTIFICATION_ID_BREAK, notification)
         }
 
+        fun showBreakTime(
+            taskId: String,
+            title: String,
+        ) {
+            ensureChannel()
+            val notification =
+                NotificationCompat
+                    .Builder(context, CHANNEL_FOCUS)
+                    .setSmallIcon(android.R.drawable.ic_dialog_info)
+                    .setContentTitle(context.getString(R.string.focus_break_time_title))
+                    .setContentText(context.getString(R.string.focus_break_time_body, title))
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setAutoCancel(true)
+                    .build()
+            notificationManager.notify(NOTIFICATION_ID_BREAK, notification)
+        }
+
+        fun showBackToWork(
+            taskId: String,
+            title: String,
+        ) {
+            ensureChannel()
+            val notification =
+                NotificationCompat
+                    .Builder(context, CHANNEL_FOCUS)
+                    .setSmallIcon(android.R.drawable.ic_dialog_info)
+                    .setContentTitle(context.getString(R.string.focus_work_resumed_title))
+                    .setContentText(context.getString(R.string.focus_work_resumed_body, title))
+                    .setPriority(NotificationCompat.PRIORITY_LOW)
+                    .setAutoCancel(true)
+                    .build()
+            notificationManager.notify(NOTIFICATION_ID_INTERVAL, notification)
+        }
+
         fun showIntervalSwitch(
             taskId: String,
             title: String,

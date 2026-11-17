@@ -316,7 +316,16 @@ class TaskRepository
             transform: (TaskEntity) -> TaskEntity,
         ) {
             val task = taskDao.getById(id) ?: return
-            val updated = transform(task).copy(updatedAt = System.currentTimeMillis())
+            var updated = transform(task).copy(updatedAt = System.currentTimeMillis())
+            if (task.sourceRoutineId != null) {
+                val customized =
+                    updated.title != task.title ||
+                        updated.durationMin != task.durationMin ||
+                        updated.startLocalTime != task.startLocalTime
+                if (customized) {
+                    updated = updated.copy(routineInstanceDetached = true)
+                }
+            }
             taskDao.update(updated)
             reminderSync.syncTask(id)
         }
@@ -340,7 +349,11 @@ class TaskRepository
             val newDate = date?.toString()
             if (before?.sourceRoutineId != null) {
                 val oldOccurrence = before.routineOccurrenceDate ?: before.date
-                if (oldOccurrence != null && newDate != null && oldOccurrence != newDate) {
+                if (oldOccurrence != null &&
+                    newDate != null &&
+                    oldOccurrence != newDate &&
+                    before.routineOccurrenceDate == newDate
+                ) {
                     routineInstanceGenerator.recordSkip(before.sourceRoutineId, oldOccurrence)
                 }
             }
@@ -353,18 +366,33 @@ class TaskRepository
                         userDisabled -> false
                         else -> defaultReminders
                     }
-                task.copy(
-                    placement = placement,
-                    date = date?.toString(),
-                    startLocalTime = startLocalTime,
-                    reminderEnabled = enableReminders,
-                    routineOccurrenceDate =
-                        if (task.sourceRoutineId != null && newDate != null) {
-                            newDate
-                        } else {
-                            task.routineOccurrenceDate
-                        },
-                )
+                val priorOccurrence = task.routineOccurrenceDate ?: task.date
+                val keptOccurrence =
+                    if (task.sourceRoutineId != null && newDate != null) {
+                        when {
+                            task.routineOccurrenceDate != null -> task.routineOccurrenceDate
+                            priorOccurrence == newDate -> newDate
+                            priorOccurrence != null -> priorOccurrence
+                            else -> newDate
+                        }
+                    } else {
+                        task.routineOccurrenceDate
+                    }
+                val next =
+                    task.copy(
+                        placement = placement,
+                        date = date?.toString(),
+                        startLocalTime = startLocalTime,
+                        reminderEnabled = enableReminders,
+                        routineOccurrenceDate = keptOccurrence,
+                    )
+                if (task.sourceRoutineId != null &&
+                    (next.startLocalTime != task.startLocalTime || next.date != task.date)
+                ) {
+                    next.copy(routineInstanceDetached = true)
+                } else {
+                    next
+                }
             }
         }
 

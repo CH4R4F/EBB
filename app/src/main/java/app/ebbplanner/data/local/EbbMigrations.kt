@@ -71,3 +71,16 @@ val MIGRATION_5_6 =
             )
         }
     }
+
+val MIGRATION_6_7 =
+    object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE tasks ADD COLUMN routineInstanceDetached INTEGER NOT NULL DEFAULT 0",
+            )
+            db.execSQL(
+                "ALTER TABLE tasks ADD COLUMN breatherBufferMin INTEGER NOT NULL DEFAULT 0",
+            )
+            RoutineOccurrenceBackfill.run(db)
+        }
+    }

@@ -7,6 +7,7 @@ import app.ebbplanner.data.local.MIGRATION_2_3
 import app.ebbplanner.data.local.MIGRATION_3_4
 import app.ebbplanner.data.local.MIGRATION_4_5
 import app.ebbplanner.data.local.MIGRATION_5_6
+import app.ebbplanner.data.local.MIGRATION_6_7
 import app.ebbplanner.data.local.dao.DayPlanDao
 import app.ebbplanner.data.local.dao.ReminderDao
 import app.ebbplanner.data.local.dao.RoutineDao
@@ -33,7 +34,7 @@ object DatabaseModule {
             EbbDatabase::class.java,
             "ebb.db",
         )
-            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
             .build()
 
     @Provides

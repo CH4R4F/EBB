@@ -28,6 +28,8 @@ data class TaskEntity(
     val reminderEnabled: Boolean = true,
     val sourceRoutineId: String? = null,
     val routineOccurrenceDate: String? = null,
+    val routineInstanceDetached: Boolean = false,
+    val breatherBufferMin: Int = 0,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

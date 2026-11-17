@@ -101,7 +101,14 @@ fun MainShell(
             }
             composable(
                 route = AppRoutes.ROUTINE_EDIT,
-                arguments = listOf(navArgument("routineId") { type = NavType.StringType }),
+                arguments =
+                    listOf(
+                        navArgument("routineId") { type = NavType.StringType },
+                        navArgument("linkTaskId") {
+                            type = NavType.StringType
+                            defaultValue = ""
+                        },
+                    ),
             ) {
                 app.ebbplanner.ui.routines.RoutineEditorScreen(
                     onClose = { navController.popBackStack() },

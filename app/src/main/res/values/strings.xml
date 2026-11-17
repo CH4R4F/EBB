@@ -151,6 +151,8 @@
     <string name="focus_channel_name">Focus timer</string>
     <string name="focus_times_up_title">Time\'s up for %1$s</string>
     <string name="focus_times_up_body">How did it go? Open Ebb to wrap up.</string>
+    <string name="focus_break_time_title">Break time</string>
+    <string name="focus_break_time_body">Pause from %1$s — stretch or breathe.</string>
     <string name="focus_break_ended_title">Break over</string>
     <string name="focus_break_ended_body">Back to %1$s — tap to return to focus.</string>
     <string name="focus_work_resumed_title">Focus interval</string>

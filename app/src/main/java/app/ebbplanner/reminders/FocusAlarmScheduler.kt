@@ -22,24 +22,41 @@ class FocusAlarmScheduler
         private val alarmManager: AlarmManager,
         private val alarmGrant: ExactAlarmGrant,
     ) {
-        fun scheduleTimesUp(
+        fun schedulePhaseEnd(
             taskId: String,
             title: String,
             triggerAtMs: Long,
-            isBreak: Boolean = false,
+            kind: FocusAlarmKind,
         ) {
             cancel()
             val delay = triggerAtMs - System.currentTimeMillis()
             if (delay <= 0L) return
             if (alarmGrant.isGranted()) {
                 try {
-                    scheduleExact(taskId, title, triggerAtMs, isBreak)
+                    scheduleExact(taskId, title, triggerAtMs, kind)
                     return
                 } catch (_: SecurityException) {
                     // fall through to WorkManager
                 }
             }
-            scheduleWork(taskId, title, delay, isBreak)
+            scheduleWork(taskId, title, delay, kind)
+        }
+
+        fun scheduleTimesUp(
+            taskId: String,
+            title: String,
+            triggerAtMs: Long,
+            isBreak: Boolean = false,
+        ) {
+            schedulePhaseEnd(
+                taskId,
+                title,
+                triggerAtMs,
+                when {
+                    isBreak -> FocusAlarmKind.INTERVAL_BREAK
+                    else -> FocusAlarmKind.TIMES_UP
+                },
+            )
         }
 
         fun cancel() {
@@ -59,13 +76,13 @@ class FocusAlarmScheduler
             taskId: String,
             title: String,
             triggerAtMs: Long,
-            isBreak: Boolean,
+            kind: FocusAlarmKind,
         ) {
             val intent =
                 Intent(context, FocusTimesUpReceiver::class.java).apply {
                     putExtra(EXTRA_TASK_ID, taskId)
                     putExtra(EXTRA_TASK_TITLE, title)
-                    putExtra(EXTRA_IS_BREAK, isBreak)
+                    putExtra(EXTRA_ALARM_KIND, kind.name)
                 }
             val pending =
                 PendingIntent.getBroadcast(
@@ -85,7 +102,7 @@ class FocusAlarmScheduler
             taskId: String,
             title: String,
             delayMs: Long,
-            isBreak: Boolean,
+            kind: FocusAlarmKind,
         ) {
             val work =
                 OneTimeWorkRequestBuilder<FocusAlarmWorker>()
@@ -94,7 +111,7 @@ class FocusAlarmScheduler
                         workDataOf(
                             FocusAlarmWorker.KEY_TASK_ID to taskId,
                             FocusAlarmWorker.KEY_TASK_TITLE to title,
-                            FocusAlarmWorker.KEY_IS_BREAK to isBreak,
+                            FocusAlarmWorker.KEY_ALARM_KIND to kind.name,
                         ),
                     )
                     .build()
@@ -109,7 +126,14 @@ class FocusAlarmScheduler
             const val EXTRA_TASK_ID = "focus_task_id"
             const val EXTRA_TASK_TITLE = "focus_task_title"
             const val EXTRA_IS_BREAK = "focus_is_break"
+            const val EXTRA_ALARM_KIND = "focus_alarm_kind"
             private const val REQUEST_CODE = 42_002
             private const val UNIQUE_WORK = "ebb-focus-alarm"
         }
     }
+
+enum class FocusAlarmKind {
+    TIMES_UP,
+    INTERVAL_BREAK,
+    INTERVAL_WORK,
+}

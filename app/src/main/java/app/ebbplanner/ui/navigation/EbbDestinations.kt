@@ -26,14 +26,17 @@ object AppRoutes {
 
     const val SEARCH = "flow/search"
     const val SETTINGS = "flow/settings"
-    const val ROUTINE_EDIT = "main/routines/edit/{routineId}"
+    const val ROUTINE_EDIT = "main/routines/edit/{routineId}?linkTaskId={linkTaskId}"
 
     fun taskDetail(
         taskId: String,
         sheet: String = "none",
     ): String = "flow/task/$taskId/$sheet"
 
-    fun routineEdit(routineId: String): String = "main/routines/edit/$routineId"
+    fun routineEdit(routineId: String): String = "main/routines/edit/$routineId?linkTaskId="
+
+    fun routineEditFromTask(taskId: String): String =
+        "main/routines/edit/new?linkTaskId=$taskId"
 }
 
 enum class MainTab(val route: String, val label: String) {

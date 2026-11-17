@@ -32,6 +32,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -132,7 +133,10 @@ fun TodayDayHead(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s3),
         ) {
-            DayProgressRing(percent = state.progressPercent)
+            DayProgressRing(
+                percent = state.progressPercent,
+                largeText = LocalConfiguration.current.fontScale >= 1.75f,
+            )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = state.timeLeftLabel,
@@ -175,14 +179,18 @@ fun TodayDayHead(
 }
 
 @Composable
-private fun DayProgressRing(percent: Int) {
+private fun DayProgressRing(
+    percent: Int,
+    largeText: Boolean = false,
+) {
     val track = MaterialTheme.colorScheme.surfaceVariant
     val arc = MaterialTheme.colorScheme.primary
-    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(44.dp)) {
-        Canvas(modifier = Modifier.size(44.dp)) {
+    val ringSize = if (largeText) 52.dp else 44.dp
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(ringSize)) {
+        Canvas(modifier = Modifier.size(ringSize)) {
             val stroke = 4.dp.toPx()
             val inset = stroke / 2f
-            val arcSize = Size(size.width - stroke, size.height - stroke)
+            val arcSize = Size(this.size.width - stroke, this.size.height - stroke)
             drawArc(
                 color = track,
                 startAngle = -90f,
@@ -202,7 +210,16 @@ private fun DayProgressRing(percent: Int) {
                 style = Stroke(width = stroke, cap = StrokeCap.Round),
             )
         }
-        Text("$percent%", style = EbbTypography.labelM)
+        Text(
+            "$percent%",
+            style =
+                if (largeText) {
+                    EbbTypography.labelM.copy(fontSize = 10.sp, lineHeight = 12.sp)
+                } else {
+                    EbbTypography.labelM
+                },
+            maxLines = 1,
+        )
     }
 }
 

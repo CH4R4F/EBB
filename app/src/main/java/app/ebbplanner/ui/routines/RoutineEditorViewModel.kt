@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ebbplanner.data.local.entity.RoutineEntity
 import app.ebbplanner.data.repository.RoutineRepository
+import app.ebbplanner.data.repository.TaskRepository
 import app.ebbplanner.domain.routines.RoutineInstanceGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,32 +36,56 @@ class RoutineEditorViewModel
         savedStateHandle: SavedStateHandle,
         private val routineRepository: RoutineRepository,
         private val routineInstanceGenerator: RoutineInstanceGenerator,
+        private val taskRepository: TaskRepository,
     ) : ViewModel() {
         private val routineId: String = savedStateHandle.get<String>("routineId").orEmpty()
+        private val linkTaskId: String? =
+            savedStateHandle.get<String>("linkTaskId")?.takeIf { it.isNotBlank() }
 
         private val _state = MutableStateFlow(RoutineEditorState())
         val state: StateFlow<RoutineEditorState> = _state.asStateFlow()
 
         init {
-            if (routineId.isNotBlank() && routineId != NEW_ROUTINE_ID) {
-                viewModelScope.launch {
-                    val entity = routineRepository.getRoutine(routineId) ?: return@launch
-                    _state.value =
-                        RoutineEditorState(
-                            id = entity.id,
-                            title = entity.title,
-                            repeatRule = entity.repeatRule,
-                            weeklyDays = parseWeeklyDays(entity.weeklyDays),
-                            startLocalTime = entity.startLocalTime,
-                            durationMin = entity.durationMin,
-                            colorKey = entity.colorKey,
-                            iconKey = entity.iconKey,
-                            enabled = entity.enabled,
-                            isNew = false,
-                        )
+            when {
+                routineId.isNotBlank() && routineId != NEW_ROUTINE_ID -> {
+                    viewModelScope.launch {
+                        val entity = routineRepository.getRoutine(routineId) ?: return@launch
+                        _state.value =
+                            RoutineEditorState(
+                                id = entity.id,
+                                title = entity.title,
+                                repeatRule = entity.repeatRule,
+                                weeklyDays = parseWeeklyDays(entity.weeklyDays),
+                                startLocalTime = entity.startLocalTime,
+                                durationMin = entity.durationMin,
+                                colorKey = entity.colorKey,
+                                iconKey = entity.iconKey,
+                                enabled = entity.enabled,
+                                isNew = false,
+                            )
+                    }
                 }
-            } else {
-                _state.value = RoutineEditorState(id = routineId, isNew = true)
+                linkTaskId != null -> {
+                    viewModelScope.launch {
+                        val task = taskRepository.getTask(linkTaskId) ?: return@launch
+                        _state.value =
+                            RoutineEditorState(
+                                id = NEW_ROUTINE_ID,
+                                title = task.title,
+                                repeatRule = RoutineEntity.REPEAT_WEEKDAYS,
+                                weeklyDays = setOf(1, 2, 3, 4, 5),
+                                startLocalTime = task.startLocalTime ?: "09:00",
+                                durationMin = task.durationMin,
+                                colorKey = task.colorKey,
+                                iconKey = task.iconKey,
+                                enabled = true,
+                                isNew = true,
+                            )
+                    }
+                }
+                else -> {
+                    _state.value = RoutineEditorState(id = routineId, isNew = true)
+                }
             }
         }
 
@@ -116,7 +141,11 @@ class RoutineEditorViewModel
                         updatedAt = now,
                     )
                 routineRepository.upsert(entity)
-                routineInstanceGenerator.syncFutureInstances(entity)
+                if (linkTaskId != null && draft.isNew) {
+                    routineInstanceGenerator.linkExistingTask(linkTaskId, entity)
+                } else {
+                    routineInstanceGenerator.syncFutureInstances(entity)
+                }
                 onSaved()
             }
         }

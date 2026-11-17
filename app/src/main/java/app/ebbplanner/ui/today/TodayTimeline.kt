@@ -491,23 +491,35 @@ private fun StandardTaskRow(
         ) {
             Text(
                 text = block.title,
-                style = EbbTypography.titleM,
-                maxLines = 1,
+                style =
+                    if (largeText) {
+                        EbbTypography.titleM.copy(fontSize = 14.sp, lineHeight = 18.sp)
+                    } else {
+                        EbbTypography.titleM
+                    },
+                maxLines = if (largeText) 2 else 1,
                 overflow = TextOverflow.Ellipsis,
             )
             val showMeta = !titleOnly && block.hasMetaRow()
             if (showMeta) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
-                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s1),
+                    verticalAlignment = Alignment.Top,
                 ) {
                     block.metaTimeRange?.let {
                         Text(
                             it,
-                            style = EbbTypography.bodyM,
+                            style =
+                                if (largeText) {
+                                    EbbTypography.bodyM.copy(fontSize = 12.sp, lineHeight = 14.sp)
+                                } else {
+                                    EbbTypography.bodyM
+                                },
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
+                            maxLines = if (largeText) 2 else 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
                         )
                     }
                     block.metaDuration?.let {

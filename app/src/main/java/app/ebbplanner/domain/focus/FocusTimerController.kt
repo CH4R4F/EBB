@@ -26,6 +26,18 @@ data class FocusTimerSnapshot(
     val paused: Boolean,
 )
 
+data class FocusTimerPersistedState(
+    val phase: FocusPhase,
+    val endAtMs: Long,
+    val totalMs: Long,
+    val pausedRemainingMs: Long,
+    val countUp: Boolean,
+    val intervalMode: Boolean,
+    val countUpStartedAtMs: Long,
+    val intervalCyclesCompleted: Int,
+    val phaseStartedAtMs: Long,
+)
+
 class FocusTimerController {
     private var phase: FocusPhase = FocusPhase.Setup
     private var endAtMs: Long = 0L
@@ -34,24 +46,22 @@ class FocusTimerController {
     private var countUp: Boolean = false
     private var countUpStartedAtMs: Long = 0L
     private var intervalMode: Boolean = false
+    private var intervalCyclesCompleted: Int = 0
+    private var phaseStartedAtMs: Long = 0L
     private val intervalWorkMs = 25 * 60_000L
     private val intervalBreakMs = 5 * 60_000L
 
     fun isCountUp(): Boolean = countUp
 
+    fun isIntervalMode(): Boolean = intervalMode
+
     fun snapshot(nowMs: Long): FocusTimerSnapshot {
         val remaining = remainingMs(nowMs)
-        val label =
-            if (countUp) {
-                formatMs(remaining)
-            } else {
-                formatMs(remaining)
-            }
         return FocusTimerSnapshot(
             phase = phase,
             remainingMs = remaining,
             totalMs = totalMs,
-            timerLabel = label,
+            timerLabel = formatMs(remaining),
             paused = phase == FocusPhase.Paused,
         )
     }
@@ -71,6 +81,7 @@ class FocusTimerController {
         totalMs = remaining
         endAtMs = nowMs + remaining
         phase = FocusPhase.Running
+        phaseStartedAtMs = nowMs
     }
 
     fun startFixedMinutes(
@@ -82,6 +93,7 @@ class FocusTimerController {
         totalMs = duration
         endAtMs = nowMs + duration
         phase = FocusPhase.Running
+        phaseStartedAtMs = nowMs
     }
 
     fun startCountUp(nowMs: Long) {
@@ -91,14 +103,17 @@ class FocusTimerController {
         totalMs = 0L
         endAtMs = Long.MAX_VALUE
         phase = FocusPhase.Running
+        phaseStartedAtMs = nowMs
     }
 
     fun startIntervals(nowMs: Long) {
         clearModes()
         intervalMode = true
+        intervalCyclesCompleted = 0
         totalMs = intervalWorkMs
         endAtMs = nowMs + intervalWorkMs
         phase = FocusPhase.Running
+        phaseStartedAtMs = nowMs
     }
 
     fun pause(nowMs: Long) {
@@ -152,6 +167,7 @@ class FocusTimerController {
                 totalMs = extra
                 endAtMs = nowMs + extra
                 phase = FocusPhase.Running
+                phaseStartedAtMs = nowMs
             }
             else -> Unit
         }
@@ -164,15 +180,22 @@ class FocusTimerController {
         if (!expired) return FocusTickResult.None
         if (intervalMode) {
             if (phase == FocusPhase.Running) {
+                intervalCyclesCompleted++
+                if (intervalCyclesCompleted >= INTERVAL_CYCLES) {
+                    enterTimesUp()
+                    return FocusTickResult.SessionEnded
+                }
                 totalMs = intervalBreakMs
                 endAtMs = nowMs + intervalBreakMs
                 phase = FocusPhase.Break
+                phaseStartedAtMs = nowMs
                 return FocusTickResult.IntervalBreak
             }
             if (phase == FocusPhase.Break) {
                 totalMs = intervalWorkMs
                 endAtMs = nowMs + intervalWorkMs
                 phase = FocusPhase.Running
+                phaseStartedAtMs = nowMs
                 return FocusTickResult.IntervalWork
             }
         }
@@ -195,6 +218,7 @@ class FocusTimerController {
         endAtMs = 0L
         totalMs = 0L
         pausedRemainingMs = 0L
+        phaseStartedAtMs = 0L
         clearModes()
     }
 
@@ -208,23 +232,52 @@ class FocusTimerController {
         totalMs = duration
         endAtMs = nowMs + duration
         phase = FocusPhase.Break
+        phaseStartedAtMs = nowMs
     }
 
-    fun restore(
-        phase: FocusPhase,
-        endAtMs: Long,
-        totalMs: Long,
-        pausedRemainingMs: Long,
+    fun exportPersistedState(): FocusTimerPersistedState =
+        FocusTimerPersistedState(
+            phase = phase,
+            endAtMs = endAtMs,
+            totalMs = totalMs,
+            pausedRemainingMs = pausedRemainingMs,
+            countUp = countUp,
+            intervalMode = intervalMode,
+            countUpStartedAtMs = countUpStartedAtMs,
+            intervalCyclesCompleted = intervalCyclesCompleted,
+            phaseStartedAtMs = phaseStartedAtMs,
+        )
+
+    fun restoreFromPersisted(
+        saved: FocusTimerPersistedState,
         nowMs: Long,
     ) {
-        this.phase = phase
-        this.endAtMs = endAtMs
-        this.totalMs = totalMs
-        this.pausedRemainingMs = pausedRemainingMs
+        phase = saved.phase
+        endAtMs = saved.endAtMs
+        totalMs = saved.totalMs
+        pausedRemainingMs = saved.pausedRemainingMs
+        countUp = saved.countUp
+        intervalMode = saved.intervalMode
+        countUpStartedAtMs = saved.countUpStartedAtMs
+        intervalCyclesCompleted = saved.intervalCyclesCompleted
+        phaseStartedAtMs = saved.phaseStartedAtMs
         when (phase) {
             FocusPhase.Running, FocusPhase.Break ->
-                if (nowMs >= endAtMs && endAtMs != Long.MAX_VALUE) {
-                    if (phase == FocusPhase.Break) {
+                if (!countUp && nowMs >= endAtMs && endAtMs != Long.MAX_VALUE) {
+                    if (intervalMode && phase == FocusPhase.Running) {
+                        intervalCyclesCompleted++
+                        if (intervalCyclesCompleted >= INTERVAL_CYCLES) {
+                            enterTimesUp()
+                        } else {
+                            totalMs = intervalBreakMs
+                            endAtMs = nowMs + intervalBreakMs
+                            phase = FocusPhase.Break
+                        }
+                    } else if (phase == FocusPhase.Break && intervalMode) {
+                        totalMs = intervalWorkMs
+                        endAtMs = nowMs + intervalWorkMs
+                        phase = FocusPhase.Running
+                    } else if (phase == FocusPhase.Break) {
                         this.phase = FocusPhase.Setup
                         this.endAtMs = 0L
                         this.totalMs = 0L
@@ -234,6 +287,29 @@ class FocusTimerController {
                 }
             else -> Unit
         }
+    }
+
+    fun restore(
+        phase: FocusPhase,
+        endAtMs: Long,
+        totalMs: Long,
+        pausedRemainingMs: Long,
+        nowMs: Long,
+    ) {
+        restoreFromPersisted(
+            FocusTimerPersistedState(
+                phase = phase,
+                endAtMs = endAtMs,
+                totalMs = totalMs,
+                pausedRemainingMs = pausedRemainingMs,
+                countUp = false,
+                intervalMode = false,
+                countUpStartedAtMs = 0L,
+                intervalCyclesCompleted = 0,
+                phaseStartedAtMs = nowMs,
+            ),
+            nowMs,
+        )
     }
 
     fun enterTimesUp() {
@@ -271,6 +347,7 @@ class FocusTimerController {
         countUp = false
         intervalMode = false
         countUpStartedAtMs = 0L
+        intervalCyclesCompleted = 0
     }
 
     private fun formatMs(ms: Long): String {
@@ -278,5 +355,9 @@ class FocusTimerController {
         val min = totalSec / 60
         val sec = totalSec % 60
         return "%d:%02d".format(min, sec)
+    }
+
+    companion object {
+        const val INTERVAL_CYCLES = 4
     }
 }

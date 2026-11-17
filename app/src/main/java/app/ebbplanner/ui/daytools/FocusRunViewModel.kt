@@ -9,9 +9,11 @@ import app.ebbplanner.data.preferences.PersistedFocusSession
 import app.ebbplanner.data.repository.TaskRepository
 import app.ebbplanner.domain.focus.FocusPhase
 import app.ebbplanner.domain.focus.FocusTickResult
+import app.ebbplanner.domain.focus.FocusTimerPersistedState
 import app.ebbplanner.domain.focus.FocusTickDelayer
 import app.ebbplanner.domain.focus.FocusTimerController
 import app.ebbplanner.domain.time.EbbClock
+import app.ebbplanner.reminders.FocusAlarmKind
 import app.ebbplanner.reminders.FocusAlarmScheduler
 import app.ebbplanner.reminders.FocusNotifier
 import app.ebbplanner.ui.focus.FocusPresentationState
@@ -51,6 +53,7 @@ class FocusRunViewModel
         private var fixedMinutes = 25
         private var cachedBlockDuration = TaskEntity.DEFAULT_DURATION_MIN
         private var cachedStartLocalTime: String? = null
+        private var cachedTaskDate: LocalDate? = null
 
         private val _state = MutableStateFlow(FocusPresentationState(mode = FocusVisualMode.Setup, taskId = taskId))
         val state: StateFlow<FocusPresentationState> = _state.asStateFlow()
@@ -68,18 +71,30 @@ class FocusRunViewModel
                 showRing = saved.showRing
                 hideNumbers = saved.hideNumbers
                 fixedMinutes = saved.fixedMinutes
-                timer.restore(
-                    FocusPhase.valueOf(saved.phase),
-                    saved.endAtMs,
-                    saved.totalMs,
-                    saved.pausedRemainingMs,
+                timer.restoreFromPersisted(
+                    FocusTimerPersistedState(
+                        phase = FocusPhase.valueOf(saved.phase),
+                        endAtMs = saved.endAtMs,
+                        totalMs = saved.totalMs,
+                        pausedRemainingMs = saved.pausedRemainingMs,
+                        countUp = saved.countUp,
+                        intervalMode = saved.intervalMode,
+                        countUpStartedAtMs = saved.countUpStartedAtMs,
+                        intervalCyclesCompleted = saved.intervalCyclesCompleted,
+                        phaseStartedAtMs = saved.phaseStartedAtMs,
+                    ),
                     clock.millis(),
                 )
                 if (timer.phase() == FocusPhase.TimesUp) {
                     focusSessionStore.clear()
                     focusNotifier.cancel()
                     timer.resetToSetup()
-                } else if (timer.phase() == FocusPhase.Running || timer.phase() == FocusPhase.Break) {
+                } else if (
+                    timer.phase() == FocusPhase.Running ||
+                        timer.phase() == FocusPhase.Break ||
+                        timer.phase() == FocusPhase.Paused
+                ) {
+                    scheduleAlarm()
                     startTicking()
                 }
             }
@@ -88,7 +103,11 @@ class FocusRunViewModel
 
         fun setTimerMode(index: Int) {
             timerModeIndex = index
-            refreshSetupCopy(blockDuration = cachedBlockDuration, startLocalTime = cachedStartLocalTime)
+            refreshSetupCopy(
+                blockDuration = cachedBlockDuration,
+                startLocalTime = cachedStartLocalTime,
+                taskDate = cachedTaskDate,
+            )
         }
 
         fun setShowRing(ring: Boolean) {
@@ -103,7 +122,11 @@ class FocusRunViewModel
 
         fun setFixedMinutes(minutes: Int) {
             fixedMinutes = minutes.coerceIn(5, 120)
-            refreshSetupCopy(blockDuration = cachedBlockDuration, startLocalTime = cachedStartLocalTime)
+            refreshSetupCopy(
+                blockDuration = cachedBlockDuration,
+                startLocalTime = cachedStartLocalTime,
+                taskDate = cachedTaskDate,
+            )
         }
 
         private suspend fun refreshTaskHeader() {
@@ -135,6 +158,7 @@ class FocusRunViewModel
             cachedBlockDuration = task.durationMin
             cachedStartLocalTime = task.startLocalTime
             val taskDate = task.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+            cachedTaskDate = taskDate
             refreshSetupCopy(
                 blockDuration = task.durationMin,
                 startLocalTime = task.startLocalTime,
@@ -172,6 +196,7 @@ class FocusRunViewModel
             if (!blockEnabled && modeIndex == 0) {
                 modeIndex = 1
                 timerModeIndex = 1
+                fixedMinutes = cachedBlockDuration.coerceIn(5, 120)
             }
             _state.value =
                 _state.value.copy(
@@ -329,12 +354,20 @@ class FocusRunViewModel
             val snap = timer.snapshot(clock.millis())
             if (snap.phase == FocusPhase.Running || snap.phase == FocusPhase.Break) {
                 val endAt = clock.millis() + snap.remainingMs
-                val isBreak = snap.phase == FocusPhase.Break
-                focusAlarmScheduler.scheduleTimesUp(
+                val kind =
+                    when {
+                        timer.isIntervalMode() && snap.phase == FocusPhase.Running ->
+                            FocusAlarmKind.INTERVAL_BREAK
+                        timer.isIntervalMode() && snap.phase == FocusPhase.Break ->
+                            FocusAlarmKind.INTERVAL_WORK
+                        snap.phase == FocusPhase.Break -> FocusAlarmKind.INTERVAL_BREAK
+                        else -> FocusAlarmKind.TIMES_UP
+                    }
+                focusAlarmScheduler.schedulePhaseEnd(
                     taskId,
                     _state.value.runningTitle,
                     endAt,
-                    isBreak = isBreak,
+                    kind,
                 )
             }
         }
@@ -363,14 +396,14 @@ class FocusRunViewModel
                                 }
                                 FocusTickResult.IntervalBreak -> {
                                     val title = _state.value.runningTitle.ifBlank { _state.value.title }
-                                    focusNotifier.showIntervalSwitch(taskId, title, onBreak = true)
+                                    focusNotifier.showBreakTime(taskId, title)
                                     scheduleAlarm()
                                     mergeTimerIntoState()
                                     persistSession()
                                 }
                                 FocusTickResult.IntervalWork -> {
                                     val title = _state.value.runningTitle.ifBlank { _state.value.title }
-                                    focusNotifier.showIntervalSwitch(taskId, title, onBreak = false)
+                                    focusNotifier.showBackToWork(taskId, title)
                                     scheduleAlarm()
                                     mergeTimerIntoState()
                                     persistSession()
@@ -378,9 +411,10 @@ class FocusRunViewModel
                                 FocusTickResult.SessionEnded -> {
                                     mergeTimerIntoState()
                                     persistSession()
-                                    when (timer.phase()) {
-                                        FocusPhase.TimesUp -> onTimesUp()
-                                        else -> onBreakEnded()
+                                    if (timer.phase() == FocusPhase.TimesUp) {
+                                        onTimesUp()
+                                    } else {
+                                        onBreakEnded()
                                     }
                                     done = true
                                 }
@@ -417,6 +451,7 @@ class FocusRunViewModel
                     FocusPhase.Running, FocusPhase.Break -> clock.millis() + snap.remainingMs
                     else -> 0L
                 }
+            val exported = timer.exportPersistedState()
             focusSessionStore.save(
                 PersistedFocusSession(
                     taskId = taskId,
@@ -428,6 +463,11 @@ class FocusRunViewModel
                     showRing = showRing,
                     hideNumbers = hideNumbers,
                     fixedMinutes = fixedMinutes,
+                    countUp = exported.countUp,
+                    intervalMode = exported.intervalMode,
+                    countUpStartedAtMs = exported.countUpStartedAtMs,
+                    intervalCyclesCompleted = exported.intervalCyclesCompleted,
+                    phaseStartedAtMs = exported.phaseStartedAtMs,
                 ),
             )
         }

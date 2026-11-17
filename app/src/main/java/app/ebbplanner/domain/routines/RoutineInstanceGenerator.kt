@@ -41,8 +41,7 @@ class RoutineInstanceGenerator
             routineDao.listEnabled().forEach { routine ->
                 if (!routine.enabled || !appliesOn(routine, date)) return@forEach
                 if (routineSkipDao.isSkipped(routine.id, occurrences) != null) return@forEach
-                val existing = taskDao.getRoutineOccurrence(routine.id, occurrences)
-                if (existing != null) return@forEach
+                if (taskDao.getRoutineOccurrence(routine.id, occurrences) != null) return@forEach
                 val task =
                     TaskEntity(
                         id = UUID.randomUUID().toString(),
@@ -81,7 +80,46 @@ class RoutineInstanceGenerator
             routineSkipDao.deleteForRoutine(routineId)
         }
 
-        suspend fun syncFutureInstances(routine: RoutineEntity) {
+        suspend fun linkExistingTask(
+            taskId: String,
+            routine: RoutineEntity,
+        ) {
+            val task = taskDao.getById(taskId) ?: return
+            val occurrence =
+                when {
+                    task.date != null -> task.date
+                    task.placement == TaskEntity.PLACEMENT_SCHEDULED -> LocalDate.now().toString()
+                    else -> LocalDate.now().toString()
+                }
+            val now = System.currentTimeMillis()
+            val updated =
+                task.copy(
+                    sourceRoutineId = routine.id,
+                    routineOccurrenceDate = occurrence,
+                    placement =
+                        if (task.placement == TaskEntity.PLACEMENT_INBOX) {
+                            TaskEntity.PLACEMENT_SCHEDULED
+                        } else {
+                            task.placement
+                        },
+                    date = occurrence,
+                    startLocalTime = task.startLocalTime ?: routine.startLocalTime,
+                    durationMin = task.durationMin,
+                    colorKey = task.colorKey.ifBlank { routine.colorKey },
+                    iconKey = task.iconKey ?: routine.iconKey,
+                    routineInstanceDetached = task.routineInstanceDetached,
+                    updatedAt = now,
+                )
+            taskDao.update(updated)
+            reminderSync.syncTask(taskId)
+            syncFutureInstances(routine, skipLinkDay = occurrence)
+        }
+
+        suspend fun syncFutureInstances(
+            routine: RoutineEntity,
+            skipLinkDay: String? = null,
+        ) {
+            pruneNonApplyingInstances(routine)
             val today = LocalDate.now()
             val end = today.plusDays(DEFAULT_WINDOW_DAYS.toLong() - 1)
             var day = today
@@ -89,7 +127,11 @@ class RoutineInstanceGenerator
                 val occurrence = day.toString()
                 if (appliesOn(routine, day)) {
                     val existing = taskDao.getRoutineOccurrence(routine.id, occurrence)
-                    if (existing != null && existing.status != TaskEntity.STATUS_DONE) {
+                    if (existing != null &&
+                        existing.status != TaskEntity.STATUS_DONE &&
+                        !existing.routineInstanceDetached &&
+                        occurrence != skipLinkDay
+                    ) {
                         val updated =
                             existing.copy(
                                 title = routine.title,
@@ -97,7 +139,7 @@ class RoutineInstanceGenerator
                                 durationMin = routine.durationMin,
                                 colorKey = routine.colorKey,
                                 iconKey = routine.iconKey,
-                                date = occurrence,
+                                date = existing.date ?: occurrence,
                                 updatedAt = System.currentTimeMillis(),
                             )
                         taskDao.update(updated)
@@ -107,6 +149,21 @@ class RoutineInstanceGenerator
                 day = day.plusDays(1)
             }
             ensureRollingWindow()
+        }
+
+        private suspend fun pruneNonApplyingInstances(routine: RoutineEntity) {
+            val today = LocalDate.now().toString()
+            val open = taskDao.listOpenRoutineInstancesFrom(routine.id, today)
+            open.forEach { task ->
+                val occ =
+                    task.routineOccurrenceDate ?: task.date
+                        ?: return@forEach
+                val occDate = runCatching { LocalDate.parse(occ) }.getOrNull() ?: return@forEach
+                if (!appliesOn(routine, occDate)) {
+                    taskDao.softDelete(task.id, System.currentTimeMillis(), System.currentTimeMillis())
+                    reminderSync.cancelTask(task.id)
+                }
+            }
         }
 
         private fun appliesOn(

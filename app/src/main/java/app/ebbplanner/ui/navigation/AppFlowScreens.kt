@@ -228,11 +228,9 @@ fun TaskDetailRoute(
                         navController.popBackStack()
                     },
                     onOpenRepeat = {
-                        viewModel.routineIdForRepeat { routineId ->
-                            navController.navigate(AppRoutes.routineEdit(routineId))
-                        }
+                        viewModel.navigateTargetForRepeat { route -> navController.navigate(route) }
                     },
-                    onApplyBreather = viewModel::applyBreatherAfter,
+                    onApplyBreather = viewModel::toggleBreatherAfter,
                 ),
         )
         if (state.mode != TaskDetailMode.NotFound && state.mode != TaskDetailMode.Loading) {

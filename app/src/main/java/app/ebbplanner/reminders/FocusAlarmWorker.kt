@@ -18,12 +18,19 @@ class FocusAlarmWorker
         override suspend fun doWork(): Result {
             val taskId = inputData.getString(KEY_TASK_ID).orEmpty()
             val title = inputData.getString(KEY_TASK_TITLE).orEmpty()
-            val isBreak = inputData.getBoolean(KEY_IS_BREAK, false)
+            val kind =
+                inputData.getString(KEY_ALARM_KIND)?.let {
+                    runCatching { FocusAlarmKind.valueOf(it) }.getOrNull()
+                } ?: if (inputData.getBoolean(KEY_IS_BREAK, false)) {
+                    FocusAlarmKind.INTERVAL_BREAK
+                } else {
+                    FocusAlarmKind.TIMES_UP
+                }
             if (taskId.isBlank()) return Result.failure()
-            if (isBreak) {
-                focusNotifier.showBreakEnded(taskId, title.ifBlank { "Focus" })
-            } else {
-                focusNotifier.showTimesUp(taskId, title.ifBlank { "Focus" })
+            when (kind) {
+                FocusAlarmKind.INTERVAL_BREAK -> focusNotifier.showBreakTime(taskId, title.ifBlank { "Focus" })
+                FocusAlarmKind.INTERVAL_WORK -> focusNotifier.showBackToWork(taskId, title.ifBlank { "Focus" })
+                FocusAlarmKind.TIMES_UP -> focusNotifier.showTimesUp(taskId, title.ifBlank { "Focus" })
             }
             return Result.success()
         }
@@ -32,5 +39,6 @@ class FocusAlarmWorker
             const val KEY_TASK_ID = "focus_task_id"
             const val KEY_TASK_TITLE = "focus_task_title"
             const val KEY_IS_BREAK = "focus_is_break"
+            const val KEY_ALARM_KIND = "focus_alarm_kind"
         }
     }

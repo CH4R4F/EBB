@@ -7,10 +7,8 @@ import androidx.lifecycle.viewModelScope
 import app.ebbplanner.data.local.entity.SubtaskEntity
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.preferences.UserPreferencesRepository
-import app.ebbplanner.data.local.entity.RoutineEntity
-import app.ebbplanner.data.repository.RoutineRepository
 import app.ebbplanner.data.repository.TaskRepository
-import app.ebbplanner.domain.routines.RoutineInstanceGenerator
+import app.ebbplanner.ui.navigation.AppRoutes
 import app.ebbplanner.domain.day.DayGapScheduler
 import app.ebbplanner.domain.day.DayPlanningUseCase
 import app.ebbplanner.domain.time.EbbClock
@@ -33,8 +31,6 @@ class TaskDetailViewModel
         private val userPreferencesRepository: UserPreferencesRepository,
         private val dayPlanningUseCase: DayPlanningUseCase,
         private val clock: EbbClock,
-        private val routineRepository: RoutineRepository,
-        private val routineInstanceGenerator: RoutineInstanceGenerator,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(TaskDetailPresentationState(mode = TaskDetailMode.Loading))
         val uiState: StateFlow<TaskDetailPresentationState> = _uiState.asStateFlow()
@@ -115,38 +111,36 @@ class TaskDetailViewModel
             }
         }
 
-        fun applyBreatherAfter() {
+        fun toggleBreatherAfter() {
             viewModelScope.launch {
-                taskRepository.updateTaskFields(loadedTaskId) {
-                    it.copy(durationMin = it.durationMin + defaultBreatherMinutes)
+                val task = taskRepository.getTask(loadedTaskId) ?: return@launch
+                if (task.breatherBufferMin > 0) {
+                    taskRepository.updateTaskFields(loadedTaskId) {
+                        it.copy(
+                            durationMin = (it.durationMin - it.breatherBufferMin).coerceAtLeast(5),
+                            breatherBufferMin = 0,
+                        )
+                    }
+                } else {
+                    taskRepository.updateTaskFields(loadedTaskId) {
+                        it.copy(
+                            durationMin = it.durationMin + defaultBreatherMinutes,
+                            breatherBufferMin = defaultBreatherMinutes,
+                        )
+                    }
                 }
                 reloadTask(loadedTaskId)
             }
         }
 
-        fun routineIdForRepeat(onResult: (String) -> Unit) {
+        fun navigateTargetForRepeat(onResult: (String) -> Unit) {
             viewModelScope.launch {
                 val task = taskRepository.getTask(loadedTaskId) ?: return@launch
-                val routineId =
-                    task.sourceRoutineId?.takeIf { it.isNotBlank() }
-                        ?: run {
-                            val routine =
-                                routineRepository.createDefault(
-                                    title = task.title,
-                                    repeatRule = RoutineEntity.REPEAT_WEEKDAYS,
-                                    startLocalTime = task.startLocalTime ?: "09:00",
-                                    durationMin = task.durationMin,
-                                )
-                            taskRepository.updateTaskFields(loadedTaskId) {
-                                it.copy(
-                                    sourceRoutineId = routine.id,
-                                    routineOccurrenceDate = it.date,
-                                )
-                            }
-                            routineInstanceGenerator.syncFutureInstances(routine)
-                            routine.id
-                        }
-                onResult(routineId)
+                val route =
+                    task.sourceRoutineId?.takeIf { it.isNotBlank() }?.let {
+                        AppRoutes.routineEdit(it)
+                    } ?: AppRoutes.routineEditFromTask(loadedTaskId)
+                onResult(route)
             }
         }
 
@@ -346,7 +340,12 @@ class TaskDetailViewModel
                 startLocalTime?.let { start ->
                     "${ClockFormat.localTimeToClock(start)} · $durationMin min"
                 } ?: "$durationMin min"
-            val breatherSubtitle = "Default ($defaultBreatherMinutes min)"
+            val breatherSubtitle =
+                if (breatherBufferMin > 0) {
+                    "$breatherBufferMin min buffer on · tap to remove"
+                } else {
+                    "Add $defaultBreatherMinutes min buffer · tap to apply"
+                }
             val repeatLabel =
                 if (!sourceRoutineId.isNullOrBlank()) {
                     "From routine"

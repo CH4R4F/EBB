@@ -27,6 +27,11 @@ data class PersistedFocusSession(
     val showRing: Boolean,
     val hideNumbers: Boolean,
     val fixedMinutes: Int,
+    val countUp: Boolean,
+    val intervalMode: Boolean,
+    val countUpStartedAtMs: Long,
+    val intervalCyclesCompleted: Int,
+    val phaseStartedAtMs: Long,
 )
 
 @Singleton
@@ -49,6 +54,11 @@ class FocusSessionStore
                     showRing = prefs[SHOW_RING] ?: true,
                     hideNumbers = prefs[HIDE_NUMBERS] ?: false,
                     fixedMinutes = prefs[FIXED_MINUTES] ?: 25,
+                    countUp = prefs[COUNT_UP] ?: false,
+                    intervalMode = prefs[INTERVAL_MODE] ?: false,
+                    countUpStartedAtMs = prefs[COUNT_UP_STARTED_AT_MS] ?: 0L,
+                    intervalCyclesCompleted = prefs[INTERVAL_CYCLES_COMPLETED] ?: 0,
+                    phaseStartedAtMs = prefs[PHASE_STARTED_AT_MS] ?: 0L,
                 )
             }
 
@@ -63,6 +73,11 @@ class FocusSessionStore
                 prefs[SHOW_RING] = session.showRing
                 prefs[HIDE_NUMBERS] = session.hideNumbers
                 prefs[FIXED_MINUTES] = session.fixedMinutes
+                prefs[COUNT_UP] = session.countUp
+                prefs[INTERVAL_MODE] = session.intervalMode
+                prefs[COUNT_UP_STARTED_AT_MS] = session.countUpStartedAtMs
+                prefs[INTERVAL_CYCLES_COMPLETED] = session.intervalCyclesCompleted
+                prefs[PHASE_STARTED_AT_MS] = session.phaseStartedAtMs
             }
         }
 
@@ -85,5 +100,10 @@ class FocusSessionStore
             private val SHOW_RING = booleanPreferencesKey("show_ring")
             private val HIDE_NUMBERS = booleanPreferencesKey("hide_numbers")
             private val FIXED_MINUTES = intPreferencesKey("fixed_minutes")
+            private val COUNT_UP = booleanPreferencesKey("count_up")
+            private val INTERVAL_MODE = booleanPreferencesKey("interval_mode")
+            private val COUNT_UP_STARTED_AT_MS = longPreferencesKey("count_up_started_at_ms")
+            private val INTERVAL_CYCLES_COMPLETED = intPreferencesKey("interval_cycles_completed")
+            private val PHASE_STARTED_AT_MS = longPreferencesKey("phase_started_at_ms")
         }
     }

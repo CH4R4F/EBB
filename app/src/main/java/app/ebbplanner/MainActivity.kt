@@ -28,7 +28,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        focusDeepLinkTaskId.value = intentFocusTaskId(intent)
+        val restored = savedInstanceState?.getString(KEY_PENDING_FOCUS)
+        val fromIntent =
+            if (savedInstanceState == null) {
+                intentFocusTaskId(intent)?.also { stripFocusIntentExtra() }
+            } else {
+                null
+            }
+        focusDeepLinkTaskId.value = restored ?: fromIntent
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
@@ -46,7 +53,9 @@ class MainActivity : ComponentActivity() {
                 ) {
                     EbbNavHost(
                         pendingFocusTaskId = pendingFocus,
-                        onFocusDeepLinkConsumed = { focusDeepLinkTaskId.value = null },
+                        onFocusDeepLinkConsumed = {
+                            focusDeepLinkTaskId.value = null
+                        },
                     )
                 }
             }
@@ -56,9 +65,26 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        focusDeepLinkTaskId.value = intentFocusTaskId(intent)
+        intentFocusTaskId(intent)?.let { id ->
+            stripFocusIntentExtra()
+            focusDeepLinkTaskId.value = id
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        focusDeepLinkTaskId.value?.let { outState.putString(KEY_PENDING_FOCUS, it) }
+    }
+
+    private fun stripFocusIntentExtra() {
+        intent?.removeExtra(FocusNotifier.EXTRA_OPEN_FOCUS)
+        intent = Intent(intent).apply { removeExtra(FocusNotifier.EXTRA_OPEN_FOCUS) }
     }
 
     private fun intentFocusTaskId(intent: Intent?): String? =
         intent?.getStringExtra(FocusNotifier.EXTRA_OPEN_FOCUS)?.takeIf { it.isNotBlank() }
+
+    companion object {
+        private const val KEY_PENDING_FOCUS = "pending_focus_task_id"
+    }
 }
