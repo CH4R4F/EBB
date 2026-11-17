@@ -14,14 +14,25 @@ class ReminderActionReceiver : BroadcastReceiver() {
         context: Context,
         intent: Intent,
     ) {
+        val taskId = intent.getStringExtra(EXTRA_TASK_ID)
+        val title = intent.getStringExtra(EXTRA_TITLE)
         when (intent.action) {
-            ACTION_SNOOZE -> rescheduleUseCase.snoozeTask(intent.getStringExtra(EXTRA_TASK_ID))
-            ACTION_DONE, ACTION_SHIFT -> Unit
+            ACTION_SNOOZE -> {
+                rescheduleUseCase.dismissNotification(taskId)
+                rescheduleUseCase.snoozeTask(taskId, title)
+            }
+            ACTION_DONE -> {
+                rescheduleUseCase.markDoneFromNotification(taskId)
+            }
+            ACTION_SHIFT -> {
+                rescheduleUseCase.shiftDayFromNotification(taskId)
+            }
         }
     }
 
     companion object {
         const val EXTRA_TASK_ID = "task_id"
+        const val EXTRA_TITLE = "title"
         const val ACTION_DONE = "app.ebbplanner.reminder.DONE"
         const val ACTION_SNOOZE = "app.ebbplanner.reminder.SNOOZE"
         const val ACTION_SHIFT = "app.ebbplanner.reminder.SHIFT"

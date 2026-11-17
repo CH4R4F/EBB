@@ -86,8 +86,11 @@
     <string name="onboarding_done_subtitle">Your day is ready. Start small.</string>
     <string name="onboarding_done_day_chip">Day %1$s–%2$s</string>
     <string name="onboarding_done_reminders_chip">Reminders on</string>
+    <string name="onboarding_done_reminders_on">Reminders on</string>
+    <string name="onboarding_done_reminders_off">Reminders off</string>
     <string name="onboarding_done_breather_chip">%1$d min breathers</string>
     <string name="onboarding_done_calendar_chip">2 calendars</string>
+    <string name="onboarding_done_calendar_chip_format">%1$d calendars</string>
     <string name="onboarding_add_sample_tasks">Add sample tasks</string>
     <string name="onboarding_add_sample_tasks_hint">“Drink water”, “Plan tomorrow” — easy to remove</string>
     <string name="onboarding_open_my_day">Open my day</string>
@@ -129,6 +132,7 @@
 
     <string name="reminder_channel_tasks">Task reminders</string>
     <string name="reminder_channel_breather">Breather nudges</string>
+    <string name="reminder_task_body">Starting now</string>
     <string name="reminder_action_done">Done</string>
     <string name="reminder_action_snooze">Snooze 10</string>
     <string name="reminder_action_shift">Shift day</string>

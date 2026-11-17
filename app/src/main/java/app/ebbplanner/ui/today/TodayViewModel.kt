@@ -8,13 +8,15 @@ import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.data.repository.TaskRepository
 import app.ebbplanner.domain.capture.QuickCaptureParser
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -73,13 +75,31 @@ class TodayViewModel
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
 
-        init {
-            viewModelScope.launch {
-                val seedEnabled = userPreferencesRepository.seedSampleTasks.first()
-                if (seedEnabled) {
-                    taskRepository.ensureSampleDataForTodayIfEmpty(LocalDate.now())
+        private val minuteTick =
+            flow {
+                while (true) {
+                    emit(Unit)
+                    delay(60_000)
                 }
             }
+
+        val presentationState: StateFlow<TodayPresentationState> =
+            combine(
+                uiState,
+                minuteTick.onStart { emit(Unit) },
+            ) { state, _ ->
+                TodayPresentationMapper.from(state, currentNowMinutes())
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayPresentationState())
+
+        fun markTaskDone(taskId: String) {
+            viewModelScope.launch {
+                taskRepository.markTaskDone(taskId)
+            }
+        }
+
+        private fun currentNowMinutes(): Int {
+            val now = java.time.LocalTime.now()
+            return now.hour * 60 + now.minute
         }
 
         fun refreshForDate(date: LocalDate) {

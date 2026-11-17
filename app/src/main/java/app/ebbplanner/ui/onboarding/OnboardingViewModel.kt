@@ -25,6 +25,8 @@ data class OnboardingUiState(
     val breatherMinutes: Int = 5,
     val celebrationStyle: CelebrationStyle = CelebrationStyle.Calm,
     val addSampleTasks: Boolean = false,
+    val remindersEnabled: Boolean = true,
+    val linkedCalendarCount: Int = 0,
 )
 
 @HiltViewModel
@@ -57,6 +59,14 @@ class OnboardingViewModel
             _uiState.update { it.copy(addSampleTasks = enabled) }
         }
 
+        fun setRemindersEnabled(enabled: Boolean) {
+            _uiState.update { it.copy(remindersEnabled = enabled) }
+        }
+
+        fun setLinkedCalendarCount(count: Int) {
+            _uiState.update { it.copy(linkedCalendarCount = count.coerceAtLeast(0)) }
+        }
+
         fun completeOnboarding(onComplete: () -> Unit) {
             viewModelScope.launch {
                 persistOnboardingChoices()
@@ -68,10 +78,12 @@ class OnboardingViewModel
             val state = _uiState.value
             userPreferencesRepository.setDayWakeMinutes(state.wakeMinutes)
             userPreferencesRepository.setDayBedMinutes(state.bedMinutes)
+            userPreferencesRepository.setBreatherMinutes(state.breatherMinutes)
+            userPreferencesRepository.setCelebrationStyle(state.celebrationStyle.name)
             userPreferencesRepository.setSeedSampleTasks(state.addSampleTasks)
             userPreferencesRepository.setOnboardingComplete(true)
             if (state.addSampleTasks) {
-                taskRepository.ensureSampleDataForTodayIfEmpty(LocalDate.now())
+                taskRepository.seedSampleTasksForToday(LocalDate.now())
             }
         }
     }

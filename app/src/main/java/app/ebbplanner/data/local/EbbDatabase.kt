@@ -15,7 +15,7 @@ import app.ebbplanner.data.local.entity.TaskEntity
         DayPlanEntity::class,
         ReminderEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 abstract class EbbDatabase : RoomDatabase() {

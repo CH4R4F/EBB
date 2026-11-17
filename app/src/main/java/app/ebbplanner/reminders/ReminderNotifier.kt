@@ -29,6 +29,7 @@ class ReminderNotifier
         fun showTaskReminder(
             taskId: String,
             title: String,
+            body: String? = null,
         ) {
             ensureChannels()
             val openApp =
@@ -39,18 +40,18 @@ class ReminderNotifier
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                 )
             val done =
-                actionPendingIntent(taskId, ReminderActionReceiver.ACTION_DONE, 1)
+                actionPendingIntent(taskId, title, ReminderActionReceiver.ACTION_DONE, 1)
             val snooze =
-                actionPendingIntent(taskId, ReminderActionReceiver.ACTION_SNOOZE, 2)
+                actionPendingIntent(taskId, title, ReminderActionReceiver.ACTION_SNOOZE, 2)
             val shift =
-                actionPendingIntent(taskId, ReminderActionReceiver.ACTION_SHIFT, 3)
+                actionPendingIntent(taskId, title, ReminderActionReceiver.ACTION_SHIFT, 3)
 
             val notification =
                 NotificationCompat
                     .Builder(context, CHANNEL_TASKS)
                     .setSmallIcon(android.R.drawable.ic_dialog_info)
                     .setContentTitle(title)
-                    .setContentText(context.getString(R.string.quick_capture_title))
+                    .setContentText(body ?: context.getString(R.string.reminder_task_body))
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setContentIntent(openApp)
                     .addAction(0, context.getString(R.string.reminder_action_done), done)
@@ -62,6 +63,7 @@ class ReminderNotifier
 
         private fun actionPendingIntent(
             taskId: String,
+            title: String,
             action: String,
             requestCode: Int,
         ): PendingIntent {
@@ -69,6 +71,7 @@ class ReminderNotifier
                 Intent(context, ReminderActionReceiver::class.java).apply {
                     this.action = action
                     putExtra(ReminderActionReceiver.EXTRA_TASK_ID, taskId)
+                    putExtra(ReminderActionReceiver.EXTRA_TITLE, title)
                 }
             return PendingIntent.getBroadcast(
                 context,

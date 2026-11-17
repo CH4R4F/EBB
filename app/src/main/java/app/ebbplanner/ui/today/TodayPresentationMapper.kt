@@ -36,7 +36,12 @@ object TodayPresentationMapper {
             dayMeta =
                 "today · bedtime ${formatBed(state.bedMinutes)} · " +
                     "${scheduled.count { it.status == TaskEntity.STATUS_DONE }} done",
-            progressPercent = progressPercent(state.minutesPlanned, state.wakeMinutes, state.bedMinutes),
+            progressPercent =
+                progressPercent(
+                    state.scheduledTasks.filter { it.status == TaskEntity.STATUS_DONE }.sumOf { it.durationMin },
+                    state.wakeMinutes,
+                    state.bedMinutes,
+                ),
             anytimeChips = state.anytimeTasks.map { it.title },
             blocks = blocks,
             events = state.calendarEvents.map { it.toPresentation() },
@@ -87,8 +92,9 @@ object TodayPresentationMapper {
     }
 
     private fun formatClock(minutes: Int): String {
-        val h = minutes / 60
-        val m = minutes % 60
+        val normalized = ((minutes % (24 * 60)) + (24 * 60)) % (24 * 60)
+        val h = normalized / 60
+        val m = normalized % 60
         return "%d:%02d".format(h, m)
     }
 

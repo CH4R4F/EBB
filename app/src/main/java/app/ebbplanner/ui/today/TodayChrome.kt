@@ -105,6 +105,7 @@ fun TodayTopBar(
 fun TodayDayHead(
     state: TodayPresentationState,
     modifier: Modifier = Modifier,
+    onShiftClick: () -> Unit = {},
 ) {
     Surface(
         modifier =
@@ -124,7 +125,12 @@ fun TodayDayHead(
         ) {
             DayProgressRing(percent = state.progressPercent)
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = state.timeLeftLabel, style = EbbTypography.titleL)
+                Text(
+                    text = state.timeLeftLabel,
+                    style = EbbTypography.titleL,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 if (!state.titleOnlyBlocks) {
                     Text(
                         text = state.dayMeta,
@@ -134,7 +140,7 @@ fun TodayDayHead(
                 }
             }
             Surface(
-                onClick = {},
+                onClick = onShiftClick,
                 shape = EbbShapes.full,
                 color = MaterialTheme.colorScheme.primaryContainer,
             ) {
@@ -320,7 +326,11 @@ fun TodayLoadingSkeleton(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun TodayEmptyState(modifier: Modifier = Modifier) {
+fun TodayEmptyState(
+    modifier: Modifier = Modifier,
+    onPlanDayClick: () -> Unit = {},
+    onAddTaskClick: () -> Unit = {},
+) {
     Column(
         modifier =
             modifier
@@ -336,8 +346,8 @@ fun TodayEmptyState(modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2)) {
-            TextButton(onClick = {}) { Text(stringResource(R.string.today_plan_day)) }
-            TextButton(onClick = {}) { Text(stringResource(R.string.today_add_task)) }
+            TextButton(onClick = onPlanDayClick) { Text(stringResource(R.string.today_plan_day)) }
+            TextButton(onClick = onAddTaskClick) { Text(stringResource(R.string.today_add_task)) }
         }
     }
 }

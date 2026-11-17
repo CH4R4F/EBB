@@ -1,19 +1,15 @@
 package app.ebbplanner.reminders
 
-import android.app.AlarmManager
+import android.app.NotificationManager
 import android.content.Context
-import android.os.Build
-import app.ebbplanner.data.local.dao.ReminderDao
-import app.ebbplanner.data.local.entity.ReminderEntity
 import app.ebbplanner.data.repository.TaskRepository
 import app.ebbplanner.domain.reminders.ReminderKind
 import app.ebbplanner.domain.reminders.ReminderRequest
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-import java.time.LocalDate
-import java.time.ZoneId
-import java.util.UUID
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -22,75 +18,61 @@ class ReminderRescheduleUseCase
     @Inject
     constructor(
         @ApplicationContext private val context: Context,
-        private val scheduler: ReminderScheduler,
+        private val taskReminderSync: TaskReminderSync,
         private val taskRepository: TaskRepository,
-        private val reminderDao: ReminderDao,
     ) {
+        private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
         fun rescheduleNow() {
-            runBlocking {
-                val tasks = taskRepository.observeTasksForDate(LocalDate.now()).first()
-                val zone = ZoneId.systemDefault()
-                val requests =
-                    tasks.mapNotNull { task ->
-                        val start = task.startLocalTime ?: return@mapNotNull null
-                        val parts = start.split(":")
-                        val hour = parts.getOrNull(0)?.toIntOrNull() ?: return@mapNotNull null
-                        val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
-                        val fire =
-                            LocalDate
-                                .parse(task.date ?: LocalDate.now().toString())
-                                .atTime(hour, minute)
-                                .atZone(zone)
-                                .toInstant()
-                                .toEpochMilli()
-                        ReminderRequest(
-                            taskId = task.id,
-                            fireAtEpochMillis = fire,
-                            kind = ReminderKind.TaskStart,
-                            title = task.title,
-                            exact = true,
-                        )
-                    }
-                val now = System.currentTimeMillis()
-                reminderDao.deleteAll()
-                reminderDao.upsertAll(
-                    requests.map { req ->
-                        ReminderEntity(
-                            id = UUID.randomUUID().toString(),
-                            taskId = req.taskId,
-                            fireAtEpochMillis = req.fireAtEpochMillis,
-                            kind = req.kind.name,
-                            title = req.title,
-                            exact = req.exact,
-                            createdAt = now,
-                            updatedAt = now,
-                        )
-                    },
-                )
-                scheduler.rescheduleAll(requests, exactAlarmsGranted())
+            scope.launch {
+                taskReminderSync.rescheduleAllEnabledFuture()
             }
         }
 
-        fun snoozeTask(taskId: String?) {
+        fun snoozeTask(
+            taskId: String?,
+            title: String?,
+        ) {
             if (taskId == null) return
-            val request =
-                ReminderRequest(
-                    taskId = taskId,
-                    fireAtEpochMillis = System.currentTimeMillis() + SNOOZE_MILLIS,
-                    kind = ReminderKind.TaskStart,
-                    title = "Snoozed",
-                    exact = true,
-                )
-            scheduler.rescheduleAll(listOf(request), exactAlarmsGranted())
+            scope.launch {
+                val taskTitle = title ?: taskRepository.getTask(taskId)?.title ?: return@launch
+                taskReminderSync.cancelTask(taskId)
+                val request =
+                    ReminderRequest(
+                        taskId = taskId,
+                        fireAtEpochMillis = System.currentTimeMillis() + SNOOZE_MILLIS,
+                        kind = ReminderKind.TaskStart,
+                        title = taskTitle,
+                        exact = true,
+                    )
+                taskReminderSync.scheduleOneOff(request)
+            }
         }
 
-        private fun exactAlarmsGranted(): Boolean {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            return alarmManager.canScheduleExactAlarms()
+        fun markDoneFromNotification(taskId: String?) {
+            if (taskId == null) return
+            scope.launch {
+                taskRepository.markTaskDone(taskId)
+                dismissNotification(taskId)
+            }
+        }
+
+        fun shiftDayFromNotification(taskId: String?) {
+            if (taskId == null) return
+            scope.launch {
+                taskRepository.shiftScheduledTaskByMinutes(taskId, SHIFT_MINUTES)
+                dismissNotification(taskId)
+            }
+        }
+
+        fun dismissNotification(taskId: String?) {
+            if (taskId == null) return
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.cancel(taskId.hashCode())
         }
 
         companion object {
             private const val SNOOZE_MILLIS = 10 * 60 * 1000L
+            private const val SHIFT_MINUTES = 15
         }
     }

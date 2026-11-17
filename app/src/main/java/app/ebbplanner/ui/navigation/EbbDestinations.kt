@@ -11,6 +11,16 @@ object EbbDestinations {
     const val ONBOARDING_CALENDAR = "onboarding/o7-calendar"
     const val ONBOARDING_DONE = "onboarding/o9-done"
     const val MAIN = "main"
+    const val ONBOARDING_GRAPH = "onboarding"
+}
+
+object AppRoutes {
+    const val TASK_DETAIL = "flow/task/{taskId}"
+    const val SHIFT_DAY = "flow/shift"
+    const val PLAN_DAY = "flow/plan"
+    const val FOCUS_RUN = "flow/focus"
+
+    fun taskDetail(taskId: String): String = "flow/task/$taskId"
 }
 
 enum class MainTab(val route: String, val label: String) {

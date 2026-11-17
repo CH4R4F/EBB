@@ -37,14 +37,18 @@ import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTaskColors
 import app.ebbplanner.ui.theme.EbbTypography
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun TaskDetailScreenDesign(
     state: TaskDetailPresentationState,
     modifier: Modifier = Modifier,
+    onClose: () -> Unit = {},
+    onMarkDone: () -> Unit = {},
+    onStartFocus: () -> Unit = {},
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            TaskDetailTopBar()
+            TaskDetailTopBar(done = state.done, onClose = onClose, onMarkDone = onMarkDone)
             state.recurringBanner?.let { banner ->
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -90,12 +94,19 @@ fun TaskDetailScreenDesign(
                 }
             }
         }
-        TaskDetailBottomBar(modifier = Modifier.align(Alignment.BottomCenter))
+        TaskDetailBottomBar(
+            onStartFocus = onStartFocus,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
 }
 
 @Composable
-private fun TaskDetailTopBar() {
+private fun TaskDetailTopBar(
+    done: Boolean,
+    onClose: () -> Unit = {},
+    onMarkDone: () -> Unit = {},
+) {
     Row(
         modifier =
             Modifier
@@ -104,8 +115,15 @@ private fun TaskDetailTopBar() {
                 .padding(horizontal = EbbSpacing.s1),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
+        IconButton(onClick = onClose, modifier = Modifier.size(48.dp)) {
             EbbSymbol("close", fontSize = 22.sp)
+        }
+        IconButton(onClick = onMarkDone, modifier = Modifier.size(48.dp)) {
+            EbbSymbol(
+                if (done) "check_circle" else "radio_button_unchecked",
+                fontSize = 22.sp,
+                filled = done,
+            )
         }
         androidx.compose.foundation.layout.Spacer(modifier = Modifier.weight(1f))
         IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
@@ -408,7 +426,10 @@ private fun AddStepRow() {
 }
 
 @Composable
-private fun TaskDetailBottomBar(modifier: Modifier = Modifier) {
+private fun TaskDetailBottomBar(
+    onStartFocus: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.background,
@@ -440,7 +461,11 @@ private fun TaskDetailBottomBar(modifier: Modifier = Modifier) {
                 EbbSymbol("spa", fontSize = 22.sp)
             }
             androidx.compose.foundation.layout.Spacer(modifier = Modifier.weight(1f))
-            Surface(shape = EbbShapes.full, color = MaterialTheme.colorScheme.primary) {
+            Surface(
+                onClick = onStartFocus,
+                shape = EbbShapes.full,
+                color = MaterialTheme.colorScheme.primary,
+            ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,

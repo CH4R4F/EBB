@@ -5,7 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import androidx.work.Data
+import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -29,7 +29,6 @@ class ReminderScheduler
             requests: List<ReminderRequest>,
             exactAlarmsGranted: Boolean,
         ) {
-            cancelAllPending()
             val planned =
                 ReminderSchedulePlanner.plan(
                     requests = requests,
@@ -37,6 +36,19 @@ class ReminderScheduler
                     nowEpochMillis = System.currentTimeMillis(),
                 )
             planned.forEach { scheduleOne(it) }
+        }
+
+        fun scheduleTask(
+            request: ReminderRequest,
+            exactAlarmsGranted: Boolean,
+        ) {
+            val planned =
+                ReminderSchedulePlanner.plan(
+                    requests = listOf(request),
+                    exactAlarmsGranted = exactAlarmsGranted,
+                    nowEpochMillis = System.currentTimeMillis(),
+                ).firstOrNull() ?: return
+            scheduleOne(planned)
         }
 
         private fun scheduleOne(reminder: ScheduledReminder) {
@@ -55,7 +67,7 @@ class ReminderScheduler
             val pending =
                 PendingIntent.getBroadcast(
                     context,
-                    request.taskId.hashCode(),
+                    alarmRequestCode(request.taskId),
                     intent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                 )
@@ -76,25 +88,45 @@ class ReminderScheduler
 
         private fun scheduleWork(reminder: ScheduledReminder) {
             val delay = (reminder.request.fireAtEpochMillis - System.currentTimeMillis()).coerceAtLeast(0)
-            val data: Data =
-                workDataOf(
-                    ReminderWorker.KEY_TASK_ID to reminder.request.taskId,
-                    ReminderWorker.KEY_TITLE to reminder.request.title,
-                )
             val work =
                 OneTimeWorkRequestBuilder<ReminderWorker>()
                     .setInitialDelay(delay, TimeUnit.MILLISECONDS)
-                    .setInputData(data)
-                    .addTag(reminder.workRequestId ?: "reminder-${reminder.request.taskId}")
+                    .setInputData(
+                        workDataOf(
+                            ReminderWorker.KEY_TASK_ID to reminder.request.taskId,
+                            ReminderWorker.KEY_TITLE to reminder.request.title,
+                        ),
+                    )
+                    .addTag(workTag(reminder.request.taskId))
                     .build()
-            WorkManager.getInstance(context).enqueue(work)
+            WorkManager.getInstance(context).enqueueUniqueWork(
+                uniqueWorkName(reminder.request.taskId),
+                ExistingWorkPolicy.REPLACE,
+                work,
+            )
         }
 
-        fun cancelAllPending() {
-            WorkManager.getInstance(context).cancelAllWorkByTag(REMINDER_WORK_TAG)
+        fun cancelForTask(taskId: String) {
+            val alarmIntent =
+                Intent(context, ReminderAlarmReceiver::class.java).apply {
+                    putExtra(ReminderAlarmReceiver.EXTRA_TASK_ID, taskId)
+                }
+            val pending =
+                PendingIntent.getBroadcast(
+                    context,
+                    alarmRequestCode(taskId),
+                    alarmIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                )
+            alarmManager.cancel(pending)
+            WorkManager.getInstance(context).cancelUniqueWork(uniqueWorkName(taskId))
         }
 
         companion object {
-            const val REMINDER_WORK_TAG = "ebb-reminders"
+            fun uniqueWorkName(taskId: String): String = "ebb-reminder-$taskId"
+
+            fun workTag(taskId: String): String = "ebb-reminder-tag-$taskId"
+
+            fun alarmRequestCode(taskId: String): Int = taskId.hashCode()
         }
     }

@@ -6,13 +6,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import app.ebbplanner.ui.components.EbbBottomNavigation
 import app.ebbplanner.ui.inbox.InboxScreen
+import app.ebbplanner.ui.navigation.AppRoutes
+import app.ebbplanner.ui.navigation.FocusRunScreen
 import app.ebbplanner.ui.navigation.MainTab
+import app.ebbplanner.ui.navigation.PlanDayScreen
+import app.ebbplanner.ui.navigation.ShiftDayScreen
+import app.ebbplanner.ui.navigation.TaskDetailRoute
 import app.ebbplanner.ui.routines.RoutinesScreen
 import app.ebbplanner.ui.today.TodayScreen
 import app.ebbplanner.ui.week.WeekScreen
@@ -23,22 +30,26 @@ fun MainShell() {
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route ?: MainTab.Today.route
     val selected =
-        MainTab.entries.firstOrNull { it.route == currentRoute } ?: MainTab.Today
+        MainTab.entries.firstOrNull { currentRoute?.startsWith(it.route) == true } ?: MainTab.Today
+    val showBottomBar =
+        MainTab.entries.any { it.route == currentRoute }
 
     Scaffold(
         bottomBar = {
-            EbbBottomNavigation(
-                selected = selected,
-                onTabSelected = { tab ->
-                    navController.navigate(tab.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+            if (showBottomBar) {
+                EbbBottomNavigation(
+                    selected = selected,
+                    onTabSelected = { tab ->
+                        navController.navigate(tab.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-            )
+                    },
+                )
+            }
         },
     ) { padding ->
         NavHost(
@@ -46,10 +57,26 @@ fun MainShell() {
             startDestination = MainTab.Today.route,
             modifier = Modifier.padding(padding),
         ) {
-            composable(MainTab.Today.route) { TodayScreen() }
+            composable(MainTab.Today.route) {
+                TodayScreen(
+                    onOpenPlanDay = { navController.navigate(AppRoutes.PLAN_DAY) },
+                    onOpenShiftDay = { navController.navigate(AppRoutes.SHIFT_DAY) },
+                    onOpenTask = { id -> navController.navigate(AppRoutes.taskDetail(id)) },
+                )
+            }
             composable(MainTab.Inbox.route) { InboxScreen() }
             composable(MainTab.Week.route) { WeekScreen() }
             composable(MainTab.Routines.route) { RoutinesScreen() }
+            composable(AppRoutes.SHIFT_DAY) { ShiftDayScreen() }
+            composable(AppRoutes.PLAN_DAY) { PlanDayScreen() }
+            composable(AppRoutes.FOCUS_RUN) { FocusRunScreen() }
+            composable(
+                route = AppRoutes.TASK_DETAIL,
+                arguments = listOf(navArgument("taskId") { type = NavType.StringType }),
+            ) { entry ->
+                val taskId = entry.arguments?.getString("taskId").orEmpty()
+                TaskDetailRoute(taskId = taskId, navController = navController)
+            }
         }
     }
 }

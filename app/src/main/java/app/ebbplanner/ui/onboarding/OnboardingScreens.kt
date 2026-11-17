@@ -604,7 +604,14 @@ fun OnboardingNotificationsScreen(
 fun OnboardingExactAlarmsScreen(
     onOpenSettings: () -> Unit,
     onSkip: () -> Unit,
+    showExactAlarmStep: Boolean = true,
 ) {
+    if (!showExactAlarmStep) {
+        androidx.compose.runtime.LaunchedEffect(Unit) {
+            onSkip()
+        }
+        return
+    }
     OnboardingScreenScaffold(
         topBar = { OnboardingTopBar(activeSteps = 5) },
         bottomBar = {
@@ -871,12 +878,22 @@ fun OnboardingDoneScreen(
                         formatMinutes(state.bedMinutes),
                     ),
                 )
-                SummaryChip("notifications", stringResource(R.string.onboarding_done_reminders_chip))
+                SummaryChip(
+                    "notifications",
+                    if (state.remindersEnabled) {
+                        stringResource(R.string.onboarding_done_reminders_on)
+                    } else {
+                        stringResource(R.string.onboarding_done_reminders_off)
+                    },
+                )
                 SummaryChip(
                     "air",
                     stringResource(R.string.onboarding_done_breather_chip, state.breatherMinutes),
                 )
-                SummaryChip("calendar_month", stringResource(R.string.onboarding_done_calendar_chip))
+                SummaryChip(
+                    "calendar_month",
+                    stringResource(R.string.onboarding_done_calendar_chip_format, state.linkedCalendarCount),
+                )
             }
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = EbbSpacing.s4),

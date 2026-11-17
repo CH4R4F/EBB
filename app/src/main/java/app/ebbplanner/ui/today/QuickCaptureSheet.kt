@@ -56,7 +56,7 @@ fun QuickCaptureSheet(
             androidx.compose.material3.TextButton(
                 onClick = {
                     if (title.isNotBlank()) {
-                        onSave(parsed.title)
+                        onSave(title)
                         title = ""
                         onDismiss()
                     }

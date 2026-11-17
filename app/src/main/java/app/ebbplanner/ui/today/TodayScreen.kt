@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -19,25 +18,32 @@ const val TODAY_TIMELINE_TAG = "today_timeline"
 fun TodayScreen(
     modifier: Modifier = Modifier,
     viewModel: TodayViewModel = hiltViewModel(),
+    onOpenPlanDay: () -> Unit = {},
+    onOpenShiftDay: () -> Unit = {},
+    onOpenTask: (String) -> Unit = {},
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val presentation by viewModel.presentationState.collectAsStateWithLifecycle()
     var showCapture by rememberSaveable { mutableStateOf(false) }
-    val presentation = remember(state) { TodayPresentationMapper.from(state) }
+    val capturePresentation =
+        presentation.copy(
+            quickCapture =
+                if (showCapture) {
+                    QuickCapturePresentationState(mode = QuickCaptureMode.Empty)
+                } else {
+                    null
+                },
+        )
 
     TodayScreenDesign(
-        state =
-            if (showCapture) {
-                presentation.copy(
-                    quickCapture =
-                        QuickCapturePresentationState(
-                            mode = QuickCaptureMode.Empty,
-                        ),
-                )
-            } else {
-                presentation
-            },
+        state = capturePresentation,
         modifier = modifier.fillMaxSize().testTag(TODAY_TIMELINE_TAG),
         showBottomNav = false,
+        onFabClick = { showCapture = true },
+        onPlanDayClick = onOpenPlanDay,
+        onAddTaskClick = { showCapture = true },
+        onShiftClick = onOpenShiftDay,
+        onTaskClick = onOpenTask,
+        onMarkTaskDone = viewModel::markTaskDone,
     )
 
     QuickCaptureSheet(
@@ -52,6 +58,6 @@ fun TodayScreenContent(
     state: TodayUiState,
     modifier: Modifier = Modifier,
 ) {
-    val presentation = remember(state) { TodayPresentationMapper.from(state) }
+    val presentation = TodayPresentationMapper.from(state)
     TodayScreenDesign(state = presentation, modifier = modifier, showBottomNav = false)
 }

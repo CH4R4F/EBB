@@ -24,11 +24,18 @@ import androidx.compose.ui.unit.sp
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
 
+@Suppress("LongParameterList")
 @Composable
 fun TodayScreenDesign(
     state: TodayPresentationState,
     modifier: Modifier = Modifier,
     showBottomNav: Boolean = true,
+    onFabClick: () -> Unit = {},
+    onPlanDayClick: () -> Unit = {},
+    onAddTaskClick: () -> Unit = {},
+    onShiftClick: () -> Unit = {},
+    onTaskClick: (String) -> Unit = {},
+    onMarkTaskDone: (String) -> Unit = {},
 ) {
     val dimmed = state.visualMode == TodayVisualMode.Drag
     Scaffold(
@@ -41,7 +48,7 @@ fun TodayScreenDesign(
         floatingActionButton = {
             if (state.showFab && state.quickCapture == null) {
                 FloatingActionButton(
-                    onClick = {},
+                    onClick = onFabClick,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
@@ -70,7 +77,7 @@ fun TodayScreenDesign(
                 }
                 state.overlapHint?.let { TodayOverlapHint(it) }
                 if (state.visualMode != TodayVisualMode.Multiselect) {
-                    TodayDayHead(state = state)
+                    TodayDayHead(state = state, onShiftClick = onShiftClick)
                     TodayAnytimeTray(chips = state.anytimeChips)
                 }
                 Column(
@@ -82,10 +89,14 @@ fun TodayScreenDesign(
                 ) {
                     when (state.visualMode) {
                         TodayVisualMode.Loading -> TodayLoadingSkeleton()
-                        TodayVisualMode.Empty -> TodayEmptyState()
+                        TodayVisualMode.Empty ->
+                            TodayEmptyState(
+                                onPlanDayClick = onPlanDayClick,
+                                onAddTaskClick = onAddTaskClick,
+                            )
                         else -> {
                             Spacer(modifier = Modifier.height(8.dp))
-                            TodayTimeline(state = state)
+                            TodayTimeline(state = state, onTaskClick = onTaskClick, onMarkTaskDone = onMarkTaskDone)
                         }
                     }
                 }

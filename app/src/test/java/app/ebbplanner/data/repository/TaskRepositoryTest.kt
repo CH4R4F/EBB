@@ -5,6 +5,10 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import app.ebbplanner.data.local.EbbDatabase
 import app.ebbplanner.data.local.entity.TaskEntity
+import app.ebbplanner.reminders.TaskReminderSync
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -23,6 +27,7 @@ import java.time.LocalDate
 class TaskRepositoryTest {
     private lateinit var database: EbbDatabase
     private lateinit var repository: TaskRepository
+    private lateinit var reminderSync: TaskReminderSync
 
     @Before
     fun setUp() {
@@ -31,7 +36,10 @@ class TaskRepositoryTest {
             Room.inMemoryDatabaseBuilder(context, EbbDatabase::class.java)
                 .allowMainThreadQueries()
                 .build()
-        repository = TaskRepository(database.taskDao(), database.dayPlanDao())
+        reminderSync = mockk(relaxed = true)
+        coEvery { reminderSync.syncTask(any()) } returns Unit
+        coEvery { reminderSync.cancelTask(any()) } returns Unit
+        repository = TaskRepository(database.taskDao(), database.dayPlanDao(), reminderSync)
     }
 
     @After
@@ -40,10 +48,10 @@ class TaskRepositoryTest {
     }
 
     @Test
-    fun ensureSampleDataForTodayIfEmpty_seedsTasks() =
+    fun seedSampleTasksForToday_seedsTasks() =
         runTest {
             val today = LocalDate.of(2025, 11, 17)
-            repository.ensureSampleDataForTodayIfEmpty(today)
+            repository.seedSampleTasksForToday(today)
             val tasks = repository.observeTasksForDate(today).first()
             assertTrue(tasks.isNotEmpty())
             assertTrue(tasks.any { it.placement == TaskEntity.PLACEMENT_SCHEDULED })
@@ -58,6 +66,7 @@ class TaskRepositoryTest {
             assertEquals("Walk the dog", task.title)
             val stored = repository.getTask(task.id)
             assertNotNull(stored)
+            coVerify { reminderSync.syncTask(task.id) }
         }
 
     @Test

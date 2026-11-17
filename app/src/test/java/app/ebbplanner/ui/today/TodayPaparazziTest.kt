@@ -59,6 +59,22 @@ class TodayPaparazziTest {
     @Test fun m1_today_rtl_dark() = snap("m1_today_rtl_dark", true, todayPopulatedDark(), rtl = true)
 }
 
+class TodayPaparazziFont130Test {
+    @get:Rule
+    val paparazzi =
+        Paparazzi(
+            deviceConfig = DeviceConfig.PIXEL_6.copy(fontScale = 1.3f),
+            renderingMode = SessionParams.RenderingMode.SHRINK,
+        )
+
+    @Test
+    fun m1_today_font130_dark() {
+        paparazzi.snapshot("m1_today_font130_dark") {
+            TodayAppPreview(darkTheme = true, state = todayCompactTypography())
+        }
+    }
+}
+
 class TodayPaparazziFont200Test {
     @get:Rule
     val paparazzi =

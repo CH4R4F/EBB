@@ -8,6 +8,7 @@ import androidx.room.Update
 import app.ebbplanner.data.local.entity.TaskEntity
 import kotlinx.coroutines.flow.Flow
 
+@Suppress("TooManyFunctions")
 @Dao
 interface TaskDao {
     @Query(
@@ -34,6 +35,38 @@ interface TaskDao {
 
     @Query("SELECT * FROM tasks WHERE id = :id AND deletedAt IS NULL LIMIT 1")
     suspend fun getById(id: String): TaskEntity?
+
+    @Query(
+        """
+        SELECT * FROM tasks
+        WHERE deletedAt IS NULL AND placement = 'inbox'
+        ORDER BY createdAt DESC
+        """,
+    )
+    fun observeInbox(): Flow<List<TaskEntity>>
+
+    @Query(
+        """
+        SELECT * FROM tasks
+        WHERE deletedAt IS NULL AND date >= :startInclusive AND date <= :endInclusive
+        ORDER BY date ASC, startLocalTime ASC
+        """,
+    )
+    fun observeBetween(
+        startInclusive: String,
+        endInclusive: String,
+    ): Flow<List<TaskEntity>>
+
+    @Query(
+        """
+        SELECT * FROM tasks
+        WHERE deletedAt IS NULL
+        AND placement = 'scheduled'
+        AND startLocalTime IS NOT NULL
+        AND reminderEnabled = 1
+        """,
+    )
+    suspend fun getActiveScheduledWithReminders(): List<TaskEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(task: TaskEntity)

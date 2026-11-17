@@ -10,6 +10,7 @@ import app.ebbplanner.data.local.EbbDatabase
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.data.repository.TaskRepository
+import io.mockk.mockk
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -41,7 +42,12 @@ class TodayViewModelTest {
             Room.inMemoryDatabaseBuilder(context, EbbDatabase::class.java)
                 .allowMainThreadQueries()
                 .build()
-        taskRepository = TaskRepository(database.taskDao(), database.dayPlanDao())
+        taskRepository =
+            TaskRepository(
+                database.taskDao(),
+                database.dayPlanDao(),
+                mockk(relaxed = true),
+            )
         preferencesRepository = UserPreferencesRepository(context)
     }
 

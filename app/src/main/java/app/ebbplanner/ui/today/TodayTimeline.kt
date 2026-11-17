@@ -61,10 +61,13 @@ internal fun minutesToTimelineY(
 
 internal fun durationToHeight(minutes: Int): Dp = timelineDpPerMinute * minutes
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun TodayTimeline(
     state: TodayPresentationState,
     modifier: Modifier = Modifier,
+    onTaskClick: (String) -> Unit = {},
+    onMarkTaskDone: (String) -> Unit = {},
 ) {
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val hours = (state.timelineStartHour until state.timelineEndHour).toList()
@@ -144,6 +147,8 @@ fun TodayTimeline(
                 block = block,
                 dark = dark,
                 titleOnly = state.titleOnlyBlocks,
+                onClick = { onTaskClick(block.id) },
+                onMarkDone = { onMarkTaskDone(block.id) },
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
@@ -162,6 +167,8 @@ fun TodayTimeline(
                 block = block,
                 dark = dark,
                 titleOnly = state.titleOnlyBlocks,
+                onClick = { onTaskClick(block.id) },
+                onMarkDone = { onMarkTaskDone(block.id) },
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
@@ -299,11 +306,14 @@ private fun NowLine(
     }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun ScheduledTaskBlock(
     block: TodayScheduledBlock,
     dark: Boolean,
     titleOnly: Boolean,
+    onClick: () -> Unit = {},
+    onMarkDone: () -> Unit = {},
     modifier: Modifier = Modifier,
     elevated: Boolean = false,
 ) {
@@ -320,15 +330,16 @@ private fun ScheduledTaskBlock(
         )
     Box(modifier = blockModifier.clip(shape)) {
         Surface(
+            onClick = onClick,
             modifier = Modifier.fillMaxSize(),
             shape = shape,
             color = fill,
             shadowElevation = if (elevated) 8.dp else 0.dp,
         ) {
             if (block.short) {
-                ShortTaskRow(block = block, accent = accent, titleOnly = titleOnly)
+                ShortTaskRow(block = block, accent = accent, titleOnly = titleOnly, onMarkDone = onMarkDone)
             } else {
-                StandardTaskRow(block = block, accent = accent, titleOnly = titleOnly)
+                StandardTaskRow(block = block, accent = accent, titleOnly = titleOnly, onMarkDone = onMarkDone)
             }
         }
         if (block.isCurrent && block.minutesLeftLabel != null) {
@@ -348,6 +359,7 @@ private fun ShortTaskRow(
     block: TodayScheduledBlock,
     accent: Color,
     titleOnly: Boolean,
+    onMarkDone: () -> Unit = {},
 ) {
     Row(
         modifier = Modifier.fillMaxSize(),
@@ -397,7 +409,12 @@ private fun ShortTaskRow(
                 modifier = Modifier.padding(end = 8.dp),
             )
         } else {
-            TaskRing(done = block.done, modifier = Modifier.padding(end = 8.dp))
+            androidx.compose.material3.IconButton(
+                onClick = onMarkDone,
+                modifier = Modifier.padding(end = 0.dp).size(40.dp),
+            ) {
+                TaskRing(done = block.done)
+            }
         }
     }
 }
@@ -407,6 +424,7 @@ private fun StandardTaskRow(
     block: TodayScheduledBlock,
     accent: Color,
     titleOnly: Boolean,
+    onMarkDone: () -> Unit = {},
 ) {
     Row(
         modifier = Modifier.fillMaxSize(),
@@ -492,7 +510,12 @@ private fun StandardTaskRow(
                 modifier = Modifier.padding(end = 8.dp),
             )
         } else {
-            TaskRing(done = block.done, modifier = Modifier.padding(end = 8.dp))
+            androidx.compose.material3.IconButton(
+                onClick = onMarkDone,
+                modifier = Modifier.padding(end = 0.dp).size(40.dp),
+            ) {
+                TaskRing(done = block.done)
+            }
         }
     }
 }

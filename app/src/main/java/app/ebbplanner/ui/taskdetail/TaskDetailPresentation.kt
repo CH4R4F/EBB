@@ -7,7 +7,9 @@ data class TaskSubtaskRow(
 )
 
 data class TaskDetailPresentationState(
+    val id: String = "",
     val title: String = "Write project brief",
+    val scheduleLabel: String = "",
     val whenLabel: String = "Today · 10:00–11:15",
     val dateLabel: String = "Mon 16 Nov",
     val estimate: String = "1 h 15 min",
