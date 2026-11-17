@@ -13,9 +13,17 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
 
+enum class CelebrationStyle {
+    Calm,
+    Lively,
+    Off,
+}
+
 data class OnboardingUiState(
     val wakeMinutes: Int = UserPreferencesRepository.DEFAULT_WAKE_MINUTES,
     val bedMinutes: Int = UserPreferencesRepository.DEFAULT_BED_MINUTES,
+    val breatherMinutes: Int = 5,
+    val celebrationStyle: CelebrationStyle = CelebrationStyle.Calm,
     val addSampleTasks: Boolean = true,
 )
 
@@ -35,6 +43,14 @@ class OnboardingViewModel
 
         fun setBedMinutes(minutes: Int) {
             _uiState.update { it.copy(bedMinutes = minutes.coerceIn(0, 24 * 60 - 1)) }
+        }
+
+        fun setBreatherMinutes(minutes: Int) {
+            _uiState.update { it.copy(breatherMinutes = minutes) }
+        }
+
+        fun setCelebrationStyle(style: CelebrationStyle) {
+            _uiState.update { it.copy(celebrationStyle = style) }
         }
 
         fun setAddSampleTasks(enabled: Boolean) {

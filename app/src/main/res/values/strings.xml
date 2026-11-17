@@ -3,25 +3,65 @@
     <string name="app_name">Ebb</string>
 
     <string name="onboarding_welcome_tagline">A calm plan for a busy brain</string>
+    <string name="onboarding_welcome_body">Dump it. Drop it on your day. Shift when life happens.</string>
     <string name="onboarding_get_started">Get started</string>
-    <string name="onboarding_restore_backup">I\'ve used Ebb before — Restore backup</string>
+    <string name="onboarding_restore_backup">I’ve used Ebb before → Restore backup</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_not_now">Not now</string>
+
     <string name="onboarding_promise_title">Our promise</string>
     <string name="promise_free_forever">Free forever</string>
     <string name="promise_free_forever_detail">Every feature, no ads, no paywall.</string>
     <string name="promise_no_account">No account</string>
     <string name="promise_no_account_detail">Open it and start. Nothing to sign up for.</string>
     <string name="promise_private_offline">Private &amp; offline</string>
-    <string name="promise_private_offline_detail">Your plan stays on this device.</string>
+    <string name="promise_private_offline_detail">Your plans stay on this phone unless you back them up.</string>
     <string name="promise_open_source">Open source</string>
-    <string name="promise_open_source_detail">Inspect the code, or fork it anytime.</string>
-    <string name="onboarding_preferences_title">Your day shape</string>
-    <string name="onboarding_day_shape_hint">Set when your day usually starts and ends — this shapes your timeline.</string>
-    <string name="onboarding_wake_label">Wake time</string>
-    <string name="onboarding_bed_label">Sleep time</string>
+    <string name="promise_open_source_detail">Anyone can read the code (GPL-3.0).</string>
+
+    <string name="onboarding_day_shape_title">Your day shape</string>
+    <string name="onboarding_day_shape_hint">When does your day usually start and end? This sets your timeline and “time left”.</string>
+    <string name="onboarding_wake_label">Wake up</string>
+    <string name="onboarding_bed_label">Bedtime</string>
+    <string name="onboarding_day_span_summary">Your day: %1$s–%2$s · %3$d hours</string>
     <string name="onboarding_change_anytime">You can change these anytime in Settings.</string>
-    <string name="onboarding_done_title">You\'re set</string>
-    <string name="onboarding_done_summary">Day %1$s–%2$s</string>
+
+    <string name="onboarding_prefs_title">A few preferences</string>
+    <string name="onboarding_prefs_subtitle">Good defaults are already picked.</string>
+    <string name="onboarding_breather_label">Breather between tasks</string>
+    <string name="onboarding_celebrations_label">Celebrations</string>
+    <string name="onboarding_celebration_calm">Calm</string>
+    <string name="onboarding_celebration_lively">Lively</string>
+    <string name="onboarding_celebration_off">Off</string>
+
+    <string name="onboarding_try_it_step">Try it · 1 of 2</string>
+    <string name="onboarding_try_it_title">Type 3 things on your mind</string>
+    <string name="onboarding_try_it_hint">Anything at all. Press Enter after each one.</string>
+    <string name="onboarding_try_it_field_label">Thought 1</string>
+    <string name="onboarding_try_it_placeholder">e.g. Buy stamps</string>
+    <string name="onboarding_try_it_next">Next</string>
+
+    <string name="onboarding_notifications_title">Want a gentle nudge when it’s time?</string>
+    <string name="onboarding_notifications_body">Ebb only notifies you about your own plans. Without it, everything still works — you just won’t get reminders.</string>
+    <string name="onboarding_notifications_allow">Allow notifications</string>
+
+    <string name="onboarding_alarms_title">So reminders arrive on time</string>
+    <string name="onboarding_alarms_body">Android needs your OK for “Alarms &amp; reminders” — otherwise reminders can arrive 10 minutes late. Without it, Ebb still works; timing is just looser.</string>
+    <string name="onboarding_alarms_tip">On the next screen, switch on Allow setting alarms and reminders, then come back.</string>
+    <string name="onboarding_alarms_open_setting">Open setting</string>
+
+    <string name="onboarding_calendar_title">See your calendar on your day?</string>
+    <string name="onboarding_calendar_body">Ebb can show events from your phone’s calendars as fixed blocks. It only reads them, never changes them. Skip it and Ebb works the same.</string>
+    <string name="onboarding_calendar_allow">Show my calendar events</string>
+
+    <string name="onboarding_done_title">You’re set.</string>
+    <string name="onboarding_done_subtitle">Your day is ready. Start small.</string>
+    <string name="onboarding_done_day_chip">Day %1$s–%2$s</string>
+    <string name="onboarding_done_reminders_chip">Reminders on</string>
+    <string name="onboarding_done_breather_chip">%1$d min breathers</string>
+    <string name="onboarding_done_calendar_chip">2 calendars</string>
     <string name="onboarding_add_sample_tasks">Add sample tasks</string>
+    <string name="onboarding_add_sample_tasks_hint">“Drink water”, “Plan tomorrow” — easy to remove</string>
     <string name="onboarding_open_my_day">Open my day</string>
 
     <string name="action_continue">Continue</string>
