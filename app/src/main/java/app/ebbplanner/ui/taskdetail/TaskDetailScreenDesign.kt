@@ -4,6 +4,7 @@ package app.ebbplanner.ui.taskdetail
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,13 +43,11 @@ import app.ebbplanner.ui.theme.EbbTypography
 fun TaskDetailScreenDesign(
     state: TaskDetailPresentationState,
     modifier: Modifier = Modifier,
-    onClose: () -> Unit = {},
-    onMarkDone: () -> Unit = {},
-    onStartFocus: () -> Unit = {},
+    callbacks: TaskDetailCallbacks = TaskDetailCallbacks(),
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            TaskDetailTopBar(done = state.done, onClose = onClose, onMarkDone = onMarkDone)
+            TaskDetailTopBar(done = state.done, onClose = callbacks.onClose, onMarkDone = callbacks.onMarkDone)
             state.recurringBanner?.let { banner ->
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -75,18 +74,25 @@ fun TaskDetailScreenDesign(
                     line1 = state.whenLabel,
                     line2 = state.dateLabel,
                     tall = true,
+                    onClick = callbacks.onOpenSchedule,
                 )
-                EstimateRow(state.estimate)
+                EstimateRow(state.estimate, onClick = callbacks.onOpenDuration)
                 PinnedRow(state.pinned)
                 EnergySegmentedRow(state.energySelected)
-                ColorIconRow(state)
-                DetailListRow(icon = "notifications", line1 = state.remindersLabel, line2 = "Reminders", tall = true)
+                ColorIconRow(state, onClick = callbacks.onOpenColorIcon)
+                DetailListRow(
+                    icon = "notifications",
+                    line1 = state.remindersLabel,
+                    line2 = "Reminders",
+                    tall = true,
+                    onClick = callbacks.onOpenReminders,
+                )
                 DetailListRow(icon = "repeat", line1 = state.repeatLabel, line2 = "Repeat", tall = true)
                 DetailListRow(icon = "air", line1 = "Breather after", line2 = state.breatherSubtitle, tall = true)
                 HorizontalDivider(modifier = Modifier.padding(vertical = EbbSpacing.s2))
                 StepsHeader(state.subtaskProgress)
                 state.subtasks.forEach { SubtaskRow(it) }
-                AddStepRow()
+                AddStepRow(onClick = callbacks.onOpenBreakDown)
                 if (state.notes.isNotBlank()) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = EbbSpacing.s2))
                     Text("Notes", style = EbbTypography.labelL, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -95,7 +101,7 @@ fun TaskDetailScreenDesign(
             }
         }
         TaskDetailBottomBar(
-            onStartFocus = onStartFocus,
+            onStartFocus = callbacks.onStartFocus,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
     }
@@ -170,12 +176,14 @@ private fun DetailListRow(
     line1: String,
     line2: String,
     tall: Boolean = false,
+    onClick: () -> Unit = {},
 ) {
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(if (tall) 72.dp else 56.dp),
+                .height(if (tall) 72.dp else 56.dp)
+                .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         EbbListLeadingIcon(icon = icon)
@@ -193,12 +201,16 @@ private fun DetailListRow(
 }
 
 @Composable
-private fun EstimateRow(estimate: String) {
+private fun EstimateRow(
+    estimate: String,
+    onClick: () -> Unit = {},
+) {
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(72.dp),
+                .height(72.dp)
+                .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         EbbListLeadingIcon(icon = "timer")
@@ -317,13 +329,17 @@ private fun EnergyBars(level: Int) {
 }
 
 @Composable
-private fun ColorIconRow(state: TaskDetailPresentationState) {
+private fun ColorIconRow(
+    state: TaskDetailPresentationState,
+    onClick: () -> Unit = {},
+) {
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(72.dp),
+                .height(72.dp)
+                .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         EbbListLeadingIcon(icon = "palette")
@@ -407,12 +423,13 @@ private fun SubtaskRow(row: TaskSubtaskRow) {
 }
 
 @Composable
-private fun AddStepRow() {
+private fun AddStepRow(onClick: () -> Unit = {}) {
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(48.dp),
+                .height(48.dp)
+                .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         EbbSymbol("add", fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)

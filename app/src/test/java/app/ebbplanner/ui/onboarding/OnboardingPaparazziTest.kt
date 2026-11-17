@@ -63,25 +63,35 @@ class OnboardingPaparazziTest {
     @Test
     fun o8_try_it_step1_empty_dark() =
         snap("o8_try_it_step1_empty_dark", true) {
-            OnboardingTryItScreen(TryItStep.Step1Empty, {}, {})
+            OnboardingTryItScreen(step = TryItStep.Step1Empty, onSkip = {}, onNext = {})
         }
 
     @Test
     fun o8_try_it_step1_typed_dark() =
         snap("o8_try_it_step1_typed_dark", true) {
-            OnboardingTryItScreen(TryItStep.Step1Typed, {}, {})
+            OnboardingTryItScreen(
+                step = TryItStep.Step1Typed,
+                inputValue = "Buy stamps",
+                onSkip = {},
+                onNext = {},
+            )
         }
 
     @Test
     fun o8_try_it_step2_drag_dark() =
         snap("o8_try_it_step2_drag_dark", true) {
-            OnboardingTryItScreen(TryItStep.Step2Drag, {}, {})
+            OnboardingTryItScreen(step = TryItStep.Step2Drag, onSkip = {}, onNext = {})
         }
 
     @Test
     fun o8_try_it_success_dark() =
         snap("o8_try_it_success_dark", true) {
-            OnboardingTryItScreen(TryItStep.Success, {}, {})
+            OnboardingTryItScreen(
+                step = TryItStep.Success,
+                celebrationBody = "Buy stamps is on today at 14:30.",
+                onSkip = {},
+                onNext = {},
+            )
         }
 
     @Test

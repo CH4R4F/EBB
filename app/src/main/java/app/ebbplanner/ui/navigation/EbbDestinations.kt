@@ -15,12 +15,18 @@ object EbbDestinations {
 }
 
 object AppRoutes {
-    const val TASK_DETAIL = "flow/task/{taskId}"
+    const val TASK_DETAIL = "flow/task/{taskId}/{sheet}"
     const val SHIFT_DAY = "flow/shift"
     const val PLAN_DAY = "flow/plan"
     const val FOCUS_RUN = "flow/focus"
+    const val ROUTINE_EDIT = "main/routines/edit/{routineId}"
 
-    fun taskDetail(taskId: String): String = "flow/task/$taskId"
+    fun taskDetail(
+        taskId: String,
+        sheet: String = "none",
+    ): String = "flow/task/$taskId/$sheet"
+
+    fun routineEdit(routineId: String): String = "main/routines/edit/$routineId"
 }
 
 enum class MainTab(val route: String, val label: String) {

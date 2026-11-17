@@ -3,8 +3,11 @@ package app.ebbplanner.di
 import android.content.Context
 import androidx.room.Room
 import app.ebbplanner.data.local.EbbDatabase
+import app.ebbplanner.data.local.MIGRATION_3_4
 import app.ebbplanner.data.local.dao.DayPlanDao
 import app.ebbplanner.data.local.dao.ReminderDao
+import app.ebbplanner.data.local.dao.RoutineDao
+import app.ebbplanner.data.local.dao.SubtaskDao
 import app.ebbplanner.data.local.dao.TaskDao
 import dagger.Module
 import dagger.Provides
@@ -26,6 +29,7 @@ object DatabaseModule {
             EbbDatabase::class.java,
             "ebb.db",
         )
+            .addMigrations(MIGRATION_3_4)
             .fallbackToDestructiveMigration()
             .build()
 
@@ -37,4 +41,10 @@ object DatabaseModule {
 
     @Provides
     fun provideReminderDao(database: EbbDatabase): ReminderDao = database.reminderDao()
+
+    @Provides
+    fun provideSubtaskDao(database: EbbDatabase): SubtaskDao = database.subtaskDao()
+
+    @Provides
+    fun provideRoutineDao(database: EbbDatabase): RoutineDao = database.routineDao()
 }

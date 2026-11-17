@@ -35,6 +35,7 @@ fun TodayScreenDesign(
     onAddTaskClick: () -> Unit = {},
     onShiftClick: () -> Unit = {},
     onTaskClick: (String) -> Unit = {},
+    onTaskLongPress: (String) -> Unit = {},
     onMarkTaskDone: (String) -> Unit = {},
 ) {
     val dimmed = state.visualMode == TodayVisualMode.Drag
@@ -96,7 +97,12 @@ fun TodayScreenDesign(
                             )
                         else -> {
                             Spacer(modifier = Modifier.height(8.dp))
-                            TodayTimeline(state = state, onTaskClick = onTaskClick, onMarkTaskDone = onMarkTaskDone)
+                            TodayTimeline(
+                                state = state,
+                                onTaskClick = onTaskClick,
+                                onTaskLongPress = onTaskLongPress,
+                                onMarkTaskDone = onMarkTaskDone,
+                            )
                         }
                     }
                 }

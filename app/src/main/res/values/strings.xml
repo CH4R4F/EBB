@@ -51,6 +51,8 @@
     <string name="onboarding_try_it_next">Next</string>
     <string name="onboarding_try_it_success_celebration_title">Nice one.</string>
     <string name="onboarding_try_it_success_celebration_body">Buy stamps is on today at 14:30.</string>
+    <string name="onboarding_try_it_success_celebration_body_format">%1$s is on today at %2$s.</string>
+    <string name="onboarding_try_it_anytime_label">Anytime</string>
     <string name="onboarding_try_it_inbox_caption">These two wait in your Inbox.</string>
     <string name="onboarding_try_it_coach">Drag one into today. Let go on a time that feels right.</string>
     <string name="onboarding_try_it_got_it">Got it</string>

@@ -26,7 +26,7 @@ import app.ebbplanner.ui.onboarding.OnboardingExactAlarmsScreen
 import app.ebbplanner.ui.onboarding.OnboardingNotificationsScreen
 import app.ebbplanner.ui.onboarding.OnboardingPreferencesRoute
 import app.ebbplanner.ui.onboarding.OnboardingPromiseScreen
-import app.ebbplanner.ui.onboarding.OnboardingTryItScreen
+import app.ebbplanner.ui.onboarding.OnboardingTryItRoute
 import app.ebbplanner.ui.onboarding.OnboardingViewModel
 import app.ebbplanner.ui.onboarding.OnboardingWelcomeScreen
 
@@ -89,7 +89,7 @@ fun EbbNavHost() {
                 )
             }
             composable(EbbDestinations.ONBOARDING_TRY_IT) {
-                OnboardingTryItScreen(
+                OnboardingTryItRoute(
                     onSkip = { skipToNotifications() },
                     onNext = { skipToNotifications() },
                 )

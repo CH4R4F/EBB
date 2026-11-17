@@ -27,6 +27,8 @@ data class TaskDetailPresentationState(
     val notes: String = "",
     val mode: TaskDetailMode = TaskDetailMode.Existing,
     val done: Boolean = false,
+    val durationMin: Int = 30,
+    val remindersEnabled: Boolean = true,
 )
 
 enum class TaskDetailMode {

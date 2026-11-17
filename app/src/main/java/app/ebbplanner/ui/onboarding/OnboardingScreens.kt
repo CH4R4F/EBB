@@ -434,6 +434,9 @@ enum class NotificationPrimerState {
 @Suppress("CyclomaticComplexMethod")
 fun OnboardingTryItScreen(
     step: TryItStep = TryItStep.Step1Empty,
+    inputValue: String = "",
+    onInputChange: (String) -> Unit = {},
+    celebrationBody: String = "",
     onSkip: () -> Unit,
     onNext: () -> Unit,
 ) {
@@ -481,7 +484,7 @@ fun OnboardingTryItScreen(
                         OnboardingPrimaryButton(
                             text = stringResource(R.string.onboarding_try_it_next),
                             onClick = onNext,
-                            enabled = step != TryItStep.Step1Empty,
+                            enabled = step != TryItStep.Step1Empty || inputValue.isNotBlank(),
                             block = false,
                         )
                     }
@@ -508,22 +511,20 @@ fun OnboardingTryItScreen(
             modifier = Modifier.padding(top = EbbSpacing.s2),
         )
         when (step) {
-            TryItStep.Step1Empty ->
+            TryItStep.Step1Empty, TryItStep.Step1Typed ->
                 OnboardingUnderlineField(
-                    value = "",
+                    value = inputValue,
                     placeholder = stringResource(R.string.onboarding_try_it_placeholder),
                     focused = true,
-                    modifier = Modifier.padding(top = EbbSpacing.s6),
-                )
-            TryItStep.Step1Typed ->
-                OnboardingUnderlineField(
-                    value = "Buy stamps",
-                    placeholder = stringResource(R.string.onboarding_try_it_placeholder),
-                    focused = true,
+                    onValueChange = onInputChange,
                     modifier = Modifier.padding(top = EbbSpacing.s6),
                 )
             TryItStep.Step2Drag, TryItStep.Success ->
-                OnboardingTryItTimelineSection(step = step, modifier = Modifier.padding(top = EbbSpacing.s4))
+                OnboardingTryItTimelineSection(
+                    step = step,
+                    celebrationBody = celebrationBody,
+                    modifier = Modifier.padding(top = EbbSpacing.s4),
+                )
         }
     }
 }

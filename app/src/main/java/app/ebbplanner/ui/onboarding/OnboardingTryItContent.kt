@@ -50,6 +50,7 @@ fun OnboardingUnderlineField(
     placeholder: String,
     focused: Boolean,
     modifier: Modifier = Modifier,
+    onValueChange: (String) -> Unit = {},
 ) {
     val lineColor =
         if (focused) {
@@ -84,23 +85,31 @@ fun OnboardingUnderlineField(
                     MaterialTheme.colorScheme.onSurfaceVariant
                 },
         )
-        Box(modifier = Modifier.padding(top = EbbSpacing.s1).height(24.dp)) {
-            if (value.isEmpty()) {
-                Text(
-                    text = placeholder,
-                    style = EbbTypography.bodyL,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                Text(text = value, style = EbbTypography.bodyL, color = MaterialTheme.colorScheme.onSurface)
-            }
-        }
+        androidx.compose.foundation.text.BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            textStyle = EbbTypography.bodyL.copy(color = MaterialTheme.colorScheme.onSurface),
+            modifier = Modifier.padding(top = EbbSpacing.s1).fillMaxWidth(),
+            decorationBox = { inner ->
+                Box {
+                    if (value.isEmpty()) {
+                        Text(
+                            text = placeholder,
+                            style = EbbTypography.bodyL,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    inner()
+                }
+            },
+        )
     }
 }
 
 @Composable
 fun OnboardingTryItTimelineSection(
     step: TryItStep,
+    celebrationBody: String = "",
     modifier: Modifier = Modifier,
 ) {
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
@@ -127,7 +136,7 @@ fun OnboardingTryItTimelineSection(
             }
         }
         if (step == TryItStep.Success) {
-            CelebrationCard(modifier = Modifier.padding(top = EbbSpacing.s6))
+            CelebrationCard(body = celebrationBody, modifier = Modifier.padding(top = EbbSpacing.s6))
             Column(
                 modifier = Modifier.padding(top = EbbSpacing.s4),
                 verticalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
@@ -486,7 +495,10 @@ private fun CalendarEventBlock(modifier: Modifier) {
 }
 
 @Composable
-private fun CelebrationCard(modifier: Modifier = Modifier) {
+private fun CelebrationCard(
+    body: String,
+    modifier: Modifier = Modifier,
+) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = EbbShapes.lg,
@@ -510,7 +522,7 @@ private fun CelebrationCard(modifier: Modifier = Modifier) {
                     color = MaterialTheme.colorScheme.onTertiaryContainer,
                 )
                 Text(
-                    stringResource(R.string.onboarding_try_it_success_celebration_body),
+                    body.ifBlank { stringResource(R.string.onboarding_try_it_success_celebration_body) },
                     style = EbbTypography.bodyM,
                     color = MaterialTheme.colorScheme.onTertiaryContainer,
                 )

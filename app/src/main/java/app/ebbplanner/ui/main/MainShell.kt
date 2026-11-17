@@ -21,9 +21,11 @@ import app.ebbplanner.ui.navigation.PlanDayScreen
 import app.ebbplanner.ui.navigation.ShiftDayScreen
 import app.ebbplanner.ui.navigation.TaskDetailRoute
 import app.ebbplanner.ui.routines.RoutinesScreen
+import app.ebbplanner.ui.taskdetail.TaskSheetType
 import app.ebbplanner.ui.today.TodayScreen
 import app.ebbplanner.ui.week.WeekScreen
 
+@Suppress("LongMethod")
 @Composable
 fun MainShell() {
     val navController = rememberNavController()
@@ -62,20 +64,48 @@ fun MainShell() {
                     onOpenPlanDay = { navController.navigate(AppRoutes.PLAN_DAY) },
                     onOpenShiftDay = { navController.navigate(AppRoutes.SHIFT_DAY) },
                     onOpenTask = { id -> navController.navigate(AppRoutes.taskDetail(id)) },
+                    onOpenTaskSchedule = { id ->
+                        val sheet = TaskSheetType.toRouteArg(TaskSheetType.Schedule)
+                        navController.navigate(AppRoutes.taskDetail(id, sheet))
+                    },
                 )
             }
             composable(MainTab.Inbox.route) { InboxScreen() }
             composable(MainTab.Week.route) { WeekScreen() }
-            composable(MainTab.Routines.route) { RoutinesScreen() }
+            composable(MainTab.Routines.route) {
+                RoutinesScreen(
+                    onCreateRoutine = { id -> navController.navigate(AppRoutes.routineEdit(id)) },
+                )
+            }
+            composable(
+                route = AppRoutes.ROUTINE_EDIT,
+                arguments = listOf(navArgument("routineId") { type = NavType.StringType }),
+            ) {
+                app.ebbplanner.ui.routines.RoutineEditorScreen(
+                    onClose = { navController.popBackStack() },
+                )
+            }
             composable(AppRoutes.SHIFT_DAY) { ShiftDayScreen() }
             composable(AppRoutes.PLAN_DAY) { PlanDayScreen() }
             composable(AppRoutes.FOCUS_RUN) { FocusRunScreen() }
             composable(
                 route = AppRoutes.TASK_DETAIL,
-                arguments = listOf(navArgument("taskId") { type = NavType.StringType }),
+                arguments =
+                    listOf(
+                        navArgument("taskId") { type = NavType.StringType },
+                        navArgument("sheet") {
+                            type = NavType.StringType
+                            defaultValue = "none"
+                        },
+                    ),
             ) { entry ->
                 val taskId = entry.arguments?.getString("taskId").orEmpty()
-                TaskDetailRoute(taskId = taskId, navController = navController)
+                val sheet = entry.arguments?.getString("sheet").orEmpty()
+                TaskDetailRoute(
+                    taskId = taskId,
+                    initialSheet = sheet,
+                    navController = navController,
+                )
             }
         }
     }

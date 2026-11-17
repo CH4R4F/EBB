@@ -39,14 +39,15 @@ import app.ebbplanner.ui.theme.EbbTypography
 fun RoutinesScreenDesign(
     state: RoutinesPresentationState,
     modifier: Modifier = Modifier,
+    onFabClick: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         bottomBar = { EbbBottomNavigation(selected = MainTab.Routines) },
         floatingActionButton = {
-            if (state.mode != RoutinesVisualMode.Empty) {
+            if (state.mode == RoutinesVisualMode.Empty || state.routines.isNotEmpty()) {
                 ExtendedFloatingActionButton(
-                    onClick = {},
+                    onClick = onFabClick,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),

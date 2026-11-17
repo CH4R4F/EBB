@@ -39,7 +39,7 @@ class TaskRepositoryTest {
         reminderSync = mockk(relaxed = true)
         coEvery { reminderSync.syncTask(any()) } returns Unit
         coEvery { reminderSync.cancelTask(any()) } returns Unit
-        repository = TaskRepository(database.taskDao(), database.dayPlanDao(), reminderSync)
+        repository = TaskRepository(database.taskDao(), database.dayPlanDao(), database.subtaskDao(), reminderSync)
     }
 
     @After
@@ -67,6 +67,27 @@ class TaskRepositoryTest {
             val stored = repository.getTask(task.id)
             assertNotNull(stored)
             coVerify { reminderSync.syncTask(task.id) }
+        }
+
+    @Test
+    fun scheduleTask_movesToScheduledAndSyncs() =
+        runTest {
+            val today = LocalDate.of(2025, 11, 17)
+            val task = repository.addQuickCapture("Door", today, TaskEntity.PLACEMENT_ANYTIME)
+            repository.scheduleTask(task.id, TaskEntity.PLACEMENT_SCHEDULED, today, "14:00")
+            val stored = repository.getTask(task.id)
+            assertEquals(TaskEntity.PLACEMENT_SCHEDULED, stored?.placement)
+            assertEquals("14:00", stored?.startLocalTime)
+            coVerify { reminderSync.syncTask(task.id) }
+        }
+
+    @Test
+    fun addSubtask_persists() =
+        runTest {
+            val today = LocalDate.now()
+            val task = repository.addQuickCapture("Write", today, TaskEntity.PLACEMENT_INBOX)
+            repository.addSubtask(task.id, "Open doc")
+            assertEquals(1, repository.listSubtasks(task.id).size)
         }
 
     @Test

@@ -4,6 +4,7 @@ package app.ebbplanner.ui.today
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -67,6 +68,7 @@ fun TodayTimeline(
     state: TodayPresentationState,
     modifier: Modifier = Modifier,
     onTaskClick: (String) -> Unit = {},
+    onTaskLongPress: (String) -> Unit = {},
     onMarkTaskDone: (String) -> Unit = {},
 ) {
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
@@ -148,6 +150,7 @@ fun TodayTimeline(
                 dark = dark,
                 titleOnly = state.titleOnlyBlocks,
                 onClick = { onTaskClick(block.id) },
+                onLongClick = { onTaskLongPress(block.id) },
                 onMarkDone = { onMarkTaskDone(block.id) },
                 modifier =
                     Modifier
@@ -168,6 +171,7 @@ fun TodayTimeline(
                 dark = dark,
                 titleOnly = state.titleOnlyBlocks,
                 onClick = { onTaskClick(block.id) },
+                onLongClick = { onTaskLongPress(block.id) },
                 onMarkDone = { onMarkTaskDone(block.id) },
                 modifier =
                     Modifier
@@ -306,13 +310,18 @@ private fun NowLine(
     }
 }
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@OptIn(
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.foundation.ExperimentalFoundationApi::class,
+)
+@Suppress("LongParameterList")
 @Composable
 private fun ScheduledTaskBlock(
     block: TodayScheduledBlock,
     dark: Boolean,
     titleOnly: Boolean,
     onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {},
     onMarkDone: () -> Unit = {},
     modifier: Modifier = Modifier,
     elevated: Boolean = false,
@@ -330,8 +339,13 @@ private fun ScheduledTaskBlock(
         )
     Box(modifier = blockModifier.clip(shape)) {
         Surface(
-            onClick = onClick,
-            modifier = Modifier.fillMaxSize(),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .combinedClickable(
+                        onClick = onClick,
+                        onLongClick = onLongClick,
+                    ),
             shape = shape,
             color = fill,
             shadowElevation = if (elevated) 8.dp else 0.dp,

@@ -21,6 +21,7 @@ fun TodayScreen(
     onOpenPlanDay: () -> Unit = {},
     onOpenShiftDay: () -> Unit = {},
     onOpenTask: (String) -> Unit = {},
+    onOpenTaskSchedule: (String) -> Unit = {},
 ) {
     val presentation by viewModel.presentationState.collectAsStateWithLifecycle()
     var showCapture by rememberSaveable { mutableStateOf(false) }
@@ -43,6 +44,7 @@ fun TodayScreen(
         onAddTaskClick = { showCapture = true },
         onShiftClick = onOpenShiftDay,
         onTaskClick = onOpenTask,
+        onTaskLongPress = onOpenTaskSchedule,
         onMarkTaskDone = viewModel::markTaskDone,
     )
 

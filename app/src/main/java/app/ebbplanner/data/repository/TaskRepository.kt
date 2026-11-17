@@ -1,8 +1,10 @@
 package app.ebbplanner.data.repository
 
 import app.ebbplanner.data.local.dao.DayPlanDao
+import app.ebbplanner.data.local.dao.SubtaskDao
 import app.ebbplanner.data.local.dao.TaskDao
 import app.ebbplanner.data.local.entity.DayPlanEntity
+import app.ebbplanner.data.local.entity.SubtaskEntity
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.reminders.TaskReminderSync
 import kotlinx.coroutines.flow.Flow
@@ -12,12 +14,14 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@Suppress("TooManyFunctions")
 @Singleton
 class TaskRepository
     @Inject
     constructor(
         private val taskDao: TaskDao,
         private val dayPlanDao: DayPlanDao,
+        private val subtaskDao: SubtaskDao,
         private val reminderSync: TaskReminderSync,
     ) {
         private val zoneId: ZoneId = ZoneId.systemDefault()
@@ -154,6 +158,65 @@ class TaskRepository
         }
 
         suspend fun getTask(id: String): TaskEntity? = taskDao.getById(id)
+
+        fun observeSubtasks(taskId: String) = subtaskDao.observeForTask(taskId)
+
+        suspend fun listSubtasks(taskId: String): List<SubtaskEntity> = subtaskDao.listForTask(taskId)
+
+        suspend fun addSubtask(
+            taskId: String,
+            title: String,
+        ) {
+            val existing = subtaskDao.listForTask(taskId)
+            val now = System.currentTimeMillis()
+            subtaskDao.insert(
+                SubtaskEntity(
+                    id = UUID.randomUUID().toString(),
+                    taskId = taskId,
+                    title = title.trim(),
+                    sortOrder = existing.size,
+                    durationMin = null,
+                    done = false,
+                ),
+            )
+            touchTaskUpdated(taskId, now)
+        }
+
+        suspend fun updateTaskFields(
+            id: String,
+            transform: (TaskEntity) -> TaskEntity,
+        ) {
+            val task = taskDao.getById(id) ?: return
+            val updated = transform(task).copy(updatedAt = System.currentTimeMillis())
+            taskDao.update(updated)
+            reminderSync.syncTask(id)
+        }
+
+        private suspend fun touchTaskUpdated(
+            taskId: String,
+            now: Long,
+        ) {
+            val task = taskDao.getById(taskId) ?: return
+            taskDao.update(task.copy(updatedAt = now))
+        }
+
+        suspend fun scheduleTask(
+            id: String,
+            placement: String,
+            date: LocalDate?,
+            startLocalTime: String?,
+        ) {
+            updateTaskFields(id) { task ->
+                task.copy(
+                    placement = placement,
+                    date = date?.toString(),
+                    startLocalTime = startLocalTime,
+                    reminderEnabled =
+                        placement == TaskEntity.PLACEMENT_SCHEDULED &&
+                            startLocalTime != null,
+                )
+            }
+        }
 
         suspend fun addQuickCapture(
             title: String,

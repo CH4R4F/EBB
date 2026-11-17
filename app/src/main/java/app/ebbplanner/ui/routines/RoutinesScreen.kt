@@ -12,7 +12,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 fun RoutinesScreen(
     modifier: Modifier = Modifier,
     viewModel: RoutinesViewModel = hiltViewModel(),
+    onCreateRoutine: (String) -> Unit = {},
 ) {
     val state by viewModel.presentation.collectAsStateWithLifecycle()
-    RoutinesScreenDesign(state = state, modifier = modifier)
+    RoutinesScreenDesign(
+        state = state,
+        modifier = modifier,
+        onFabClick = { viewModel.createRoutine(onCreateRoutine) },
+    )
 }
