@@ -64,10 +64,12 @@ class OverlapHelperViewModel
                     clock.nowMinutes(),
                 )
             val situation = dayPlanning.analyzeOverlap(clock.today(), bed)
+            val defaultOption =
+                situation?.options?.firstOrNull()?.type ?: OverlapResolutionType.KEEP_BOTH
             _uiState.value =
                 OverlapUiState(
                     situation = situation,
-                    selected = situation?.options?.firstOrNull()?.type ?: OverlapResolutionType.PUSH_LATER,
+                    selected = defaultOption,
                     background = background,
                 )
         }

@@ -55,29 +55,37 @@ class DayPlanningUseCase
                     excludeTaskId = laterTask.id,
                     bedMinutes = bedMinutes,
                 )
-            val options =
-                listOf(
+            val options = mutableListOf<OverlapOption>()
+            if (!laterTask.pinned) {
+                options +=
                     OverlapOption(
                         OverlapResolutionType.PUSH_LATER,
                         "Push later",
                         "${laterTask.title} starts ${ClockFormat.minutesToClock(pushStart)}",
-                    ),
+                    )
+            }
+            if (!earlierTask.pinned) {
+                options +=
                     OverlapOption(
                         OverlapResolutionType.SHORTEN_EARLIER,
                         "Shorten earlier",
                         "${earlierTask.title} becomes $shortenDuration min",
-                    ),
+                    )
+            }
+            if (!laterTask.pinned) {
+                options +=
                     OverlapOption(
                         OverlapResolutionType.NEXT_FREE_SLOT,
                         "Next free slot",
                         freeSlot?.let { "Move ${laterTask.title} to ${ClockFormat.minutesToClock(it)}" }
                             ?: "No slot found",
-                    ),
-                    OverlapOption(
-                        OverlapResolutionType.KEEP_BOTH,
-                        "Keep both",
-                        "Fine — I'll juggle",
-                    ),
+                    )
+            }
+            options +=
+                OverlapOption(
+                    OverlapResolutionType.KEEP_BOTH,
+                    "Keep both",
+                    "Fine — I'll juggle",
                 )
             return OverlapSituation(
                 headline = "These overlap",

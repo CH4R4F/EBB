@@ -200,17 +200,18 @@ private fun ScheduleSheetPanel(
     var showTimePicker by remember { mutableStateOf(false) }
     var pickedDate by remember { mutableStateOf(LocalDate.now()) }
     var pickedTimeMinutes by remember { mutableIntStateOf(9 * 60) }
-    val zone = ZoneId.systemDefault()
-
     if (showDatePicker) {
-        val dateState = rememberDatePickerState(initialSelectedDateMillis = pickedDate.atStartOfDay(zone).toInstant().toEpochMilli())
+        val dateState =
+            rememberDatePickerState(
+                initialSelectedDateMillis = pickedDate.atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli(),
+            )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(
                     onClick = {
                         dateState.selectedDateMillis?.let { millis ->
-                            pickedDate = Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
+                            pickedDate = Instant.ofEpochMilli(millis).atZone(java.time.ZoneOffset.UTC).toLocalDate()
                         }
                         showDatePicker = false
                     },
