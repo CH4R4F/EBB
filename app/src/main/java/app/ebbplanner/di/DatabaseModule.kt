@@ -5,6 +5,7 @@ import androidx.room.Room
 import app.ebbplanner.data.local.EbbDatabase
 import app.ebbplanner.data.local.MIGRATION_2_3
 import app.ebbplanner.data.local.MIGRATION_3_4
+import app.ebbplanner.data.local.MIGRATION_4_5
 import app.ebbplanner.data.local.dao.DayPlanDao
 import app.ebbplanner.data.local.dao.ReminderDao
 import app.ebbplanner.data.local.dao.RoutineDao
@@ -30,7 +31,7 @@ object DatabaseModule {
             EbbDatabase::class.java,
             "ebb.db",
         )
-            .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
             .build()
 
     @Provides

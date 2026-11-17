@@ -18,6 +18,7 @@ fun RoutinesScreen(
     RoutinesScreenDesign(
         state = state,
         modifier = modifier,
-        onFabClick = { viewModel.createRoutine(onCreateRoutine) },
+        onFabClick = { viewModel.openNewEditor(onCreateRoutine) },
+        onRoutineClick = onCreateRoutine,
     )
 }

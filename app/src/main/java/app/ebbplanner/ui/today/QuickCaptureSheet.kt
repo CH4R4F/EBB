@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import app.ebbplanner.R
 import app.ebbplanner.domain.capture.QuickCaptureParser
+import java.time.LocalDate
 import app.ebbplanner.ui.theme.EbbSpacing
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -24,11 +25,12 @@ fun QuickCaptureSheet(
     visible: Boolean,
     onDismiss: () -> Unit,
     onSave: (String) -> Unit,
+    defaultDate: LocalDate = LocalDate.now(),
 ) {
     if (!visible) return
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var title by remember(visible) { mutableStateOf("") }
-    val parsed = remember(title) { QuickCaptureParser.parse(title) }
+    val parsed = remember(title, defaultDate) { QuickCaptureParser.parse(title, defaultDate) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,

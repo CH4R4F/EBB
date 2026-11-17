@@ -25,6 +25,10 @@ class RoutineRepository
             }
         }
 
+        suspend fun delete(id: String) {
+            routineDao.delete(id)
+        }
+
         suspend fun createDefault(
             title: String,
             repeatRule: String = RoutineEntity.REPEAT_WEEKDAYS,

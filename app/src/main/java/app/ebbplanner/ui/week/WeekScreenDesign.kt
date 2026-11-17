@@ -6,6 +6,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.IconButton
@@ -29,6 +32,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import app.ebbplanner.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -48,13 +58,15 @@ fun WeekScreenDesign(
     onPreviousWeek: () -> Unit = {},
     onNextWeek: () -> Unit = {},
     onThisWeek: () -> Unit = {},
+    onFabClick: () -> Unit = {},
+    onDaySelected: (java.time.LocalDate) -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         bottomBar = { EbbBottomNavigation(selected = MainTab.Week) },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {},
+                onClick = onFabClick,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
@@ -93,7 +105,7 @@ fun WeekScreenDesign(
                             vertical = EbbSpacing.s1,
                         ),
                 ) {
-                    items(state.days) { day -> WeekDayCard(day) }
+                    items(state.days) { day -> WeekDayCard(day, onSelect = { onDaySelected(day.date) }) }
                 }
             }
         }
@@ -118,8 +130,10 @@ private fun WeekTopBar(
         IconButton(onClick = onPreviousWeek) { EbbSymbol("chevron_left", fontSize = 22.sp) }
         Text(range, style = EbbTypography.headlineM, modifier = Modifier.weight(1f), maxLines = 1)
         IconButton(onClick = onNextWeek) { EbbSymbol("chevron_right", fontSize = 22.sp) }
-        TextButton(onClick = onThisWeek) { Text("This week", style = EbbTypography.labelL) }
-        IconButton(onClick = onThisWeek) { EbbSymbol("more_vert", fontSize = 22.sp) }
+        TextButton(onClick = onThisWeek) {
+            Text(stringResource(R.string.week_this_week), style = EbbTypography.labelL)
+        }
+        WeekOverflowMenu(onThisWeek = onThisWeek)
     }
 }
 
@@ -167,18 +181,38 @@ private fun WeekDragChip(label: String) {
 }
 
 @Composable
-private fun WeekDayCard(day: WeekDayRow) {
+private fun WeekOverflowMenu(onThisWeek: () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { expanded = true }) { EbbSymbol("more_vert", fontSize = 22.sp) }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.week_menu_jump_today)) },
+                onClick = {
+                    expanded = false
+                    onThisWeek()
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun WeekDayCard(
+    day: WeekDayRow,
+    onSelect: () -> Unit = {},
+) {
     val border =
-        if (day.today) {
-            BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-        } else {
-            null
+        when {
+            day.selected -> BorderStroke(2.dp, MaterialTheme.colorScheme.tertiary)
+            day.today -> BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+            else -> null
         }
     Surface(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(72.dp),
+                .clickable(onClick = onSelect),
         shape = EbbShapes.md,
         color = MaterialTheme.colorScheme.surfaceContainer,
         border = border,
@@ -197,11 +231,9 @@ private fun WeekDayCard(day: WeekDayRow) {
             }
             Column(modifier = Modifier.weight(1f).padding(start = EbbSpacing.s3)) {
                 Text(
-                    if (day.open) "Open" else day.summary,
+                    day.summary,
                     style = EbbTypography.bodyM,
                     color = if (day.open) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
                 )
                 WeekLoadRow(day)
             }
@@ -257,7 +289,7 @@ private fun WeekLoadRow(day: WeekDayRow) {
                     )
                 }
                 Text(
-                    "${day.eventCount} ${if (day.eventCount == 1) "event" else "events"}",
+                    pluralStringResource(R.plurals.week_event_count, day.eventCount, day.eventCount),
                     style = EbbTypography.labelM,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

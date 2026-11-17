@@ -9,14 +9,13 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class RoutinesViewModel
     @Inject
     constructor(
-        private val routineRepository: RoutineRepository,
+        routineRepository: RoutineRepository,
     ) : ViewModel() {
         val presentation: StateFlow<RoutinesPresentationState> =
             routineRepository
@@ -24,11 +23,8 @@ class RoutinesViewModel
                 .map { entities -> entities.toPresentation() }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), routinesEmpty())
 
-        fun createRoutine(onCreated: (String) -> Unit) {
-            viewModelScope.launch {
-                val created = routineRepository.createDefault(title = "New routine")
-                onCreated(created.id)
-            }
+        fun openNewEditor(onOpen: (String) -> Unit) {
+            onOpen(RoutineEditorViewModel.NEW_ROUTINE_ID)
         }
 
         private fun List<RoutineEntity>.toPresentation(): RoutinesPresentationState {
@@ -36,6 +32,7 @@ class RoutinesViewModel
             val cards =
                 map { entity ->
                     RoutineCard(
+                        id = entity.id,
                         title = entity.title,
                         schedule = formatSchedule(entity),
                         meta = "${entity.durationMin} min",
@@ -50,9 +47,16 @@ class RoutinesViewModel
                 when (entity.repeatRule) {
                     RoutineEntity.REPEAT_DAILY -> "Daily"
                     RoutineEntity.REPEAT_WEEKDAYS -> "Weekdays"
-                    RoutineEntity.REPEAT_WEEKLY -> "Weekly"
+                    RoutineEntity.REPEAT_WEEKLY -> formatWeekly(entity.weeklyDays)
                     else -> entity.repeatRule
                 }
             return "$rule · ${entity.startLocalTime}"
+        }
+
+        private fun formatWeekly(days: String): String {
+            if (days.isBlank()) return "Weekly"
+            val names = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+            val picked = days.split(',').mapNotNull { it.trim().toIntOrNull() }.map { names.getOrNull(it - 1) ?: "?" }
+            return "Weekly · ${picked.joinToString(", ")}"
         }
     }

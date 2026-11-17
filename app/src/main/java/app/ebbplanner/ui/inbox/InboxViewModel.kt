@@ -7,13 +7,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ebbplanner.R
 import app.ebbplanner.data.local.entity.TaskEntity
+import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.data.repository.TaskRepository
+import app.ebbplanner.domain.capture.QuickCaptureParser
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -22,7 +27,8 @@ class InboxViewModel
     @Inject
     constructor(
         @ApplicationContext private val context: Context,
-        taskRepository: TaskRepository,
+        private val taskRepository: TaskRepository,
+        private val userPreferencesRepository: UserPreferencesRepository,
     ) : ViewModel() {
         val tasks: StateFlow<List<TaskEntity>> =
             taskRepository.observeInboxTasks()
@@ -30,13 +36,42 @@ class InboxViewModel
 
         val presentation: StateFlow<InboxPresentationState> =
             taskRepository.observeInboxTasks()
-                .onStart { emit(emptyList()) }
                 .map { list -> inboxPresentationFromTasks(list) }
                 .stateIn(
                     viewModelScope,
                     SharingStarted.WhileSubscribed(5_000),
                     InboxPresentationState(visualMode = InboxVisualMode.Loading, tasks = emptyList()),
                 )
+
+        fun captureToInbox(raw: String) {
+            if (raw.isBlank()) return
+            viewModelScope.launch {
+                val parsed = QuickCaptureParser.parse(raw, LocalDate.now())
+                val date = parsed.targetDate ?: LocalDate.now()
+                val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+                val start = parsed.startTime?.format(timeFormatter)
+                val placement =
+                    when {
+                        start != null -> TaskEntity.PLACEMENT_SCHEDULED
+                        parsed.targetDate != null -> TaskEntity.PLACEMENT_ANYTIME
+                        else -> TaskEntity.PLACEMENT_INBOX
+                    }
+                val remindersOn = userPreferencesRepository.remindersDefault.first()
+                taskRepository.addQuickCapture(
+                    title = parsed.title,
+                    date = if (placement == TaskEntity.PLACEMENT_INBOX) date else date,
+                    placement = placement,
+                    startLocalTime = start,
+                    durationMin = parsed.durationMin ?: TaskEntity.DEFAULT_DURATION_MIN,
+                    reminderEnabled =
+                        if (placement == TaskEntity.PLACEMENT_SCHEDULED && start != null) {
+                            remindersOn
+                        } else {
+                            false
+                        },
+                )
+            }
+        }
 
         private fun inboxPresentationFromTasks(tasks: List<TaskEntity>): InboxPresentationState {
             if (tasks.isEmpty()) {

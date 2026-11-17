@@ -3,6 +3,7 @@
 package app.ebbplanner.ui.routines
 
 data class RoutineCard(
+    val id: String,
     val title: String,
     val schedule: String,
     val meta: String,

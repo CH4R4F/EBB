@@ -110,8 +110,10 @@ fun OnboardingUnderlineField(
 fun OnboardingTryItTimelineSection(
     step: TryItStep,
     celebrationBody: String = "",
+    dragTaskTitle: String = "",
     modifier: Modifier = Modifier,
 ) {
+    val primaryTitle = dragTaskTitle.ifBlank { stringResource(R.string.onboarding_try_it_placeholder) }
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     Column(modifier = modifier.fillMaxWidth()) {
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -120,7 +122,11 @@ fun OnboardingTryItTimelineSection(
                 shape = EbbShapes.lg,
                 color = MaterialTheme.colorScheme.surfaceContainer,
             ) {
-                TryItMiniDayTimeline(step = step, dark = MaterialTheme.colorScheme.background.luminance() < 0.5f)
+                TryItMiniDayTimeline(
+                    step = step,
+                    dragTaskTitle = primaryTitle,
+                    dark = MaterialTheme.colorScheme.background.luminance() < 0.5f,
+                )
             }
             if (step == TryItStep.Success) {
                 EbbSymbol(
@@ -157,7 +163,7 @@ fun OnboardingTryItTimelineSection(
                 modifier = Modifier.padding(top = EbbSpacing.s2),
                 verticalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
             ) {
-                InboxTaskRow(title = "Buy stamps", dimmed = true)
+                InboxTaskRow(title = primaryTitle, dimmed = true)
                 InboxTaskRow(title = "Call bank about card")
                 InboxTaskRow(title = "Water plants")
             }
@@ -183,6 +189,7 @@ fun OnboardingTryItTimelineSection(
 @Composable
 private fun TryItMiniDayTimeline(
     step: TryItStep,
+    dragTaskTitle: String,
     dark: Boolean,
 ) {
     val schemeDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
@@ -211,6 +218,7 @@ private fun TryItMiniDayTimeline(
         when (step) {
             TryItStep.Step2Drag ->
                 GhostTaskBlock(
+                    title = dragTaskTitle,
                     modifier =
                         Modifier
                             .align(Alignment.TopStart)
@@ -221,6 +229,7 @@ private fun TryItMiniDayTimeline(
                 )
             TryItStep.Success ->
                 PlacedTaskBlock(
+                    title = dragTaskTitle,
                     modifier =
                         Modifier
                             .align(Alignment.TopStart)
@@ -234,6 +243,7 @@ private fun TryItMiniDayTimeline(
         }
         if (step == TryItStep.Step2Drag) {
             DraggingTaskOverlay(
+                title = dragTaskTitle,
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
@@ -337,6 +347,7 @@ private fun NowLine(y: androidx.compose.ui.unit.Dp) {
 
 @Composable
 private fun PlacedTaskBlock(
+    title: String,
     modifier: Modifier,
     dark: Boolean,
 ) {
@@ -364,7 +375,7 @@ private fun PlacedTaskBlock(
         ) {
             EbbSymbol("local_post_office", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
             Text(
-                "Buy stamps",
+                title,
                 style = EbbTypography.titleM,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
@@ -381,7 +392,10 @@ private fun PlacedTaskBlock(
 }
 
 @Composable
-private fun GhostTaskBlock(modifier: Modifier) {
+private fun GhostTaskBlock(
+    title: String,
+    modifier: Modifier,
+) {
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     Row(
         modifier =
@@ -394,7 +408,7 @@ private fun GhostTaskBlock(modifier: Modifier) {
     ) {
         EbbSymbol("radio_button_unchecked", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(
-            "Buy stamps",
+            title,
             style = EbbTypography.titleM,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
@@ -408,7 +422,10 @@ private fun GhostTaskBlock(modifier: Modifier) {
 }
 
 @Composable
-private fun DraggingTaskOverlay(modifier: Modifier = Modifier) {
+private fun DraggingTaskOverlay(
+    title: String,
+    modifier: Modifier = Modifier,
+) {
     Surface(
         modifier = modifier.width(250.dp),
         shape = EbbShapes.md,
@@ -428,7 +445,7 @@ private fun DraggingTaskOverlay(modifier: Modifier = Modifier) {
             )
             TaskCompletionRing(modifier = Modifier.padding(start = 8.dp))
             Text(
-                "Buy stamps",
+                title,
                 style = EbbTypography.titleM,
                 modifier = Modifier.weight(1f).padding(horizontal = EbbSpacing.s2),
             )

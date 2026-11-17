@@ -26,6 +26,7 @@ data class TaskEntity(
     val energy: String? = null,
     val pinned: Boolean = false,
     val reminderEnabled: Boolean = true,
+    val sourceRoutineId: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

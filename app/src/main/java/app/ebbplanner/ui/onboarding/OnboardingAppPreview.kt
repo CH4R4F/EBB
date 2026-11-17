@@ -13,9 +13,10 @@ import app.ebbplanner.ui.theme.EbbTheme
 @Composable
 fun OnboardingAppPreview(
     darkTheme: Boolean,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    EbbTheme(darkTheme = darkTheme, dynamicColor = false) {
+    EbbTheme(darkTheme = darkTheme, dynamicColor = dynamicColor) {
         Surface(
             modifier =
                 Modifier

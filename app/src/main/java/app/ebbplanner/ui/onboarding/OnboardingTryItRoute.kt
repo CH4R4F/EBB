@@ -20,6 +20,7 @@ fun OnboardingTryItRoute(
     var step by rememberSaveable { mutableStateOf(TryItStep.Step1Empty) }
     var input by rememberSaveable { mutableStateOf("") }
     var celebrationBody by rememberSaveable { mutableStateOf("") }
+    var dragTaskTitle by rememberSaveable { mutableStateOf("") }
     val context = LocalContext.current
     val anytimeLabel = stringResource(R.string.onboarding_try_it_anytime_label)
 
@@ -39,6 +40,7 @@ fun OnboardingTryItRoute(
         inputValue = input,
         onInputChange = { input = it },
         celebrationBody = celebrationBody,
+        dragTaskTitle = dragTaskTitle,
         onSkip = onSkip,
         onNext = {
             when (step) {
@@ -49,15 +51,37 @@ fun OnboardingTryItRoute(
                         onSkip()
                         return@OnboardingTryItScreen
                     }
-                    val parsed = QuickCaptureParser.parse(input, LocalDate.now())
-                    val timeLabel =
-                        parsed.startTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: anytimeLabel
+                    val today = LocalDate.now()
+                    val parsed = QuickCaptureParser.parse(input, today)
+                    dragTaskTitle = parsed.title.ifBlank { input.trim() }
+                    val target = parsed.targetDate ?: today
+                    val timed = parsed.startTime != null
+                    val timeLabel = parsed.startTime?.format(DateTimeFormatter.ofPattern("HH:mm")).orEmpty()
                     celebrationBody =
-                        context.getString(
-                            R.string.onboarding_try_it_success_celebration_body_format,
-                            parsed.title,
-                            timeLabel,
-                        )
+                        when {
+                            target.isAfter(today) && timed ->
+                                context.getString(
+                                    R.string.onboarding_try_it_success_celebration_body_tomorrow_timed,
+                                    dragTaskTitle,
+                                    timeLabel,
+                                )
+                            target.isAfter(today) ->
+                                context.getString(
+                                    R.string.onboarding_try_it_success_celebration_body_tomorrow_anytime,
+                                    dragTaskTitle,
+                                )
+                            timed ->
+                                context.getString(
+                                    R.string.onboarding_try_it_success_celebration_body_today_timed,
+                                    dragTaskTitle,
+                                    timeLabel,
+                                )
+                            else ->
+                                context.getString(
+                                    R.string.onboarding_try_it_success_celebration_body_today_anytime,
+                                    dragTaskTitle,
+                                )
+                        }
                     step = TryItStep.Step2Drag
                 }
             }

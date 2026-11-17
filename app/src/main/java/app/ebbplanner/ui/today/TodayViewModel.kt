@@ -7,6 +7,7 @@ import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.data.repository.TaskRepository
 import app.ebbplanner.domain.capture.QuickCaptureParser
+import app.ebbplanner.domain.routines.RoutineInstanceGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,8 +44,15 @@ class TodayViewModel
         private val taskRepository: TaskRepository,
         private val userPreferencesRepository: UserPreferencesRepository,
         private val calendarEventsReader: CalendarEventsReader,
+        private val routineInstanceGenerator: RoutineInstanceGenerator,
     ) : ViewModel() {
         private val selectedDate = MutableStateFlow(LocalDate.now())
+
+        init {
+            viewModelScope.launch {
+                selectedDate.collect { date -> routineInstanceGenerator.ensureForDate(date) }
+            }
+        }
         private val dateFormatter = DateTimeFormatter.ofPattern("EEE d MMM")
 
         @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)

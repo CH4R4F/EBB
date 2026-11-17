@@ -13,6 +13,12 @@ interface RoutineDao {
     @Query("SELECT * FROM routines WHERE enabled = 1 ORDER BY title COLLATE NOCASE")
     fun observeEnabled(): Flow<List<RoutineEntity>>
 
+    @Query("SELECT * FROM routines WHERE enabled = 1 ORDER BY title COLLATE NOCASE")
+    suspend fun listEnabled(): List<RoutineEntity>
+
+    @Query("SELECT * FROM routines ORDER BY title COLLATE NOCASE")
+    fun observeAll(): Flow<List<RoutineEntity>>
+
     @Query("SELECT * FROM routines WHERE id = :id")
     suspend fun getById(id: String): RoutineEntity?
 

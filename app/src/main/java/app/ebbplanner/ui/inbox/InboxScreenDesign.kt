@@ -3,6 +3,7 @@
 package app.ebbplanner.ui.inbox
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -49,6 +50,8 @@ import app.ebbplanner.ui.theme.EbbTypography
 fun InboxScreenDesign(
     state: InboxPresentationState,
     modifier: Modifier = Modifier,
+    onFabClick: () -> Unit = {},
+    onTaskClick: (String) -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -56,7 +59,7 @@ fun InboxScreenDesign(
         floatingActionButton = {
             if (state.showFab) {
                 FloatingActionButton(
-                    onClick = {},
+                    onClick = onFabClick,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
@@ -105,7 +108,11 @@ fun InboxScreenDesign(
                     ) {
                         items(state.tasks, key = { it.id }) { task ->
                             val swipe = state.swipeReveal?.takeIf { it.taskId == task.id }
-                            InboxTaskCard(task = task, swipeReveal = swipe)
+                            InboxTaskCard(
+                                task = task,
+                                swipeReveal = swipe,
+                                onClick = { onTaskClick(task.id) },
+                            )
                         }
                     }
             }
@@ -196,6 +203,7 @@ private fun InboxFilterRow(
 private fun InboxTaskCard(
     task: InboxTaskRow,
     swipeReveal: InboxSwipeReveal?,
+    onClick: () -> Unit = {},
 ) {
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     Box(modifier = Modifier.fillMaxWidth()) {
@@ -237,7 +245,8 @@ private fun InboxTaskCard(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .offset(x = shiftX),
+                    .offset(x = shiftX)
+                    .clickable(onClick = onClick),
             shape = EbbShapes.md,
             color = MaterialTheme.colorScheme.surfaceContainer,
         ) {

@@ -90,7 +90,9 @@ fun MainShell() {
                     onOpenSettings = { navController.navigate(AppRoutes.SETTINGS) },
                 )
             }
-            composable(MainTab.Inbox.route) { InboxScreen() }
+            composable(MainTab.Inbox.route) {
+                InboxScreen(onOpenTask = { id -> navController.navigate(AppRoutes.taskDetail(id)) })
+            }
             composable(MainTab.Week.route) { WeekScreen() }
             composable(MainTab.Routines.route) {
                 RoutinesScreen(

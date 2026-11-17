@@ -2,11 +2,16 @@
 
 package app.ebbplanner.ui.week
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.ebbplanner.R
+import app.ebbplanner.data.calendar.CalendarEventsReader
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.repository.TaskRepository
+import app.ebbplanner.domain.capture.QuickCaptureParser
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +20,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.WeekFields
@@ -25,10 +31,13 @@ import javax.inject.Inject
 class WeekViewModel
     @Inject
     constructor(
-        taskRepository: TaskRepository,
+        @ApplicationContext private val context: Context,
+        private val taskRepository: TaskRepository,
+        private val calendarEventsReader: CalendarEventsReader,
     ) : ViewModel() {
         private val weekStart = MutableStateFlow(startOfWeek(LocalDate.now()))
         private val loading = MutableStateFlow(true)
+        private val captureDate = MutableStateFlow(LocalDate.now())
 
         private val rangeFormatter = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
         private val weekdayFormatter = DateTimeFormatter.ofPattern("EEE", Locale.getDefault())
@@ -41,36 +50,52 @@ class WeekViewModel
                     combine(
                         taskRepository.observeTasksBetween(start, end).onStart { loading.value = true },
                         weekStart,
-                    ) { tasks, anchor ->
+                        captureDate,
+                    ) { tasks, anchor, selected ->
                         loading.value = false
                         val today = LocalDate.now()
                         val rangeLabel = formatWeekRange(anchor, end)
                         WeekPresentationState(
                             rangeLabel = rangeLabel,
+                            selectedDate = selected,
                             days =
                                 (0..6).map { offset ->
                                     val day = anchor.plusDays(offset.toLong())
                                     val dayTasks =
                                         tasks.filter {
                                             it.date == day.toString() &&
-                                                it.placement != TaskEntity.PLACEMENT_INBOX
+                                                it.placement != TaskEntity.PLACEMENT_INBOX &&
+                                                it.status != TaskEntity.STATUS_DONE
                                         }
+                                    val eventCount = calendarEventsReader.eventsForDay(day).size
                                     val taskCount = dayTasks.size
-                                    val summary =
-                                        when (taskCount) {
-                                            0 -> "Open"
-                                            1 -> "1 task · 0 events"
-                                            else -> "$taskCount tasks · 0 events"
+                                    val summary = formatDaySummary(taskCount, eventCount)
+                                    val plannedMinutes = dayTasks.sumOf { it.durationMin }
+                                    val load =
+                                        when {
+                                            taskCount == 0 -> context.getString(R.string.week_load_open) to 0f
+                                            plannedMinutes >= 360 -> {
+                                                context.getString(R.string.week_load_full) to 1f
+                                            }
+                                            plannedMinutes >= 180 -> {
+                                                context.getString(R.string.week_load_balanced) to (plannedMinutes / 360f).coerceIn(0.2f, 1f)
+                                            }
+                                            else -> {
+                                                context.getString(R.string.week_load_light) to (plannedMinutes / 180f).coerceIn(0.15f, 0.6f)
+                                            }
                                         }
                                     WeekDayRow(
+                                        date = day,
                                         weekday = day.format(weekdayFormatter),
                                         dayNumber = day.dayOfMonth.toString(),
                                         summary = summary,
-                                        loadLabel = if (dayTasks.isEmpty()) "Light" else "Balanced",
-                                        loadProgress = (dayTasks.size / 6f).coerceIn(0f, 1f),
-                                        eventCount = 0,
+                                        loadLabel = load.first,
+                                        loadProgress = load.second,
+                                        loadFull = plannedMinutes >= 360,
+                                        eventCount = eventCount,
                                         today = day == today,
-                                        open = dayTasks.isEmpty(),
+                                        open = taskCount == 0 && eventCount == 0,
+                                        selected = day == selected,
                                     )
                                 },
                             mode =
@@ -98,11 +123,69 @@ class WeekViewModel
 
         fun jumpToThisWeek() {
             weekStart.value = startOfWeek(LocalDate.now())
+            captureDate.value = LocalDate.now()
         }
 
-        private fun startOfWeek(date: LocalDate): LocalDate {
+        fun selectDay(date: LocalDate) {
+            captureDate.value = date
+        }
+
+        fun captureTask(raw: String) {
+            if (raw.isBlank()) return
+            viewModelScope.launch {
+                val date = captureDate.value
+                val parsed = QuickCaptureParser.parse(raw, date)
+                val targetDate = parsed.targetDate ?: date
+                val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+                val start = parsed.startTime?.format(timeFormatter)
+                val placement =
+                    if (start != null) {
+                        TaskEntity.PLACEMENT_SCHEDULED
+                    } else {
+                        TaskEntity.PLACEMENT_ANYTIME
+                    }
+                taskRepository.addQuickCapture(
+                    title = parsed.title,
+                    date = targetDate,
+                    placement = placement,
+                    startLocalTime = start,
+                    durationMin = parsed.durationMin ?: TaskEntity.DEFAULT_DURATION_MIN,
+                )
+            }
+        }
+
+        private fun formatDaySummary(
+            taskCount: Int,
+            eventCount: Int,
+        ): String {
+            if (taskCount == 0 && eventCount == 0) {
+                return context.getString(R.string.week_day_open)
+            }
+            val tasksPart =
+                context.resources.getQuantityString(
+                    R.plurals.week_task_count,
+                    taskCount,
+                    taskCount,
+                )
+            val eventsPart =
+                context.resources.getQuantityString(
+                    R.plurals.week_event_count,
+                    eventCount,
+                    eventCount,
+                )
+            return when {
+                taskCount == 0 -> eventsPart
+                eventCount == 0 -> tasksPart
+                else -> context.getString(R.string.week_day_summary, tasksPart, eventsPart)
+            }
+        }
+
+        private fun startOfWeek(
+            date: LocalDate,
+            firstDay: Int = WeekFields.of(Locale.getDefault()).firstDayOfWeek.value,
+        ): LocalDate {
             val fields = WeekFields.of(Locale.getDefault())
-            return date.with(fields.dayOfWeek(), fields.firstDayOfWeek.value.toLong())
+            return date.with(fields.dayOfWeek(), firstDay.toLong())
         }
 
         private fun formatWeekRange(

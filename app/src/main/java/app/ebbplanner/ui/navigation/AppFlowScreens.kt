@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.ebbplanner.ui.settings.SettingsViewModel
 import androidx.navigation.NavHostController
 import app.ebbplanner.ui.daytools.FocusRunViewModel
 import app.ebbplanner.ui.daytools.MakeItFitDesign
@@ -29,7 +30,12 @@ import app.ebbplanner.ui.taskdetail.TaskSheetType
 
 @Composable
 private fun FlowTheme(content: @Composable () -> Unit) {
-    OnboardingAppPreview(darkTheme = isSystemInDarkTheme(), content = content)
+    val settings by hiltViewModel<SettingsViewModel>().uiState.collectAsStateWithLifecycle()
+    OnboardingAppPreview(
+        darkTheme = isSystemInDarkTheme(),
+        dynamicColor = settings.materialYou,
+        content = content,
+    )
 }
 
 @Composable

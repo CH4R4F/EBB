@@ -137,7 +137,7 @@ fun TodayDayHead(
                 Text(
                     text = state.timeLeftLabel,
                     style = EbbTypography.titleL,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 if (!state.titleOnlyBlocks) {
@@ -248,7 +248,7 @@ fun TodayAnytimeTray(
                         )
                         IconButton(
                             onClick = { onChipDone(chip.id) },
-                            modifier = Modifier.size(28.dp),
+                            modifier = Modifier.size(48.dp),
                         ) {
                             EbbSymbol("check", fontSize = 16.sp)
                         }

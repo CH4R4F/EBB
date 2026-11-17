@@ -438,6 +438,7 @@ fun OnboardingTryItScreen(
     inputValue: String = "",
     onInputChange: (String) -> Unit = {},
     celebrationBody: String = "",
+    dragTaskTitle: String = "",
     onSkip: () -> Unit,
     onNext: () -> Unit,
 ) {
@@ -524,6 +525,7 @@ fun OnboardingTryItScreen(
                 OnboardingTryItTimelineSection(
                     step = step,
                     celebrationBody = celebrationBody,
+                    dragTaskTitle = dragTaskTitle,
                     modifier = Modifier.padding(top = EbbSpacing.s4),
                 )
         }

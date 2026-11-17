@@ -39,6 +39,18 @@ interface TaskDao {
     @Query(
         """
         SELECT * FROM tasks
+        WHERE deletedAt IS NULL AND sourceRoutineId = :routineId AND date = :date
+        LIMIT 1
+        """,
+    )
+    suspend fun getByRoutineAndDate(
+        routineId: String,
+        date: String,
+    ): TaskEntity?
+
+    @Query(
+        """
+        SELECT * FROM tasks
         WHERE deletedAt IS NULL AND placement = 'inbox'
         ORDER BY createdAt DESC
         """,

@@ -4,6 +4,7 @@ package app.ebbplanner.ui.routines
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,6 +41,7 @@ fun RoutinesScreenDesign(
     state: RoutinesPresentationState,
     modifier: Modifier = Modifier,
     onFabClick: () -> Unit = {},
+    onRoutineClick: (String) -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -68,7 +70,7 @@ fun RoutinesScreenDesign(
                     modifier = Modifier.weight(1f),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = EbbSpacing.s4),
                 ) {
-                    items(state.routines) { card -> RoutineCardUi(card) }
+                    items(state.routines) { card -> RoutineCardUi(card, onClick = { onRoutineClick(card.id) }) }
                     item { TemplatesCard() }
                     item {
                         Text(
@@ -98,9 +100,12 @@ private fun RoutinesTopBar() {
 }
 
 @Composable
-private fun RoutineCardUi(card: RoutineCard) {
+private fun RoutineCardUi(
+    card: RoutineCard,
+    onClick: () -> Unit = {},
+) {
     Surface(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable(onClick = onClick),
         shape = EbbShapes.md,
         color = MaterialTheme.colorScheme.tertiaryContainer,
     ) {
@@ -112,7 +117,12 @@ private fun RoutineCardUi(card: RoutineCard) {
                     }
                 }
                 Column(modifier = Modifier.weight(1f).padding(horizontal = EbbSpacing.s3)) {
-                    Text(card.title, style = EbbTypography.titleM)
+                    Text(
+                        card.title,
+                        style = EbbTypography.titleM,
+                        maxLines = 2,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
                     Text(card.schedule, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(card.meta, style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }

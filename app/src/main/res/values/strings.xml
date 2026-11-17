@@ -155,4 +155,29 @@
     <string name="reminder_action_done">Done</string>
     <string name="reminder_action_snooze">Snooze 10</string>
     <string name="reminder_action_shift">Shift day</string>
+
+    <string name="week_this_week">This week</string>
+    <string name="week_menu_jump_today">Jump to this week</string>
+    <string name="week_day_open">Open</string>
+    <string name="week_day_summary">%1$s · %2$s</string>
+    <string name="week_load_open">Open</string>
+    <string name="week_load_light">Light</string>
+    <string name="week_load_balanced">Balanced</string>
+    <string name="week_load_full">Full</string>
+    <plurals name="week_task_count">
+        <item quantity="one">%d task</item>
+        <item quantity="other">%d tasks</item>
+    </plurals>
+    <plurals name="week_event_count">
+        <item quantity="one">%d event</item>
+        <item quantity="other">%d events</item>
+    </plurals>
+    <string name="onboarding_try_it_success_celebration_body_today_anytime">%1$s is on today.</string>
+    <string name="onboarding_try_it_success_celebration_body_today_timed">%1$s is on today at %2$s.</string>
+    <string name="onboarding_try_it_success_celebration_body_tomorrow_anytime">%1$s is on tomorrow.</string>
+    <string name="onboarding_try_it_success_celebration_body_tomorrow_timed">%1$s is on tomorrow at %2$s.</string>
+    <string name="routine_editor_new">New routine</string>
+    <string name="routine_delete">Delete routine</string>
+    <string name="task_delete">Delete task</string>
+    <string name="task_repeat_routine">From routine</string>
 </resources>
