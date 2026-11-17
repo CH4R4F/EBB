@@ -212,6 +212,15 @@ fun TaskDetailRoute(
                     onOpenBreakDown = { viewModel.openSheet(TaskSheetType.BreakDown) },
                     onOpenSchedule = { viewModel.openSheet(TaskSheetType.Schedule) },
                     onOpenColorIcon = { viewModel.openSheet(TaskSheetType.ColorIcon) },
+                    onPinnedChange = viewModel::setPinned,
+                    onEnergyChange = viewModel::setEnergy,
+                    onEstimateDecrease = { viewModel.adjustDuration(-5) },
+                    onEstimateIncrease = { viewModel.adjustDuration(5) },
+                    onToggleSubtask = viewModel::toggleSubtask,
+                    onDeleteTask = {
+                        viewModel.deleteTask()
+                        navController.popBackStack()
+                    },
                 ),
         )
         if (state.mode != TaskDetailMode.NotFound && state.mode != TaskDetailMode.Loading) {

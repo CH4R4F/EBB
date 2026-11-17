@@ -9,4 +9,10 @@ data class TaskDetailCallbacks(
     val onOpenBreakDown: () -> Unit = {},
     val onOpenSchedule: () -> Unit = {},
     val onOpenColorIcon: () -> Unit = {},
+    val onPinnedChange: (Boolean) -> Unit = {},
+    val onEnergyChange: (Int) -> Unit = {},
+    val onEstimateDecrease: () -> Unit = {},
+    val onEstimateIncrease: () -> Unit = {},
+    val onToggleSubtask: (String) -> Unit = {},
+    val onDeleteTask: () -> Unit = {},
 )

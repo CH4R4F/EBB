@@ -243,6 +243,13 @@ class TaskRepository
 
         suspend fun listSubtasks(taskId: String): List<SubtaskEntity> = subtaskDao.listForTask(taskId)
 
+        suspend fun toggleSubtask(subtaskId: String) {
+            val sub = subtaskDao.getById(subtaskId) ?: return
+            val now = System.currentTimeMillis()
+            subtaskDao.setDone(subtaskId, !sub.done)
+            touchTaskUpdated(sub.taskId, now)
+        }
+
         suspend fun addSubtask(
             taskId: String,
             title: String,

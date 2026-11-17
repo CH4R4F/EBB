@@ -18,11 +18,11 @@ fun taskDetailExisting(): TaskDetailPresentationState =
         subtaskProgress = "2/5",
         subtasks =
             listOf(
-                TaskSubtaskRow("Gather last year's numbers", "10 min", true),
-                TaskSubtaskRow("Outline 3 sections", "10 min", true),
-                TaskSubtaskRow("Write the first draft", "30 min", false),
-                TaskSubtaskRow("Ask Sam for feedback", "5 min", false),
-                TaskSubtaskRow("Final read-through", "10 min", false),
+                TaskSubtaskRow(title = "Gather last year's numbers", estimate = "10 min", done = true),
+                TaskSubtaskRow(title = "Outline 3 sections", estimate = "10 min", done = true),
+                TaskSubtaskRow(title = "Write the first draft", estimate = "30 min", done = false),
+                TaskSubtaskRow(title = "Ask Sam for feedback", estimate = "5 min", done = false),
+                TaskSubtaskRow(title = "Final read-through", estimate = "10 min", done = false),
             ),
         notes = "Brief for the spring campaign. Keep it to one page.",
         mode = TaskDetailMode.Existing,
@@ -58,7 +58,7 @@ fun taskDetailRecurring(): TaskDetailPresentationState =
 fun taskDetailManySubtasks(): TaskDetailPresentationState {
     val subs =
         (1..22).map { i ->
-            TaskSubtaskRow("Step $i", "5 min", i <= 3)
+            TaskSubtaskRow(title = "Step $i", estimate = "5 min", done = i <= 3)
         }
     return taskDetailExisting().copy(
         mode = TaskDetailMode.ManySubtasks,

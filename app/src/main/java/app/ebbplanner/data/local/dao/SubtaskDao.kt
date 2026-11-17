@@ -15,6 +15,15 @@ interface SubtaskDao {
     @Query("SELECT * FROM subtasks WHERE taskId = :taskId ORDER BY sortOrder ASC")
     suspend fun listForTask(taskId: String): List<SubtaskEntity>
 
+    @Query("SELECT * FROM subtasks WHERE id = :id LIMIT 1")
+    suspend fun getById(id: String): SubtaskEntity?
+
+    @Query("UPDATE subtasks SET done = :done WHERE id = :id")
+    suspend fun setDone(
+        id: String,
+        done: Boolean,
+    )
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(items: List<SubtaskEntity>)
 

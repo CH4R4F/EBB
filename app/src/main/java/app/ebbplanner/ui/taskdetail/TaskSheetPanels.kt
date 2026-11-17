@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -15,7 +17,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -30,7 +35,12 @@ import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbTaskColors
 import app.ebbplanner.ui.theme.EbbTypography
+import androidx.compose.ui.res.stringResource
+import app.ebbplanner.R
+import app.ebbplanner.ui.time.ClockFormat
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 
 private val durationPresets = listOf(5, 10, 15, 30, 45, 60, 90)
 private val colorOptions = listOf("slate", "lemon", "sky", "rose", "amber", "green")
@@ -80,6 +90,7 @@ fun TaskSheetHost(
             TaskSheetType.Schedule ->
                 ScheduleSheetPanel(
                     taskTitle = state.title,
+                    suggestions = state.scheduleSuggestions,
                     onSave = { placement, date, time ->
                         onSaveSchedule(placement, date, time)
                         onDismiss()
@@ -178,37 +189,125 @@ private fun BreakDownSheetPanel(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ScheduleSheetPanel(
     taskTitle: String,
+    suggestions: List<ScheduleSuggestion>,
     onSave: (String, LocalDate?, String?) -> Unit,
 ) {
-    val today = LocalDate.now()
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+    var pickedDate by remember { mutableStateOf(LocalDate.now()) }
+    var pickedTimeMinutes by remember { mutableIntStateOf(9 * 60) }
+    val zone = ZoneId.systemDefault()
+
+    if (showDatePicker) {
+        val dateState = rememberDatePickerState(initialSelectedDateMillis = pickedDate.atStartOfDay(zone).toInstant().toEpochMilli())
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        dateState.selectedDateMillis?.let { millis ->
+                            pickedDate = Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
+                        }
+                        showDatePicker = false
+                    },
+                ) {
+                    Text(stringResource(R.string.action_save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text(stringResource(R.string.onboarding_not_now))
+                }
+            },
+        ) {
+            DatePicker(state = dateState)
+        }
+    }
+    if (showTimePicker) {
+        val hour = pickedTimeMinutes / 60
+        val minute = pickedTimeMinutes % 60
+        val timeState = rememberTimePickerState(initialHour = hour, initialMinute = minute, is24Hour = true)
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pickedTimeMinutes = timeState.hour * 60 + timeState.minute
+                        showTimePicker = false
+                    },
+                ) {
+                    Text(stringResource(R.string.action_save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) {
+                    Text(stringResource(R.string.onboarding_not_now))
+                }
+            },
+            text = { TimePicker(state = timeState) },
+        )
+    }
+
     Column(Modifier.padding(EbbSpacing.s4), verticalArrangement = Arrangement.spacedBy(EbbSpacing.s2)) {
         Text("Schedule", style = EbbTypography.titleL)
         Text(taskTitle, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        ScheduleChoice("Anytime today", onClick = { onSave(TaskEntity.PLACEMENT_ANYTIME, today, null) })
-        ScheduleChoice("Today · 14:00", onClick = { onSave(TaskEntity.PLACEMENT_SCHEDULED, today, "14:00") })
-        ScheduleChoice("Tomorrow · Anytime", onClick = { onSave(TaskEntity.PLACEMENT_ANYTIME, today.plusDays(1), null) })
-        ScheduleChoice("Inbox", onClick = { onSave(TaskEntity.PLACEMENT_INBOX, null, null) })
-        ScheduleChoice("Someday", onClick = { onSave(TaskEntity.PLACEMENT_SOMEDAY, null, null) })
+        suggestions.forEach { suggestion ->
+            ScheduleChoice(
+                label = suggestion.label,
+                subtitle = suggestion.subtitle,
+                onClick = {
+                    onSave(suggestion.placement, suggestion.date, suggestion.startLocalTime)
+                },
+            )
+        }
+        Row(
+            Modifier.fillMaxWidth().padding(top = EbbSpacing.s2),
+            horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
+        ) {
+            TextButton(onClick = { showDatePicker = true }) {
+                Text("Pick date", style = EbbTypography.labelL)
+            }
+            TextButton(onClick = { showTimePicker = true }) {
+                Text("Pick time", style = EbbTypography.labelL)
+            }
+            TextButton(
+                onClick = {
+                    onSave(
+                        TaskEntity.PLACEMENT_SCHEDULED,
+                        pickedDate,
+                        ClockFormat.minutesToLocalTime(pickedTimeMinutes),
+                    )
+                },
+                modifier = Modifier.align(Alignment.CenterVertically),
+            ) {
+                Text("Use selection", style = EbbTypography.labelL)
+            }
+        }
     }
 }
 
 @Composable
 private fun ScheduleChoice(
     label: String,
+    subtitle: String? = null,
     onClick: () -> Unit,
 ) {
-    Text(
-        label,
+    Column(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick)
                 .padding(vertical = 12.dp),
-        style = EbbTypography.bodyL,
-    )
+    ) {
+        Text(label, style = EbbTypography.bodyL)
+        subtitle?.let {
+            Text(it, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
 }
 
 @Composable

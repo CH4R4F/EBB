@@ -3,6 +3,7 @@ package app.ebbplanner.ui.taskdetail
 import app.ebbplanner.data.local.entity.TaskEntity
 
 data class TaskSubtaskRow(
+    val id: String = "",
     val title: String,
     val estimate: String,
     val done: Boolean,
@@ -16,7 +17,7 @@ data class TaskDetailPresentationState(
     val dateLabel: String = "",
     val estimate: String = "",
     val pinned: Boolean = false,
-    val energySelected: Int = 3,
+    val energySelected: Int = 2,
     val colorLabel: String = "",
     val colorIconKey: String = "task",
     val colorKey: String = "slate",
@@ -31,6 +32,7 @@ data class TaskDetailPresentationState(
     val done: Boolean = false,
     val durationMin: Int = TaskEntity.DEFAULT_DURATION_MIN,
     val remindersEnabled: Boolean = false,
+    val scheduleSuggestions: List<ScheduleSuggestion> = emptyList(),
 )
 
 enum class TaskDetailMode {

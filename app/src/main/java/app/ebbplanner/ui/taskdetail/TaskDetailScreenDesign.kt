@@ -18,6 +18,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,11 +28,17 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import app.ebbplanner.R
 import app.ebbplanner.ui.components.EbbListLeadingIcon
 import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
@@ -47,7 +55,12 @@ fun TaskDetailScreenDesign(
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            TaskDetailTopBar(done = state.done, onClose = callbacks.onClose, onMarkDone = callbacks.onMarkDone)
+            TaskDetailTopBar(
+                done = state.done,
+                onClose = callbacks.onClose,
+                onMarkDone = callbacks.onMarkDone,
+                onDeleteTask = callbacks.onDeleteTask,
+            )
             when (state.mode) {
                 TaskDetailMode.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -91,7 +104,7 @@ fun TaskDetailScreenDesign(
                         .padding(horizontal = EbbSpacing.s4)
                         .padding(bottom = 96.dp),
             ) {
-                TitleRow(state)
+                TitleRow(state, onMarkDone = callbacks.onMarkDone)
                 DetailListRow(
                     icon = "event",
                     line1 = state.whenLabel,
@@ -99,9 +112,14 @@ fun TaskDetailScreenDesign(
                     tall = true,
                     onClick = callbacks.onOpenSchedule,
                 )
-                EstimateRow(state.estimate, onClick = callbacks.onOpenDuration)
-                PinnedRow(state.pinned)
-                EnergySegmentedRow(state.energySelected)
+                EstimateRow(
+                    state.estimate,
+                    onClick = callbacks.onOpenDuration,
+                    onDecrease = callbacks.onEstimateDecrease,
+                    onIncrease = callbacks.onEstimateIncrease,
+                )
+                PinnedRow(state.pinned, onPinnedChange = callbacks.onPinnedChange)
+                EnergySegmentedRow(state.energySelected, onEnergyChange = callbacks.onEnergyChange)
                 ColorIconRow(state, onClick = callbacks.onOpenColorIcon)
                 DetailListRow(
                     icon = "notifications",
@@ -114,7 +132,7 @@ fun TaskDetailScreenDesign(
                 DetailListRow(icon = "air", line1 = "Breather after", line2 = state.breatherSubtitle, tall = true)
                 HorizontalDivider(modifier = Modifier.padding(vertical = EbbSpacing.s2))
                 StepsHeader(state.subtaskProgress)
-                state.subtasks.forEach { SubtaskRow(it) }
+                state.subtasks.forEach { SubtaskRow(it, onToggle = callbacks.onToggleSubtask) }
                 AddStepRow(onClick = callbacks.onOpenBreakDown)
                 if (state.notes.isNotBlank()) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = EbbSpacing.s2))
@@ -125,6 +143,8 @@ fun TaskDetailScreenDesign(
         }
         TaskDetailBottomBar(
             onStartFocus = callbacks.onStartFocus,
+            onOpenSchedule = callbacks.onOpenSchedule,
+            onOpenBreakDown = callbacks.onOpenBreakDown,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
     }
@@ -135,7 +155,9 @@ private fun TaskDetailTopBar(
     done: Boolean,
     onClose: () -> Unit = {},
     onMarkDone: () -> Unit = {},
+    onDeleteTask: () -> Unit = {},
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
     Row(
         modifier =
             Modifier
@@ -155,20 +177,34 @@ private fun TaskDetailTopBar(
             )
         }
         androidx.compose.foundation.layout.Spacer(modifier = Modifier.weight(1f))
-        IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
-            EbbSymbol("more_vert", fontSize = 22.sp)
+        Box {
+            IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(48.dp)) {
+                EbbSymbol("more_vert", fontSize = 22.sp)
+            }
+            DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.task_delete)) },
+                    onClick = {
+                        menuExpanded = false
+                        onDeleteTask()
+                    },
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun TitleRow(state: TaskDetailPresentationState) {
+private fun TitleRow(
+    state: TaskDetailPresentationState,
+    onMarkDone: () -> Unit = {},
+) {
     Row(
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s3),
         modifier = Modifier.padding(vertical = EbbSpacing.s2),
     ) {
-        TaskCompletionRing(done = state.done)
+        TaskCompletionRing(done = state.done, onClick = onMarkDone)
         Text(
             state.title,
             style = EbbTypography.headlineM,
@@ -178,7 +214,10 @@ private fun TitleRow(state: TaskDetailPresentationState) {
 }
 
 @Composable
-private fun TaskCompletionRing(done: Boolean) {
+private fun TaskCompletionRing(
+    done: Boolean,
+    onClick: () -> Unit = {},
+) {
     val color =
         if (done) {
             MaterialTheme.colorScheme.primary
@@ -186,6 +225,7 @@ private fun TaskCompletionRing(done: Boolean) {
             MaterialTheme.colorScheme.outline
         }
     Surface(
+        onClick = onClick,
         modifier = Modifier.size(28.dp),
         shape = CircleShape,
         border = BorderStroke(2.dp, color),
@@ -227,6 +267,8 @@ private fun DetailListRow(
 private fun EstimateRow(
     estimate: String,
     onClick: () -> Unit = {},
+    onDecrease: () -> Unit = {},
+    onIncrease: () -> Unit = {},
 ) {
     Row(
         modifier =
@@ -242,15 +284,19 @@ private fun EstimateRow(
             Text("Estimate", style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s1)) {
-            RoundAdjustButton("remove")
-            RoundAdjustButton("add")
+            RoundAdjustButton("remove", onClick = onDecrease)
+            RoundAdjustButton("add", onClick = onIncrease)
         }
     }
 }
 
 @Composable
-private fun RoundAdjustButton(icon: String) {
+private fun RoundAdjustButton(
+    icon: String,
+    onClick: () -> Unit = {},
+) {
     Surface(
+        onClick = onClick,
         modifier = Modifier.size(40.dp),
         shape = CircleShape,
         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -262,7 +308,10 @@ private fun RoundAdjustButton(icon: String) {
 }
 
 @Composable
-private fun PinnedRow(pinned: Boolean) {
+private fun PinnedRow(
+    pinned: Boolean,
+    onPinnedChange: (Boolean) -> Unit = {},
+) {
     Row(
         modifier =
             Modifier
@@ -277,7 +326,7 @@ private fun PinnedRow(pinned: Boolean) {
         }
         Switch(
             checked = pinned,
-            onCheckedChange = {},
+            onCheckedChange = onPinnedChange,
             colors =
                 SwitchDefaults.colors(
                     checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
@@ -288,7 +337,10 @@ private fun PinnedRow(pinned: Boolean) {
 }
 
 @Composable
-private fun EnergySegmentedRow(selected: Int) {
+private fun EnergySegmentedRow(
+    selected: Int,
+    onEnergyChange: (Int) -> Unit = {},
+) {
     Row(
         modifier =
             Modifier
@@ -301,9 +353,9 @@ private fun EnergySegmentedRow(selected: Int) {
             Text("Energy", style = EbbTypography.bodyL)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s1)) {
-            EnergyChip("Low", 1, selected == 1)
-            EnergyChip("Med", 2, selected == 2)
-            EnergyChip("High", 3, selected == 3)
+            EnergyChip("Low", 1, selected == 1, onClick = { onEnergyChange(1) })
+            EnergyChip("Med", 2, selected == 2, onClick = { onEnergyChange(2) })
+            EnergyChip("High", 3, selected == 3, onClick = { onEnergyChange(3) })
         }
     }
 }
@@ -313,8 +365,10 @@ private fun EnergyChip(
     label: String,
     level: Int,
     selected: Boolean,
+    onClick: () -> Unit = {},
 ) {
     Surface(
+        onClick = onClick,
         shape = RoundedCornerShape(8.dp),
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
         border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
@@ -405,7 +459,10 @@ private fun StepsHeader(progress: String) {
 }
 
 @Composable
-private fun SubtaskRow(row: TaskSubtaskRow) {
+private fun SubtaskRow(
+    row: TaskSubtaskRow,
+    onToggle: (String) -> Unit = {},
+) {
     Row(
         modifier =
             Modifier
@@ -414,6 +471,7 @@ private fun SubtaskRow(row: TaskSubtaskRow) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Surface(
+            onClick = { if (row.id.isNotBlank()) onToggle(row.id) },
             modifier = Modifier.size(24.dp),
             shape = EbbShapes.xs,
             color = if (row.done) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
@@ -468,6 +526,8 @@ private fun AddStepRow(onClick: () -> Unit = {}) {
 @Composable
 private fun TaskDetailBottomBar(
     onStartFocus: () -> Unit = {},
+    onOpenSchedule: () -> Unit = {},
+    onOpenBreakDown: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -484,6 +544,7 @@ private fun TaskDetailBottomBar(
             horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
         ) {
             Surface(
+                onClick = onOpenSchedule,
                 shape = EbbShapes.full,
                 color = MaterialTheme.colorScheme.surface,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
@@ -497,7 +558,7 @@ private fun TaskDetailBottomBar(
                     Text("Schedule…", style = EbbTypography.labelL)
                 }
             }
-            IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
+            IconButton(onClick = onOpenBreakDown, modifier = Modifier.size(48.dp)) {
                 EbbSymbol("spa", fontSize = 22.sp)
             }
             androidx.compose.foundation.layout.Spacer(modifier = Modifier.weight(1f))

@@ -6,12 +6,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ebbplanner.data.local.entity.SubtaskEntity
 import app.ebbplanner.data.local.entity.TaskEntity
+import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.data.repository.TaskRepository
+import app.ebbplanner.domain.day.DayGapScheduler
+import app.ebbplanner.domain.day.DayPlanningUseCase
+import app.ebbplanner.domain.time.EbbClock
 import app.ebbplanner.ui.time.ClockFormat
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -22,6 +27,9 @@ class TaskDetailViewModel
     @Inject
     constructor(
         private val taskRepository: TaskRepository,
+        private val userPreferencesRepository: UserPreferencesRepository,
+        private val dayPlanningUseCase: DayPlanningUseCase,
+        private val clock: EbbClock,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(TaskDetailPresentationState(mode = TaskDetailMode.Loading))
         val uiState: StateFlow<TaskDetailPresentationState> = _uiState.asStateFlow()
@@ -30,11 +38,19 @@ class TaskDetailViewModel
         val openSheet: StateFlow<TaskSheetType?> = _openSheet.asStateFlow()
 
         private var loadedTaskId: String = ""
+        private var defaultBreatherMinutes: Int = 5
+
+        init {
+            viewModelScope.launch {
+                defaultBreatherMinutes = userPreferencesRepository.breatherMinutes.first()
+            }
+        }
 
         fun load(taskId: String) {
             loadedTaskId = taskId
             _uiState.value = TaskDetailPresentationState(mode = TaskDetailMode.Loading)
             viewModelScope.launch {
+                defaultBreatherMinutes = userPreferencesRepository.breatherMinutes.first()
                 val task = taskRepository.getTask(taskId)
                 if (task == null) {
                     _uiState.value =
@@ -54,13 +70,17 @@ class TaskDetailViewModel
                             )
                         return@collect
                     }
-                    _uiState.value = latest.toDetailState(list)
+                    val suggestions = buildScheduleSuggestions(latest)
+                    _uiState.value = latest.toDetailState(list, suggestions)
                 }
             }
         }
 
         fun openSheet(type: TaskSheetType) {
             if (_uiState.value.mode == TaskDetailMode.NotFound) return
+            if (type == TaskSheetType.Schedule) {
+                viewModelScope.launch { refreshScheduleSuggestions() }
+            }
             _openSheet.value = type
         }
 
@@ -79,6 +99,47 @@ class TaskDetailViewModel
             viewModelScope.launch {
                 taskRepository.markTaskDone(id)
                 reloadTask(id)
+            }
+        }
+
+        fun deleteTask() {
+            val id = _uiState.value.id
+            if (id.isBlank()) return
+            viewModelScope.launch {
+                taskRepository.deleteTask(id)
+            }
+        }
+
+        fun setPinned(pinned: Boolean) {
+            viewModelScope.launch {
+                taskRepository.updateTaskFields(loadedTaskId) { it.copy(pinned = pinned) }
+                reloadTask(loadedTaskId)
+            }
+        }
+
+        fun setEnergy(level: Int) {
+            val energy =
+                when (level) {
+                    1 -> "low"
+                    3 -> "high"
+                    else -> "med"
+                }
+            viewModelScope.launch {
+                taskRepository.updateTaskFields(loadedTaskId) { it.copy(energy = energy) }
+                reloadTask(loadedTaskId)
+            }
+        }
+
+        fun adjustDuration(deltaMinutes: Int) {
+            val current = _uiState.value.durationMin
+            val next = (current + deltaMinutes).coerceAtLeast(5)
+            saveDuration(next)
+        }
+
+        fun toggleSubtask(subtaskId: String) {
+            if (subtaskId.isBlank()) return
+            viewModelScope.launch {
+                taskRepository.toggleSubtask(subtaskId)
             }
         }
 
@@ -125,6 +186,12 @@ class TaskDetailViewModel
             }
         }
 
+        private suspend fun refreshScheduleSuggestions() {
+            val task = taskRepository.getTask(loadedTaskId) ?: return
+            val suggestions = buildScheduleSuggestions(task)
+            _uiState.value = _uiState.value.copy(scheduleSuggestions = suggestions)
+        }
+
         private suspend fun reloadTask(taskId: String) {
             val task = taskRepository.getTask(taskId)
             if (task == null) {
@@ -136,39 +203,126 @@ class TaskDetailViewModel
                 return
             }
             val subs = taskRepository.listSubtasks(taskId)
-            _uiState.value = task.toDetailState(subs)
+            val suggestions = buildScheduleSuggestions(task)
+            _uiState.value = task.toDetailState(subs, suggestions)
+        }
+
+        private suspend fun buildScheduleSuggestions(task: TaskEntity): List<ScheduleSuggestion> {
+            val today = clock.today()
+            val tomorrow = today.plusDays(1)
+            val nowMinutes = clock.nowMinutes()
+            val bedMinutes = userPreferencesRepository.dayBedMinutes.first()
+            val wakeMinutes = userPreferencesRepository.dayWakeMinutes.first()
+            val scheduled = dayPlanningUseCase.scheduledOpenTasks(today)
+            val busy =
+                DayGapScheduler.busyFromScheduled(
+                    scheduled
+                        .filter { it.id != task.id }
+                        .mapNotNull { t ->
+                            val start = ClockFormat.parseMinutes(t.startLocalTime ?: return@mapNotNull null) ?: return@mapNotNull null
+                            Triple(t.id, start, t.durationMin)
+                        },
+                )
+            val cursor = maxOf(DayGapScheduler.roundUpToFive(nowMinutes), wakeMinutes)
+            val freeStart =
+                DayGapScheduler.findSlotPublic(
+                    cursor,
+                    task.durationMin,
+                    busy,
+                    bedMinutes,
+                )
+            val suggestions = mutableListOf<ScheduleSuggestion>()
+            suggestions +=
+                ScheduleSuggestion(
+                    label = "Anytime today",
+                    subtitle = "In the Anytime tray",
+                    placement = TaskEntity.PLACEMENT_ANYTIME,
+                    date = today,
+                    startLocalTime = null,
+                )
+            freeStart?.let { start ->
+                val clockLabel = ClockFormat.minutesToClock(start)
+                suggestions +=
+                    ScheduleSuggestion(
+                        label = "Today · $clockLabel",
+                        subtitle = "Next free slot",
+                        placement = TaskEntity.PLACEMENT_SCHEDULED,
+                        date = today,
+                        startLocalTime = ClockFormat.minutesToLocalTime(start),
+                    )
+            }
+            suggestions +=
+                ScheduleSuggestion(
+                    label = "Tomorrow · Anytime",
+                    subtitle = null,
+                    placement = TaskEntity.PLACEMENT_ANYTIME,
+                    date = tomorrow,
+                    startLocalTime = null,
+                )
+            suggestions +=
+                ScheduleSuggestion(
+                    label = "Inbox",
+                    subtitle = "No date",
+                    placement = TaskEntity.PLACEMENT_INBOX,
+                    date = null,
+                    startLocalTime = null,
+                )
+            suggestions +=
+                ScheduleSuggestion(
+                    label = "Someday",
+                    subtitle = null,
+                    placement = TaskEntity.PLACEMENT_SOMEDAY,
+                    date = null,
+                    startLocalTime = null,
+                )
+            return suggestions
         }
 
         @Suppress("CyclomaticComplexMethod")
-        private fun TaskEntity.toDetailState(subtasks: List<SubtaskEntity>): TaskDetailPresentationState {
-            val placementLabel =
+        private fun TaskEntity.toDetailState(
+            subtasks: List<SubtaskEntity>,
+            scheduleSuggestions: List<ScheduleSuggestion>,
+        ): TaskDetailPresentationState {
+            val taskDate = date?.let { LocalDate.parse(it) }
+            val relativeWhen = relativeDayLabel(taskDate)
+            val (whenLabel, dateLabel) =
                 when (placement) {
-                    TaskEntity.PLACEMENT_INBOX -> "Inbox"
-                    TaskEntity.PLACEMENT_ANYTIME -> "Anytime"
-                    TaskEntity.PLACEMENT_SOMEDAY -> "Someday"
-                    else ->
-                        startLocalTime?.let { start ->
-                            val endMin =
-                                (ClockFormat.parseMinutes(start) ?: 0) + durationMin
-                            "Today · ${ClockFormat.localTimeToClock(start)}–${ClockFormat.minutesToClock(endMin)}"
-                        } ?: "Scheduled"
+                    TaskEntity.PLACEMENT_INBOX ->
+                        "Inbox" to "No date"
+                    TaskEntity.PLACEMENT_SOMEDAY ->
+                        "Someday" to "No date"
+                    TaskEntity.PLACEMENT_ANYTIME ->
+                        (relativeWhen ?: "Anytime") to "Anytime"
+                    else -> {
+                        val timeLine =
+                            startLocalTime?.let { start ->
+                                val endMin = (ClockFormat.parseMinutes(start) ?: 0) + durationMin
+                                "${ClockFormat.localTimeToClock(start)}–${ClockFormat.minutesToClock(endMin)}"
+                            }
+                        (relativeWhen ?: "Scheduled") to (timeLine ?: "Scheduled")
+                    }
                 }
-            val dateLabelText =
-                date?.let { LocalDate.parse(it).format(DateTimeFormatter.ofPattern("EEE d MMM")) }
-                    ?: "No date"
             val scheduleText =
                 startLocalTime?.let { start ->
                     "${ClockFormat.localTimeToClock(start)} · $durationMin min"
                 } ?: "$durationMin min"
+            val breatherSubtitle = "Default ($defaultBreatherMinutes min)"
+            val repeatLabel =
+                if (!sourceRoutineId.isNullOrBlank()) {
+                    "From routine"
+                } else {
+                    "Doesn't repeat"
+                }
             return TaskDetailPresentationState(
                 id = id,
                 title = title,
-                whenLabel = placementLabel,
-                dateLabel = dateLabelText,
+                whenLabel = whenLabel,
+                dateLabel = dateLabel,
                 estimate = formatDuration(durationMin),
                 scheduleLabel = scheduleText,
                 done = status == TaskEntity.STATUS_DONE,
                 pinned = pinned,
+                energySelected = energy.toEnergyLevel(),
                 durationMin = durationMin,
                 remindersEnabled = reminderEnabled,
                 remindersLabel = if (reminderEnabled) "At start" else "Off",
@@ -176,9 +330,12 @@ class TaskDetailViewModel
                 colorIconKey = iconKey ?: "task",
                 colorLabel = colorKey.replaceFirstChar { it.uppercase() },
                 notes = notes,
+                repeatLabel = repeatLabel,
+                breatherSubtitle = breatherSubtitle,
                 subtasks =
                     subtasks.map {
                         TaskSubtaskRow(
+                            id = it.id,
                             title = it.title,
                             estimate = it.durationMin?.let { m -> "$m min" } ?: "—",
                             done = it.done,
@@ -191,8 +348,27 @@ class TaskDetailViewModel
                         "${subtasks.count { it.done }}/${subtasks.size}"
                     },
                 mode = if (status == TaskEntity.STATUS_DONE) TaskDetailMode.Done else TaskDetailMode.Existing,
+                scheduleSuggestions = scheduleSuggestions,
             )
         }
+
+        private fun relativeDayLabel(date: LocalDate?): String? {
+            if (date == null) return null
+            val today = clock.today()
+            return when {
+                date == today -> "Today"
+                date == today.plusDays(1) -> "Tomorrow"
+                else -> date.format(DateTimeFormatter.ofPattern("EEE d MMM"))
+            }
+        }
+
+        private fun String?.toEnergyLevel(): Int =
+            when (this) {
+                "low" -> 1
+                "high" -> 3
+                "med", "medium" -> 2
+                else -> 2
+            }
 
         private fun formatDuration(minutes: Int): String =
             when {

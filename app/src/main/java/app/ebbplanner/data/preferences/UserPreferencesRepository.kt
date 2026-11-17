@@ -56,6 +56,11 @@ class UserPreferencesRepository
                 prefs[KEY_REMINDERS_DEFAULT] ?: true
             }
 
+        val breatherMinutes: Flow<Int> =
+            dataStore.data.map { prefs ->
+                prefs[KEY_BREATHER_MINUTES] ?: 5
+            }
+
         suspend fun setOnboardingComplete(complete: Boolean) {
             dataStore.edit { prefs -> prefs[KEY_ONBOARDING_COMPLETE] = complete }
         }
