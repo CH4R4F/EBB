@@ -79,7 +79,10 @@ PAIRS: dict[str, str] = {
     "t7_break_it_down_empty_dark.png": "22-t7-break-it-down-empty-dark.png",
     "t8_schedule_picker_default_dark.png": "23-t8-schedule-picker-default-dark.png",
     "f1_focus_setup_dark.png": "35-f1-focus-setup-dark.png",
+    "f1_focus_running_ring_dark.png": "35-f1-focus-running-ring-dark.png",
+    "f1_focus_running_bar_dark.png": "35-f1-focus-running-bar-dark.png",
     "f2_times_up_in_app_dark.png": "36-f2-times-up-in-app-dark.png",
+    "f2_times_up_lockscreen_dark.png": "36-f2-times-up-lockscreen-dark.png",
     "f3_hyperfocus_gentle_dark.png": "37-f3-hyperfocus-gentle-dark.png",
     "f4_break_ended_dark.png": "38-f4-break-ended-dark.png",
 }
