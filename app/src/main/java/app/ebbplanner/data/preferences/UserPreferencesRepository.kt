@@ -45,6 +45,11 @@ class UserPreferencesRepository
                 prefs[KEY_SEED_SAMPLE_TASKS] ?: true
             }
 
+        val useMaterialYou: Flow<Boolean> =
+            dataStore.data.map { prefs ->
+                prefs[KEY_USE_MATERIAL_YOU] ?: false
+            }
+
         suspend fun setOnboardingComplete(complete: Boolean) {
             dataStore.edit { prefs -> prefs[KEY_ONBOARDING_COMPLETE] = complete }
         }
@@ -61,11 +66,16 @@ class UserPreferencesRepository
             dataStore.edit { prefs -> prefs[KEY_SEED_SAMPLE_TASKS] = enabled }
         }
 
+        suspend fun setUseMaterialYou(enabled: Boolean) {
+            dataStore.edit { prefs -> prefs[KEY_USE_MATERIAL_YOU] = enabled }
+        }
+
         companion object {
             private val KEY_ONBOARDING_COMPLETE = booleanPreferencesKey("onboarding_complete")
             private val KEY_DAY_WAKE_MINUTES = intPreferencesKey("day_wake_minutes")
             private val KEY_DAY_BED_MINUTES = intPreferencesKey("day_bed_minutes")
             private val KEY_SEED_SAMPLE_TASKS = booleanPreferencesKey("seed_sample_tasks")
+            private val KEY_USE_MATERIAL_YOU = booleanPreferencesKey("use_material_you")
             const val DEFAULT_WAKE_MINUTES = 7 * 60
             const val DEFAULT_BED_MINUTES = 23 * 60
         }

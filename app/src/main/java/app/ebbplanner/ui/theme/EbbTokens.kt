@@ -9,7 +9,6 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -191,91 +190,103 @@ object EbbMotion {
 
 @Immutable
 object EbbTypography {
-    private val sans = FontFamily.SansSerif
+    private val heading = EbbFonts.lexend
+    private val body = EbbFonts.atkinsonNext
+    private val mono = EbbFonts.atkinsonMono
 
     val display =
         TextStyle(
-            fontFamily = sans,
+            fontFamily = heading,
             fontWeight = FontWeight.W500,
             fontSize = 40.sp,
             lineHeight = 48.sp,
         )
+    val onboardingTitle =
+        TextStyle(
+            fontFamily = heading,
+            fontWeight = FontWeight.W500,
+            fontSize = 32.sp,
+            lineHeight = 40.sp,
+        )
     val timerXL =
         TextStyle(
-            fontFamily = sans,
+            fontFamily = mono,
             fontWeight = FontWeight.W500,
             fontSize = 64.sp,
             lineHeight = 72.sp,
         )
     val timerL =
         TextStyle(
-            fontFamily = sans,
+            fontFamily = mono,
             fontWeight = FontWeight.W500,
             fontSize = 40.sp,
             lineHeight = 48.sp,
         )
     val headlineL =
         TextStyle(
-            fontFamily = sans,
+            fontFamily = heading,
             fontWeight = FontWeight.W500,
             fontSize = 28.sp,
             lineHeight = 36.sp,
         )
     val headlineM =
         TextStyle(
-            fontFamily = sans,
+            fontFamily = heading,
             fontWeight = FontWeight.W500,
             fontSize = 24.sp,
             lineHeight = 32.sp,
         )
     val titleL =
         TextStyle(
-            fontFamily = sans,
+            fontFamily = heading,
             fontWeight = FontWeight.W500,
             fontSize = 20.sp,
             lineHeight = 28.sp,
         )
     val titleM =
         TextStyle(
-            fontFamily = sans,
+            fontFamily = body,
             fontWeight = FontWeight.W700,
             fontSize = 16.sp,
             lineHeight = 24.sp,
         )
     val bodyL =
         TextStyle(
-            fontFamily = sans,
+            fontFamily = body,
             fontWeight = FontWeight.W400,
             fontSize = 16.sp,
             lineHeight = 24.sp,
         )
     val bodyM =
         TextStyle(
-            fontFamily = sans,
+            fontFamily = body,
             fontWeight = FontWeight.W400,
             fontSize = 14.sp,
             lineHeight = 20.sp,
         )
     val labelL =
         TextStyle(
-            fontFamily = sans,
+            fontFamily = body,
             fontWeight = FontWeight.W700,
             fontSize = 14.sp,
             lineHeight = 20.sp,
+            letterSpacing = 0.1.sp,
         )
     val labelM =
         TextStyle(
-            fontFamily = sans,
+            fontFamily = body,
             fontWeight = FontWeight.W700,
             fontSize = 12.sp,
             lineHeight = 16.sp,
+            letterSpacing = 0.1.sp,
         )
     val labelS =
         TextStyle(
-            fontFamily = sans,
+            fontFamily = body,
             fontWeight = FontWeight.W700,
             fontSize = 11.sp,
             lineHeight = 16.sp,
+            letterSpacing = 0.1.sp,
         )
 
     fun material(): Typography =
