@@ -4,7 +4,7 @@ package app.ebbplanner.ui.taskdetail
 
 fun taskDetailExisting(): TaskDetailPresentationState =
     TaskDetailPresentationState(
-        pinned = true,
+        pinned = false,
         subtasks =
             listOf(
                 TaskSubtaskRow("Gather last year's numbers", "10 min", true),

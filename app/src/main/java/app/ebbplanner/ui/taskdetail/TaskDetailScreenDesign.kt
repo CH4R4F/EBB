@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
@@ -29,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.ebbplanner.ui.components.EbbListLeadingIcon
 import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
@@ -76,7 +78,7 @@ fun TaskDetailScreenDesign(
                 ColorIconRow(state)
                 DetailListRow(icon = "notifications", line1 = state.remindersLabel, line2 = "Reminders", tall = true)
                 DetailListRow(icon = "repeat", line1 = state.repeatLabel, line2 = "Repeat", tall = true)
-                DetailListRow(icon = "air", line1 = state.breatherLabel, line2 = "Breather after", tall = true)
+                DetailListRow(icon = "air", line1 = "Breather after", line2 = state.breatherSubtitle, tall = true)
                 HorizontalDivider(modifier = Modifier.padding(vertical = EbbSpacing.s2))
                 StepsHeader(state.subtaskProgress)
                 state.subtasks.forEach { SubtaskRow(it) }
@@ -158,15 +160,7 @@ private fun DetailListRow(
                 .height(if (tall) 72.dp else 56.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Surface(
-            modifier = Modifier.size(40.dp),
-            shape = EbbShapes.sm,
-            color = MaterialTheme.colorScheme.surfaceVariant,
-        ) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                EbbSymbol(icon, fontSize = 20.sp)
-            }
-        }
+        EbbListLeadingIcon(icon = icon)
         Column(
             modifier =
                 Modifier
@@ -189,11 +183,7 @@ private fun EstimateRow(estimate: String) {
                 .height(72.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Surface(modifier = Modifier.size(40.dp), shape = EbbShapes.sm, color = MaterialTheme.colorScheme.surfaceVariant) {
-            Box(contentAlignment = Alignment.Center) {
-                EbbSymbol("timer", fontSize = 20.sp)
-            }
-        }
+        EbbListLeadingIcon(icon = "timer")
         Column(modifier = Modifier.weight(1f).padding(horizontal = EbbSpacing.s3)) {
             Text(estimate, style = EbbTypography.bodyL)
             Text("Estimate", style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -227,11 +217,7 @@ private fun PinnedRow(pinned: Boolean) {
                 .height(72.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Surface(modifier = Modifier.size(40.dp), shape = EbbShapes.sm, color = MaterialTheme.colorScheme.surfaceVariant) {
-            Box(contentAlignment = Alignment.Center) {
-                EbbSymbol("keep", fontSize = 20.sp, filled = pinned)
-            }
-        }
+        EbbListLeadingIcon(icon = "keep", filled = pinned)
         Column(modifier = Modifier.weight(1f).padding(horizontal = EbbSpacing.s3)) {
             Text("Pinned", style = EbbTypography.bodyL)
             Text("Stays put when you shift your day", style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -257,11 +243,7 @@ private fun EnergySegmentedRow(selected: Int) {
                 .height(72.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Surface(modifier = Modifier.size(40.dp), shape = EbbShapes.sm, color = MaterialTheme.colorScheme.surfaceVariant) {
-            Box(contentAlignment = Alignment.Center) {
-                EbbSymbol("bolt", fontSize = 20.sp)
-            }
-        }
+        EbbListLeadingIcon(icon = "bolt")
         Column(modifier = Modifier.weight(1f).padding(horizontal = EbbSpacing.s3)) {
             Text("Energy", style = EbbTypography.bodyL)
         }
@@ -280,12 +262,12 @@ private fun EnergyChip(
     selected: Boolean,
 ) {
     Surface(
-        shape = EbbShapes.full,
+        shape = RoundedCornerShape(8.dp),
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
         border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -326,11 +308,7 @@ private fun ColorIconRow(state: TaskDetailPresentationState) {
                 .height(72.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Surface(modifier = Modifier.size(40.dp), shape = EbbShapes.sm, color = MaterialTheme.colorScheme.surfaceVariant) {
-            Box(contentAlignment = Alignment.Center) {
-                EbbSymbol("palette", fontSize = 20.sp)
-            }
-        }
+        EbbListLeadingIcon(icon = "palette")
         Column(modifier = Modifier.weight(1f).padding(horizontal = EbbSpacing.s3)) {
             Text(state.colorLabel, style = EbbTypography.bodyL)
             Text("Color & icon", style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)

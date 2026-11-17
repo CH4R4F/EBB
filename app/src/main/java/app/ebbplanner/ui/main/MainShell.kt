@@ -13,7 +13,9 @@ import androidx.navigation.compose.rememberNavController
 import app.ebbplanner.ui.components.EbbBottomNavigation
 import app.ebbplanner.ui.inbox.InboxScreen
 import app.ebbplanner.ui.navigation.MainTab
+import app.ebbplanner.ui.routines.RoutinesScreen
 import app.ebbplanner.ui.today.TodayScreen
+import app.ebbplanner.ui.week.WeekScreen
 
 @Composable
 fun MainShell() {
@@ -46,8 +48,8 @@ fun MainShell() {
         ) {
             composable(MainTab.Today.route) { TodayScreen() }
             composable(MainTab.Inbox.route) { InboxScreen() }
-            composable(MainTab.Week.route) { WeekPlaceholderScreen() }
-            composable(MainTab.Routines.route) { RoutinesPlaceholderScreen() }
+            composable(MainTab.Week.route) { WeekScreen() }
+            composable(MainTab.Routines.route) { RoutinesScreen() }
         }
     }
 }

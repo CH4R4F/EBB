@@ -18,7 +18,7 @@ data class TaskDetailPresentationState(
     val colorKey: String = "amber",
     val remindersLabel: String = "At start · 5 min before",
     val repeatLabel: String = "Doesn't repeat",
-    val breatherLabel: String = "Default (5 min)",
+    val breatherSubtitle: String = "Default (5 min)",
     val recurringBanner: String? = null,
     val subtasks: List<TaskSubtaskRow> = emptyList(),
     val subtaskProgress: String = "2/5",

@@ -60,6 +60,20 @@ PAIRS: dict[str, str] = {
     "t3_estimate_picker_presets_dark.png": "18-t3-estimate-picker-presets-dark.png",
     "t3_estimate_picker_custom_dark.png": "18-t3-estimate-picker-custom-dark.png",
     "t3_estimate_picker_big_prompt_dark.png": "18-t3-estimate-picker-big-prompt-dark.png",
+    "m3_week_portrait_dark.png": "12-m3-week-portrait-dark.png",
+    "m3_week_landscape_dark.png": "12-m3-week-landscape-dark.png",
+    "m3_week_empty_dark.png": "12-m3-week-empty-dark.png",
+    "m3_week_drag_dark.png": "12-m3-week-drag-v1x-dark.png",
+    "m4_routines_empty_dark.png": "13-m4-routines-empty-dark.png",
+    "m4_routines_populated_dark.png": "13-m4-routines-populated-dark.png",
+    "m4_routines_running_dark.png": "13-m4-routines-running-dark.png",
+    "m5_search_recent_dark.png": "14-m5-search-recent-dark.png",
+    "m5_search_results_dark.png": "14-m5-search-results-dark.png",
+    "m5_search_no_results_dark.png": "14-m5-search-no-results-dark.png",
+    "m6_done_history_empty_dark.png": "15-m6-done-history-empty-dark.png",
+    "m6_done_history_populated_dark.png": "15-m6-done-history-populated-dark.png",
+    "t4_color_icon_search_empty_dark.png": "19-t4-color-icon-search-empty-dark.png",
+    "t4_color_icon_selected_dark.png": "19-t4-color-icon-selected-dark.png",
 }
 
 

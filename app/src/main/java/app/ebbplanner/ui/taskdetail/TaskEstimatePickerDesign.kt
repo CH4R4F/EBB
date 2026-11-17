@@ -31,6 +31,8 @@ import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTypography
+import app.ebbplanner.ui.today.TodayScreenDesign
+import app.ebbplanner.ui.today.todayPopulatedDark
 
 @Composable
 fun EstimatePickerScaffold(
@@ -38,11 +40,10 @@ fun EstimatePickerScaffold(
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
+        TodayScreenDesign(
+            state = todayPopulatedDark(),
+            showBottomNav = true,
+            modifier = Modifier.fillMaxSize(),
         )
         Box(
             modifier =
@@ -299,8 +300,9 @@ private fun PresetChip(
     label: String,
     selected: Boolean,
 ) {
+    val chipShape = RoundedCornerShape(12.dp)
     Surface(
-        shape = EbbShapes.full,
+        shape = chipShape,
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
         border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
