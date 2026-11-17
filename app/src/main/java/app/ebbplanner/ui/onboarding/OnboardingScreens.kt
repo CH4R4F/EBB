@@ -3,7 +3,7 @@
 package app.ebbplanner.ui.onboarding
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -23,9 +25,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -44,7 +44,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -149,13 +153,15 @@ fun OnboardingPromiseScreen(onContinue: () -> Unit) {
             }
         },
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            OnboardingBlobIllustration(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                accentColor = MaterialTheme.colorScheme.secondary,
-                symbolName = "handshake",
-                size = 120.dp,
-            )
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                OnboardingBlobIllustration(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    accentColor = MaterialTheme.colorScheme.secondary,
+                    symbolName = "handshake",
+                    size = 120.dp,
+                )
+            }
             Text(
                 text = stringResource(R.string.onboarding_promise_title),
                 style = onboardingTitleStyle(),
@@ -314,6 +320,8 @@ fun OnboardingPreferencesScreen(
                 FilterChip(
                     selected = selected,
                     onClick = { onBreatherSelect(minutes) },
+                    modifier = Modifier.height(EbbSpacing.touchBig),
+                    shape = RoundedCornerShape(12.dp),
                     label = {
                         Text(if (minutes == 0) "0" else "$minutes min")
                     },
@@ -352,6 +360,31 @@ fun OnboardingPreferencesScreen(
                         )
                     },
                 )
+            }
+        }
+        Column(modifier = Modifier.padding(top = EbbSpacing.s6)) {
+            Text(
+                text = stringResource(R.string.onboarding_week_starts_label),
+                style = EbbTypography.titleM,
+            )
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(EbbSpacing.touchBig)
+                        .padding(top = EbbSpacing.s2),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column {
+                    Text(stringResource(R.string.onboarding_week_starts_value), style = EbbTypography.titleM)
+                    Text(
+                        stringResource(R.string.onboarding_week_starts_hint),
+                        style = EbbTypography.bodyM,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                EbbSymbol("chevron_right", fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         Row(
@@ -436,41 +469,22 @@ fun OnboardingTryItScreen(
             modifier = Modifier.padding(top = EbbSpacing.s2),
         )
         when (step) {
-            TryItStep.Step1Empty, TryItStep.Step1Typed ->
-                OutlinedTextField(
-                    value = if (step == TryItStep.Step1Typed) "Buy stamps" else "",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text(stringResource(R.string.onboarding_try_it_field_label)) },
-                    placeholder = { Text(stringResource(R.string.onboarding_try_it_placeholder)) },
-                    modifier = Modifier.fillMaxWidth().padding(top = EbbSpacing.s6),
-                    shape = RoundedCornerShape(12.dp),
+            TryItStep.Step1Empty ->
+                OnboardingUnderlineField(
+                    value = "",
+                    placeholder = stringResource(R.string.onboarding_try_it_placeholder),
+                    focused = true,
+                    modifier = Modifier.padding(top = EbbSpacing.s6),
                 )
-            TryItStep.Step2Drag, TryItStep.Success -> TryItMiniTimeline()
-        }
-    }
-}
-
-@Composable
-private fun TryItMiniTimeline() {
-    Surface(
-        modifier = Modifier.fillMaxWidth().padding(top = EbbSpacing.s4),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-    ) {
-        Column(modifier = Modifier.padding(EbbSpacing.s3)) {
-            Text("09:00", style = EbbTypography.labelL, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Surface(
-                modifier = Modifier.fillMaxWidth().padding(top = EbbSpacing.s2),
-                shape = RoundedCornerShape(12.dp),
-                color = EbbTaskColors.tint("slate", isSystemInDarkTheme()),
-            ) {
-                Text(
-                    "Buy stamps",
-                    style = EbbTypography.titleM,
-                    modifier = Modifier.padding(EbbSpacing.s3),
+            TryItStep.Step1Typed ->
+                OnboardingUnderlineField(
+                    value = "Buy stamps",
+                    placeholder = stringResource(R.string.onboarding_try_it_placeholder),
+                    focused = true,
+                    modifier = Modifier.padding(top = EbbSpacing.s6),
                 )
-            }
+            TryItStep.Step2Drag, TryItStep.Success ->
+                OnboardingTryItTimelineSection(step = step, modifier = Modifier.padding(top = EbbSpacing.s4))
         }
     }
 }
@@ -503,19 +517,48 @@ fun OnboardingNotificationsScreen(
                 stringResource(R.string.onboarding_notifications_open_settings)
             else -> stringResource(R.string.onboarding_notifications_allow)
         }
-    OnboardingPermissionPrimer(
-        activeSteps = 5,
-        symbolName = if (state == NotificationPrimerState.Granted) "check_circle" else "notifications",
-        containerColor = MaterialTheme.colorScheme.primaryContainer,
-        accentColor = MaterialTheme.colorScheme.primary,
-        title = title,
-        body = body,
-        primaryLabel = primary,
-        onPrimary = onAllow,
-        secondaryLabel = stringResource(R.string.onboarding_not_now),
-        onSecondary = onSkip,
-        statusBanner = state != NotificationPrimerState.Default,
-    )
+    OnboardingScreenScaffold(
+        topBar = { OnboardingTopBar(activeSteps = 5) },
+        bottomBar = {
+            OnboardingBottomActions {
+                OnboardingPrimaryButton(text = primary, onClick = onAllow)
+                OnboardingTextButton(text = stringResource(R.string.onboarding_not_now), onClick = onSkip)
+            }
+        },
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            if (state == NotificationPrimerState.Default) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    OnboardingBlobIllustration(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        accentColor = MaterialTheme.colorScheme.primary,
+                        symbolName = "notifications",
+                        size = 140.dp,
+                    )
+                    OnboardingNotificationPreview(modifier = Modifier.padding(top = EbbSpacing.s4).fillMaxWidth(0.92f))
+                }
+            } else {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    OnboardingBlobIllustration(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        accentColor = MaterialTheme.colorScheme.primary,
+                        symbolName = if (state == NotificationPrimerState.Granted) "check_circle" else "notifications",
+                        size = 140.dp,
+                    )
+                }
+            }
+            Text(text = title, style = onboardingTitleStyle(), modifier = Modifier.padding(top = EbbSpacing.s6))
+            Text(
+                text = body,
+                style = EbbTypography.bodyL,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = EbbSpacing.s3),
+            )
+        }
+    }
 }
 
 @Composable
@@ -539,12 +582,14 @@ fun OnboardingExactAlarmsScreen(
             }
         },
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            OnboardingBlobIllustration(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                accentColor = MaterialTheme.colorScheme.secondary,
-                symbolName = "alarm_on",
-            )
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                OnboardingBlobIllustration(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    accentColor = MaterialTheme.colorScheme.secondary,
+                    symbolName = "alarm_on",
+                )
+            }
             Text(
                 text = stringResource(R.string.onboarding_alarms_title),
                 style = onboardingTitleStyle(),
@@ -559,14 +604,25 @@ fun OnboardingExactAlarmsScreen(
             Surface(
                 modifier = Modifier.padding(top = EbbSpacing.s6).fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surfaceContainer,
+                color = MaterialTheme.colorScheme.surface,
             ) {
                 Row(
-                    modifier = Modifier.padding(EbbSpacing.s3),
+                    modifier = Modifier.padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s3),
                     horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s3),
+                    verticalAlignment = Alignment.Top,
                 ) {
-                    EbbSymbol("touch_app", fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
-                    Text(stringResource(R.string.onboarding_alarms_tip), style = EbbTypography.bodyM)
+                    EbbSymbol("touch_app", fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface, filled = false)
+                    Text(
+                        text =
+                            buildAnnotatedString {
+                                append("On the next screen, switch on ")
+                                withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                                    append("Allow setting alarms and reminders")
+                                }
+                                append(", then come back.")
+                            },
+                        style = EbbTypography.bodyM,
+                    )
                 }
             }
         }
@@ -614,22 +670,18 @@ private fun CalendarChooserList(modifier: Modifier = Modifier) {
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
     ) {
-        Column {
+        Column(modifier = Modifier.padding(vertical = EbbSpacing.s1)) {
             rows.forEachIndexed { index, (name, sub, color) ->
                 Row(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s3),
+                            .heightIn(min = EbbSpacing.touchBig)
+                            .padding(start = EbbSpacing.s1, end = EbbSpacing.s4),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s3),
                 ) {
-                    EbbSymbol(
-                        name = if (index < 2) "check_box" else "check_box_outline_blank",
-                        fontSize = 22.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        filled = index < 2,
-                    )
+                    OnboardingDesignCheckbox(checked = index < 2)
                     Box(
                         modifier =
                             Modifier
@@ -637,12 +689,34 @@ private fun CalendarChooserList(modifier: Modifier = Modifier) {
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(EbbTaskColors.strong(color)),
                     )
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(name, style = EbbTypography.titleM, color = MaterialTheme.colorScheme.onSurface)
                         Text(sub, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun OnboardingDesignCheckbox(checked: Boolean) {
+    Box(
+        modifier =
+            Modifier
+                .padding(horizontal = 11.dp, vertical = 15.dp)
+                .size(18.dp)
+                .then(
+                    if (checked) {
+                        Modifier.background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp))
+                    } else {
+                        Modifier.border(2.dp, MaterialTheme.colorScheme.onSurfaceVariant, RoundedCornerShape(2.dp))
+                    },
+                ),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (checked) {
+            EbbSymbol("check", fontSize = 14.sp, color = MaterialTheme.colorScheme.onPrimary, filled = true)
         }
     }
 }
@@ -755,12 +829,25 @@ fun OnboardingDoneScreen(
                             formatMinutes(state.wakeMinutes),
                             formatMinutes(state.bedMinutes),
                         ),
+                        modifier = Modifier.weight(1f),
                     )
-                    SummaryChip("notifications", stringResource(R.string.onboarding_done_reminders_chip))
+                    SummaryChip(
+                        "notifications",
+                        stringResource(R.string.onboarding_done_reminders_chip),
+                        modifier = Modifier.weight(1f),
+                    )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2)) {
-                    SummaryChip("air", stringResource(R.string.onboarding_done_breather_chip, state.breatherMinutes))
-                    SummaryChip("calendar_month", stringResource(R.string.onboarding_done_calendar_chip))
+                    SummaryChip(
+                        "air",
+                        stringResource(R.string.onboarding_done_breather_chip, state.breatherMinutes),
+                        modifier = Modifier.weight(1f),
+                    )
+                    SummaryChip(
+                        "calendar_month",
+                        stringResource(R.string.onboarding_done_calendar_chip),
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
             Row(
@@ -786,15 +873,25 @@ fun OnboardingDoneScreen(
 private fun SummaryChip(
     symbol: String,
     label: String,
+    modifier: Modifier = Modifier,
 ) {
-    FilterChip(
-        selected = false,
-        onClick = {},
-        enabled = false,
-        label = { Text(label, style = EbbTypography.labelM) },
-        leadingIcon = { EbbSymbol(symbol, fontSize = 18.sp) },
-        colors = FilterChipDefaults.filterChipColors(disabledContainerColor = MaterialTheme.colorScheme.secondaryContainer),
-    )
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .height(32.dp)
+                    .padding(horizontal = EbbSpacing.s3),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
+        ) {
+            EbbSymbol(symbol, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+            Text(label, style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurface)
+        }
+    }
 }
 
 // Hilt entry screens

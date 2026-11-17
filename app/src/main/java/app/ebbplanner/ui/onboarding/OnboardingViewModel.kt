@@ -24,7 +24,7 @@ data class OnboardingUiState(
     val bedMinutes: Int = UserPreferencesRepository.DEFAULT_BED_MINUTES,
     val breatherMinutes: Int = 5,
     val celebrationStyle: CelebrationStyle = CelebrationStyle.Calm,
-    val addSampleTasks: Boolean = true,
+    val addSampleTasks: Boolean = false,
 )
 
 @HiltViewModel

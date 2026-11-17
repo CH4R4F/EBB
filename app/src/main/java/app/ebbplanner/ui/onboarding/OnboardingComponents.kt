@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.ebbplanner.R
+import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTypography
@@ -119,22 +120,35 @@ fun OnboardingBlobIllustration(
             val cy = this.size.height / 2f
             val r = this.size.minDimension * 0.45f
             drawCircle(color = containerColor, radius = r, center = Offset(cx, cy))
-            val wave =
-                Path().apply {
-                    moveTo(14f, 104f)
-                    cubicTo(37f, 92f, 60f, 104f, 106f, 104f)
-                    lineTo(152f, 104f)
-                    lineTo(152f, 120f)
-                    cubicTo(120f, 156f, 80f, 152f, 40f, 156f)
-                    cubicTo(8f, 120f, 8f, 120f, 8f, 120f)
-                    close()
-                }
             val scale = this.size.minDimension / 160f
             with(drawContext.canvas) {
                 save()
                 translate(cx - 80f * scale, cy - 80f * scale)
                 scale(scale, scale)
-                drawPath(wave, accentColor.copy(alpha = 0.18f))
+                val wave1 =
+                    Path().apply {
+                        moveTo(14f, 104f)
+                        cubicTo(37f, 92f, 60f, 104f, 106f, 104f)
+                        cubicTo(130f, 104f, 140f, 104f, 152f, 104f)
+                        lineTo(152f, 120f)
+                        cubicTo(120f, 156f, 80f, 152f, 40f, 156f)
+                        cubicTo(8f, 120f, 8f, 120f, 8f, 120f)
+                        close()
+                    }
+                drawPath(wave1, accentColor.copy(alpha = 0.18f))
+                val wave2 =
+                    Path().apply {
+                        moveTo(20f, 118f)
+                        cubicTo(42f, 108f, 64f, 118f, 108f, 118f)
+                        cubicTo(132f, 118f, 142f, 118f, 150f, 118f)
+                        lineTo(146f, 128f)
+                        cubicTo(118f, 154f, 80f, 152f, 42f, 154f)
+                        cubicTo(14f, 128f, 14f, 128f, 14f, 128f)
+                        close()
+                    }
+                drawPath(wave2, accentColor.copy(alpha = 0.22f))
+                drawCircle(color = accentColor.copy(alpha = 0.25f), radius = 8f, center = Offset(122f, 40f))
+                drawCircle(color = accentColor.copy(alpha = 0.2f), radius = 5f, center = Offset(36f, 52f))
                 restore()
             }
         }
@@ -159,8 +173,14 @@ fun OnboardingPrimaryButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier.fillMaxWidth().height(EbbSpacing.touchBig),
-        shape = RoundedCornerShape(16.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+        shape = EbbShapes.full,
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
+                disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.38f),
+            ),
     ) {
         if (leadingSymbol != null) {
             EbbSymbol(
@@ -201,6 +221,63 @@ fun OnboardingTextButton(
             style = EbbTypography.titleM,
             color = MaterialTheme.colorScheme.primary,
         )
+    }
+}
+
+@Composable
+fun OnboardingNotificationPreview(modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    ) {
+        Column(modifier = Modifier.padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s3)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
+            ) {
+                Box(
+                    modifier =
+                        Modifier
+                            .size(20.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    EbbSymbol("waves", fontSize = 12.sp, color = MaterialTheme.colorScheme.onPrimary, filled = true)
+                }
+                Text(
+                    stringResource(R.string.onboarding_notifications_preview_meta),
+                    style = EbbTypography.labelM,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Text(
+                stringResource(R.string.onboarding_notifications_preview_title),
+                style = EbbTypography.titleM,
+                modifier = Modifier.padding(top = EbbSpacing.s2),
+            )
+            Row(
+                modifier = Modifier.padding(top = EbbSpacing.s2),
+                horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s4),
+            ) {
+                Text(
+                    stringResource(R.string.onboarding_notifications_preview_action_focus),
+                    style = EbbTypography.labelL,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    stringResource(R.string.onboarding_notifications_preview_action_snooze),
+                    style = EbbTypography.labelL,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    stringResource(R.string.onboarding_notifications_preview_action_done),
+                    style = EbbTypography.labelL,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
     }
 }
 

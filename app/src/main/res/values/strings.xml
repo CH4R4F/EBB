@@ -30,6 +30,9 @@
     <string name="onboarding_prefs_title">A few preferences</string>
     <string name="onboarding_prefs_subtitle">Good defaults are already picked.</string>
     <string name="onboarding_breather_label">Breather between tasks</string>
+    <string name="onboarding_week_starts_label">Week starts on</string>
+    <string name="onboarding_week_starts_value">Monday</string>
+    <string name="onboarding_week_starts_hint">From your phone’s region</string>
     <string name="onboarding_celebrations_label">Celebrations</string>
     <string name="onboarding_celebration_calm">Calm</string>
     <string name="onboarding_celebration_lively">Lively</string>
@@ -46,6 +49,18 @@
     <string name="onboarding_try_it_field_label">Thought 1</string>
     <string name="onboarding_try_it_placeholder">e.g. Buy stamps</string>
     <string name="onboarding_try_it_next">Next</string>
+    <string name="onboarding_try_it_success_celebration_title">Nice one.</string>
+    <string name="onboarding_try_it_success_celebration_body">Buy stamps is on today at 14:30.</string>
+    <string name="onboarding_try_it_inbox_caption">These two wait in your Inbox.</string>
+    <string name="onboarding_try_it_coach">Drag one into today. Let go on a time that feels right.</string>
+    <string name="onboarding_try_it_got_it">Got it</string>
+    <string name="onboarding_try_it_cant_drag">Can\'t drag right now?</string>
+    <string name="onboarding_try_it_schedule">Schedule…</string>
+    <string name="onboarding_notifications_preview_meta">Ebb · now</string>
+    <string name="onboarding_notifications_preview_title">Time for: Call bank</string>
+    <string name="onboarding_notifications_preview_action_focus">Start focus</string>
+    <string name="onboarding_notifications_preview_action_snooze">+10 min</string>
+    <string name="onboarding_notifications_preview_action_done">Done</string>
 
     <string name="onboarding_notifications_title">Want a gentle nudge when it’s time?</string>
     <string name="onboarding_notifications_body">Ebb only notifies you about your own plans. Without it, everything still works — you just won’t get reminders.</string>
