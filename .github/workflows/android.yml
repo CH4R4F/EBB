@@ -45,13 +45,17 @@ jobs:
             verifyPaparazziDebug \
             assembleDebug
 
-      - name: Upload onboarding Paparazzi comparisons
-        if: always()
+      - name: Build onboarding side-by-side comparisons
+        run: |
+          python3 -m pip install --quiet Pillow
+          python3 tools/generate_onboarding_comparisons.py
+
+      - name: Upload onboarding comparisons
         uses: actions/upload-artifact@v4
         with:
           name: onboarding-comparisons
-          path: app/build/paparazzi/
-          retention-days: 14
+          path: build/onboarding-comparisons/
+          retention-days: 30
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
