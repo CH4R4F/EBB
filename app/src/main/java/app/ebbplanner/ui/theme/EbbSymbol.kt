@@ -17,7 +17,7 @@ fun EbbSymbol(
     modifier: Modifier = Modifier,
     fontSize: TextUnit = 24.sp,
     color: Color = LocalContentColor.current,
-    @Suppress("UNUSED_PARAMETER") filled: Boolean = true,
+    filled: Boolean = false,
 ) {
     val family = if (filled) EbbFonts.symbolsFilled else EbbFonts.symbolsOutlined
     Text(

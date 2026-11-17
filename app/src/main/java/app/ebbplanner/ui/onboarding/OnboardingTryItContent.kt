@@ -8,6 +8,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,15 +30,19 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import app.ebbplanner.R
 import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTaskColors
 import app.ebbplanner.ui.theme.EbbTypography
+
+private val timelineTrackHeight = 180.dp
 
 @Composable
 fun OnboardingUnderlineField(
@@ -117,7 +122,7 @@ fun OnboardingTryItTimelineSection(
                     modifier =
                         Modifier
                             .align(Alignment.TopEnd)
-                            .offset(x = (-8).dp, y = 70.dp),
+                            .offset(x = (-8).dp, y = 78.dp),
                 )
             }
         }
@@ -171,18 +176,22 @@ private fun TryItMiniDayTimeline(
     step: TryItStep,
     dark: Boolean,
 ) {
-    val timelineHeight = 162.dp
     Box(
-        modifier = Modifier.fillMaxWidth().height(timelineHeight).padding(vertical = EbbSpacing.s3),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(timelineTrackHeight)
+                .padding(top = EbbSpacing.s3, bottom = EbbSpacing.s2),
     ) {
-        PastZone(modifier = Modifier.matchParentSize())
-        HourRule("14:00", top = 0.dp)
-        HourRule("15:00", top = 72.dp)
-        HourRule("16:00", top = 144.dp)
-        NowLine(top = 24.dp)
+        PastZone(modifier = Modifier.align(Alignment.TopStart))
+        HourRule("14:00", y = 0.dp)
+        HourRule("15:00", y = 72.dp)
+        HourRule("16:00", y = 144.dp)
+        NowLine(y = 24.dp)
         CalendarEventBlock(
             modifier =
                 Modifier
+                    .align(Alignment.TopStart)
                     .padding(start = 56.dp, end = 12.dp)
                     .offset(y = 91.dp)
                     .fillMaxWidth()
@@ -193,6 +202,7 @@ private fun TryItMiniDayTimeline(
                 GhostTaskBlock(
                     modifier =
                         Modifier
+                            .align(Alignment.TopStart)
                             .padding(start = 56.dp, end = 12.dp)
                             .offset(y = 37.dp)
                             .fillMaxWidth()
@@ -202,6 +212,7 @@ private fun TryItMiniDayTimeline(
                 PlacedTaskBlock(
                     modifier =
                         Modifier
+                            .align(Alignment.TopStart)
                             .padding(start = 56.dp, end = 12.dp)
                             .offset(y = 37.dp)
                             .fillMaxWidth()
@@ -209,6 +220,15 @@ private fun TryItMiniDayTimeline(
                     dark = dark,
                 )
             else -> Unit
+        }
+        if (step == TryItStep.Step2Drag) {
+            DraggingTaskOverlay(
+                modifier =
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .offset(x = 28.dp, y = 56.dp)
+                        .zIndex(2f),
+            )
         }
     }
 }
@@ -218,9 +238,9 @@ private fun PastZone(modifier: Modifier = Modifier) {
     Box(
         modifier =
             modifier
+                .fillMaxWidth()
                 .padding(start = 56.dp)
                 .height(24.dp)
-                .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
     )
 }
@@ -228,65 +248,78 @@ private fun PastZone(modifier: Modifier = Modifier) {
 @Composable
 private fun HourRule(
     label: String,
-    top: androidx.compose.ui.unit.Dp,
+    y: androidx.compose.ui.unit.Dp,
 ) {
-    Row(
+    Box(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(top = top),
-        verticalAlignment = Alignment.Top,
+                .offset(y = y),
     ) {
         Text(
             text = label,
             style = EbbTypography.labelM,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(56.dp).padding(end = EbbSpacing.s2),
-            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+            modifier =
+                Modifier
+                    .width(56.dp)
+                    .padding(end = EbbSpacing.s2)
+                    .align(Alignment.TopStart),
+            textAlign = TextAlign.End,
         )
         Box(
             modifier =
                 Modifier
-                    .weight(1f)
-                    .padding(end = 12.dp)
+                    .align(Alignment.TopStart)
+                    .padding(start = 56.dp, end = 12.dp)
+                    .fillMaxWidth()
                     .height(1.dp)
+                    .offset(y = 8.dp)
                     .background(MaterialTheme.colorScheme.outline),
         )
     }
 }
 
 @Composable
-private fun NowLine(top: androidx.compose.ui.unit.Dp) {
+private fun NowLine(y: androidx.compose.ui.unit.Dp) {
+    val primary = MaterialTheme.colorScheme.primary
+    val onPrimary = MaterialTheme.colorScheme.onPrimary
     Box(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(top = top)
-                .height(1.dp),
+                .offset(y = y),
     ) {
         Box(
             modifier =
                 Modifier
-                    .padding(start = 56.dp)
-                    .offset(y = (-3).dp)
-                    .size(8.dp)
-                    .background(MaterialTheme.colorScheme.primary, CircleShape),
+                    .align(Alignment.TopStart)
+                    .padding(start = 56.dp, end = 12.dp)
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(primary),
         )
         Box(
             modifier =
                 Modifier
-                    .padding(start = 6.dp)
+                    .align(Alignment.TopStart)
+                    .padding(start = 52.dp)
+                    .offset(y = (-3).dp)
+                    .size(8.dp)
+                    .background(primary, CircleShape),
+        )
+        Box(
+            modifier =
+                Modifier
+                    .align(Alignment.TopStart)
+                    .padding(start = 4.dp)
                     .offset(y = (-10).dp)
                     .height(20.dp)
-                    .background(MaterialTheme.colorScheme.primary, EbbShapes.full)
+                    .background(primary, EbbShapes.full)
                     .padding(horizontal = 6.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                "14:20",
-                style = EbbTypography.labelM,
-                color = MaterialTheme.colorScheme.onPrimary,
-            )
+            Text("14:20", style = EbbTypography.labelM, color = onPrimary)
         }
     }
 }
@@ -296,32 +329,43 @@ private fun PlacedTaskBlock(
     modifier: Modifier,
     dark: Boolean,
 ) {
-    val lemonTint = EbbTaskColors.tint("lemon", dark)
-    val lemon = EbbTaskColors.strong("lemon")
+    val lemonFill = EbbTaskColors.tint("lemon", dark)
+    val lemonAccent = EbbTaskColors.strong("lemon")
     Row(
         modifier =
             modifier
                 .clip(EbbShapes.sm)
-                .background(lemonTint)
-                .padding(start = 14.dp, end = 6.dp),
+                .background(lemonFill)
+                .height(IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
     ) {
         Box(
             modifier =
                 Modifier
                     .width(4.dp)
-                    .height(20.dp)
-                    .background(lemon),
+                    .height(26.dp)
+                    .background(lemonAccent),
         )
-        EbbSymbol("local_post_office", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
-        Text("Buy stamps", style = EbbTypography.titleM, modifier = Modifier.weight(1f), maxLines = 1)
-        Text(
-            "14:30 · 20 min",
-            style = EbbTypography.labelM,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        TaskCompletionRing()
+        Row(
+            modifier = Modifier.padding(start = 10.dp, end = 6.dp, top = 2.dp, bottom = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
+        ) {
+            EbbSymbol("local_post_office", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                "Buy stamps",
+                style = EbbTypography.titleM,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+            )
+            Text(
+                "14:30 · 20 min",
+                style = EbbTypography.labelM,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            TaskCompletionRing()
+        }
     }
 }
 
@@ -338,12 +382,53 @@ private fun GhostTaskBlock(modifier: Modifier) {
         horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
     ) {
         EbbSymbol("radio_button_unchecked", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("Buy stamps", style = EbbTypography.titleM, modifier = Modifier.weight(1f))
+        Text(
+            "Buy stamps",
+            style = EbbTypography.titleM,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+        )
         Text(
             "14:30 · 30 min",
             style = EbbTypography.labelM,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+@Composable
+private fun DraggingTaskOverlay(modifier: Modifier = Modifier) {
+    val dark = isSystemInDarkTheme()
+    Surface(
+        modifier = modifier.width(250.dp),
+        shape = EbbShapes.md,
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 6.dp,
+    ) {
+        Row(
+            modifier = Modifier.height(44.dp).padding(end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .width(4.dp)
+                        .height(36.dp)
+                        .background(EbbTaskColors.strong("slate")),
+            )
+            TaskCompletionRing(modifier = Modifier.padding(start = 8.dp))
+            Text(
+                "Buy stamps",
+                style = EbbTypography.titleM,
+                modifier = Modifier.weight(1f).padding(horizontal = EbbSpacing.s2),
+            )
+            EbbSymbol(
+                "drag_indicator",
+                fontSize = 20.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(end = EbbSpacing.s2),
+            )
+        }
     }
 }
 
@@ -382,12 +467,16 @@ private fun CalendarEventBlock(modifier: Modifier) {
     ) {
         EbbSymbol("event", fontSize = 18.sp, color = accent)
         Column(modifier = Modifier.weight(1f)) {
-            Text("Team call", style = EbbTypography.titleM)
+            Text("Team call", style = EbbTypography.titleM, color = MaterialTheme.colorScheme.onSurface)
             Row(horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s3)) {
                 Text("15:15–16:00", style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("45 min", style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    EbbSymbol("calendar_month", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    EbbSymbol(
+                        "calendar_month",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                     Text("Work", style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -434,7 +523,6 @@ private fun InboxTaskRow(
     title: String,
     dimmed: Boolean = false,
 ) {
-    val dark = isSystemInDarkTheme()
     val alpha = if (dimmed) 0.35f else 1f
     Surface(
         modifier = Modifier.fillMaxWidth(),

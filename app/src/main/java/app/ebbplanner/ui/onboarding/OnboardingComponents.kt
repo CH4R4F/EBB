@@ -110,20 +110,23 @@ fun OnboardingBlobIllustration(
     symbolName: String,
     size: Dp = 160.dp,
     symbolSize: Dp = 56.dp,
+    symbolFilled: Boolean = true,
 ) {
     Box(
-        modifier = Modifier.size(size),
+        modifier =
+            Modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(containerColor),
         contentAlignment = Alignment.Center,
     ) {
         Canvas(modifier = Modifier.matchParentSize()) {
-            val cx = this.size.width / 2f
-            val cy = this.size.height / 2f
-            val r = this.size.minDimension * 0.45f
-            drawCircle(color = containerColor, radius = r, center = Offset(cx, cy))
             val scale = this.size.minDimension / 160f
+            val ox = (this.size.width - 160f * scale) / 2f
+            val oy = (this.size.height - 160f * scale) / 2f
             with(drawContext.canvas) {
                 save()
-                translate(cx - 80f * scale, cy - 80f * scale)
+                translate(ox, oy)
                 scale(scale, scale)
                 val wave1 =
                     Path().apply {
@@ -156,7 +159,7 @@ fun OnboardingBlobIllustration(
             name = symbolName,
             fontSize = symbolSize.value.sp,
             color = accentColor,
-            filled = true,
+            filled = symbolFilled,
         )
     }
 }
@@ -168,11 +171,13 @@ fun OnboardingPrimaryButton(
     modifier: Modifier = Modifier,
     leadingSymbol: String? = null,
     enabled: Boolean = true,
+    block: Boolean = true,
 ) {
+    val widthModifier = if (block) Modifier.fillMaxWidth() else Modifier
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.fillMaxWidth().height(EbbSpacing.touchBig),
+        modifier = modifier.then(widthModifier).height(EbbSpacing.touchBig),
         shape = EbbShapes.full,
         colors =
             ButtonDefaults.buttonColors(
@@ -294,7 +299,7 @@ fun OnboardingBottomActions(
                     start = EbbSpacing.marginMedium,
                     end = EbbSpacing.marginMedium,
                     top = EbbSpacing.s4,
-                    bottom = EbbSpacing.s6,
+                    bottom = EbbSpacing.s8,
                 ),
         verticalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
     ) {
