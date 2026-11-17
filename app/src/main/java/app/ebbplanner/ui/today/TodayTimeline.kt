@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -126,10 +127,13 @@ fun TodayTimeline(
 
         state.events.forEach { event ->
             val y = minutesToTimelineY(event.startMinutes, state.timelineStartHour)
-            val h =
-                durationToHeight(event.durationMin).coerceAtLeast(
-                    if (largeText) 80.dp else 52.dp,
-                )
+            val slotHeight = durationToHeight(event.durationMin).coerceAtLeast(52.dp)
+            val minEventHeight =
+                if (largeText) {
+                    slotHeight.coerceAtLeast(56.dp)
+                } else {
+                    slotHeight
+                }
             CalendarEventBlock(
                 title = event.title,
                 timeRange = formatRange(event.startMinutes, event.durationMin),
@@ -141,10 +145,22 @@ fun TodayTimeline(
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
-                        .padding(start = timelineHourRail + 4.dp, end = 8.dp)
+                        .padding(
+                            start = timelineHourRail + 4.dp,
+                            end = 8.dp,
+                            bottom = if (largeText) 6.dp else 0.dp,
+                        )
                         .offset(y = y)
                         .fillMaxWidth()
-                        .height(h),
+                        .then(
+                            if (largeText) {
+                                Modifier
+                                    .heightIn(min = minEventHeight)
+                                    .wrapContentHeight()
+                            } else {
+                                Modifier.height(minEventHeight)
+                            },
+                        ),
             )
         }
 
@@ -760,8 +776,7 @@ private fun CalendarEventBlock(
                         x += 8f
                     }
                 }
-                .padding(horizontal = 12.dp, vertical = if (largeText) 10.dp else 6.dp)
-                .then(if (largeText) Modifier.heightIn(min = 72.dp) else Modifier),
+                .padding(horizontal = 12.dp, vertical = if (largeText) 8.dp else 6.dp),
         horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
     ) {
         EbbSymbol("event", fontSize = if (largeText) 16.sp else 18.sp, color = accent)
@@ -783,10 +798,14 @@ private fun CalendarEventBlock(
                         timeRange,
                         style = EbbTypography.bodyM.copy(fontSize = 12.sp, lineHeight = 16.sp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s1)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s1),
+                    ) {
                         Text(
                             durationLabel,
                             style = EbbTypography.bodyM.copy(fontSize = 12.sp),
@@ -796,13 +815,18 @@ private fun CalendarEventBlock(
                         if (pinned) {
                             EbbSymbol("keep", fontSize = 14.sp, filled = true)
                         }
-                        EbbSymbol("calendar_month", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        EbbSymbol(
+                            "calendar_month",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                         Text(
                             calendarLabel,
                             style = EbbTypography.bodyM.copy(fontSize = 12.sp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
                         )
                     }
                 }

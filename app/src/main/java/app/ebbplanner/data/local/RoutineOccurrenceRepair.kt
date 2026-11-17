@@ -35,8 +35,7 @@ internal object RoutineOccurrenceRepair {
             }
         } catch (t: Throwable) {
             Log.e(TAG, "Routine occurrence repair failed during migration; rolling back savepoint.", t)
-            db.execSQL("ROLLBACK TO $SAVEPOINT")
-            db.execSQL("RELEASE SAVEPOINT $SAVEPOINT")
+            rollbackSavepoint(db)
             if (recordPendingOnFailure) {
                 setPendingInMeta(db)
             }
@@ -86,6 +85,55 @@ internal object RoutineOccurrenceRepair {
     fun clearPendingInMeta(db: SupportSQLiteDatabase) {
         ensureMetaTable(db)
         db.execSQL("DELETE FROM $META_TABLE WHERE key = ?", arrayOf(META_KEY_PENDING))
+    }
+
+    fun deduplicateLiveOccurrenceKeysForIndex(db: SupportSQLiteDatabase) {
+        db.query(
+            """
+            SELECT sourceRoutineId, routineOccurrenceDate
+            FROM tasks
+            WHERE deletedAt IS NULL
+            AND sourceRoutineId IS NOT NULL
+            AND routineOccurrenceDate IS NOT NULL
+            GROUP BY sourceRoutineId, routineOccurrenceDate
+            HAVING COUNT(*) > 1
+            """.trimIndent(),
+        ).use { groups ->
+            while (groups.moveToNext()) {
+                val routineId = groups.getString(0)
+                val occurrence = groups.getString(1)
+                val taskIds = mutableListOf<Pair<String, Long>>()
+                db.query(
+                    """
+                    SELECT id, createdAt FROM tasks
+                    WHERE deletedAt IS NULL
+                    AND sourceRoutineId = ?
+                    AND routineOccurrenceDate = ?
+                    ORDER BY createdAt ASC, id ASC
+                    """.trimIndent(),
+                    arrayOf(routineId, occurrence),
+                ).use { c ->
+                    while (c.moveToNext()) {
+                        taskIds += c.getString(0) to c.getLong(1)
+                    }
+                }
+                taskIds.drop(1).forEach { (id, _) ->
+                    db.execSQL(
+                        """
+                        UPDATE tasks
+                        SET routineOccurrenceDate = NULL, routineInstanceDetached = 1
+                        WHERE id = ?
+                        """.trimIndent(),
+                        arrayOf(id),
+                    )
+                }
+            }
+        }
+    }
+
+    private fun rollbackSavepoint(db: SupportSQLiteDatabase) {
+        db.execSQL(";ROLLBACK TO $SAVEPOINT")
+        db.execSQL("RELEASE SAVEPOINT $SAVEPOINT")
     }
 
     private fun purgeFutureSkipsWithoutEvidence(

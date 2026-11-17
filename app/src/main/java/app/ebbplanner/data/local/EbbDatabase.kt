@@ -24,7 +24,7 @@ import app.ebbplanner.data.local.entity.TaskEntity
         RoutineEntity::class,
         RoutineSkipEntity::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = false,
 )
 abstract class EbbDatabase : RoomDatabase() {

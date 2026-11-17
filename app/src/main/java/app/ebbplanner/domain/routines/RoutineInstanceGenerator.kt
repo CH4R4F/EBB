@@ -23,18 +23,36 @@ class RoutineInstanceGenerator
         private val taskDao: TaskDao,
         private val reminderSync: TaskReminderSync,
         private val userPreferencesRepository: UserPreferencesRepository,
+        private val generationGate: RoutineGenerationGate,
+        private val repairState: RoutineRepairState,
     ) {
         suspend fun ensureRollingWindow(daysAhead: Int = DEFAULT_WINDOW_DAYS) {
+            if (repairState.isRepairPending()) return
+            generationGate.withExclusive {
+                if (repairState.isRepairPending()) return@withExclusive
+                ensureRollingWindowLocked(daysAhead)
+            }
+        }
+
+        suspend fun ensureRollingWindowLocked(daysAhead: Int = DEFAULT_WINDOW_DAYS) {
             val start = LocalDate.now()
             val end = start.plusDays(daysAhead.toLong() - 1)
             var day = start
             while (!day.isAfter(end)) {
-                ensureForDate(day)
+                ensureForDateLocked(day)
                 day = day.plusDays(1)
             }
         }
 
         suspend fun ensureForDate(date: LocalDate) {
+            if (repairState.isRepairPending()) return
+            generationGate.withExclusive {
+                if (repairState.isRepairPending()) return@withExclusive
+                ensureForDateLocked(date)
+            }
+        }
+
+        private suspend fun ensureForDateLocked(date: LocalDate) {
             val remindersOn = userPreferencesRepository.remindersDefault.first()
             val occurrences = date.toString()
             val now = System.currentTimeMillis()
@@ -42,7 +60,9 @@ class RoutineInstanceGenerator
                 if (!routine.enabled || !appliesOn(routine, date)) return@forEach
                 if (routineSkipDao.isSkipped(routine.id, occurrences) != null) return@forEach
                 if (taskDao.getRoutineOccurrence(routine.id, occurrences) != null) return@forEach
-                if (taskDao.hasLiveRoutineTaskOnDate(routine.id, occurrences)) return@forEach
+                if (taskDao.blocksRoutineOccurrenceOnDate(routine.id, occurrences, occurrences)) {
+                    return@forEach
+                }
                 val task =
                     TaskEntity(
                         id = UUID.randomUUID().toString(),
@@ -59,8 +79,10 @@ class RoutineInstanceGenerator
                         createdAt = now,
                         updatedAt = now,
                     )
-                taskDao.insert(task)
-                reminderSync.syncTask(task.id)
+                val rowId = taskDao.insertRoutineInstanceIfAbsent(task)
+                if (rowId != -1L) {
+                    reminderSync.syncTask(task.id)
+                }
             }
         }
 
@@ -68,20 +90,35 @@ class RoutineInstanceGenerator
             routineId: String,
             occurrenceDate: String,
         ) {
-            routineSkipDao.insert(RoutineSkipEntity(routineId, occurrenceDate))
+            generationGate.withExclusive {
+                routineSkipDao.insert(RoutineSkipEntity(routineId, occurrenceDate))
+            }
         }
 
         suspend fun onRoutineDeleted(routineId: String) {
-            val today = LocalDate.now().toString()
-            val open = taskDao.listOpenRoutineInstancesFrom(routineId, today)
-            open.forEach { task ->
-                taskDao.softDelete(task.id, System.currentTimeMillis(), System.currentTimeMillis())
-                reminderSync.cancelTask(task.id)
+            generationGate.withExclusive {
+                val today = LocalDate.now().toString()
+                val open = taskDao.listOpenRoutineInstancesFrom(routineId, today)
+                open.forEach { task ->
+                    taskDao.softDelete(task.id, System.currentTimeMillis(), System.currentTimeMillis())
+                    reminderSync.cancelTask(task.id)
+                }
+                routineSkipDao.deleteForRoutine(routineId)
             }
-            routineSkipDao.deleteForRoutine(routineId)
         }
 
         suspend fun linkExistingTask(
+            taskId: String,
+            routine: RoutineEntity,
+        ) {
+            if (repairState.isRepairPending()) return
+            generationGate.withExclusive {
+                if (repairState.isRepairPending()) return@withExclusive
+                linkExistingTaskLocked(taskId, routine)
+            }
+        }
+
+        private suspend fun linkExistingTaskLocked(
             taskId: String,
             routine: RoutineEntity,
         ) {
@@ -123,10 +160,21 @@ class RoutineInstanceGenerator
                 )
             taskDao.update(updated)
             reminderSync.syncTask(taskId)
-            syncFutureInstances(routine, skipLinkDay = occurrence)
+            syncFutureInstancesLocked(routine, skipLinkDay = occurrence)
         }
 
         suspend fun syncFutureInstances(
+            routine: RoutineEntity,
+            skipLinkDay: String? = null,
+        ) {
+            if (repairState.isRepairPending()) return
+            generationGate.withExclusive {
+                if (repairState.isRepairPending()) return@withExclusive
+                syncFutureInstancesLocked(routine, skipLinkDay)
+            }
+        }
+
+        private suspend fun syncFutureInstancesLocked(
             routine: RoutineEntity,
             skipLinkDay: String? = null,
         ) {
@@ -159,7 +207,7 @@ class RoutineInstanceGenerator
                 }
                 day = day.plusDays(1)
             }
-            ensureRollingWindow()
+            ensureRollingWindowLocked()
         }
 
         private suspend fun pruneNonApplyingInstances(routine: RoutineEntity) {

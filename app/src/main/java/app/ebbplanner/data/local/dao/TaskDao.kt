@@ -52,11 +52,17 @@ interface TaskDao {
         """
         SELECT COUNT(*) > 0 FROM tasks
         WHERE deletedAt IS NULL AND sourceRoutineId = :routineId AND date = :date
+        AND (
+            routineOccurrenceDate IS NULL
+            OR routineOccurrenceDate = ''
+            OR routineOccurrenceDate = :occurrenceDate
+        )
         """,
     )
-    suspend fun hasLiveRoutineTaskOnDate(
+    suspend fun blocksRoutineOccurrenceOnDate(
         routineId: String,
         date: String,
+        occurrenceDate: String,
     ): Boolean
 
     @Query(
@@ -105,6 +111,9 @@ interface TaskDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(task: TaskEntity)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertRoutineInstanceIfAbsent(task: TaskEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(tasks: List<TaskEntity>)
