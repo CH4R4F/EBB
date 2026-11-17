@@ -145,10 +145,13 @@ fun TodayTimeline(
 
         state.blocks.filter { !it.isLifted }.forEach { block ->
             val y = minutesToTimelineY(block.startMinutes, state.timelineStartHour)
-            val h =
-                durationToHeight(block.durationMin).coerceAtLeast(
-                    if (block.short) 24.dp else 40.dp,
-                )
+            val minBlockHeight =
+                when {
+                    block.short -> if (largeText) 36.dp else 24.dp
+                    largeText && !state.titleOnlyBlocks && block.hasMetaRow() -> 56.dp
+                    else -> if (block.short) 24.dp else 40.dp
+                }
+            val h = durationToHeight(block.durationMin).coerceAtLeast(minBlockHeight)
             ScheduledTaskBlock(
                 block = block,
                 dark = dark,
@@ -502,6 +505,46 @@ private fun StandardTaskRow(
             )
             val showMeta = !titleOnly && block.hasMetaRow()
             if (showMeta) {
+                if (largeText) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        block.metaTimeRange?.let {
+                            Text(
+                                it,
+                                style = EbbTypography.bodyM.copy(fontSize = 12.sp, lineHeight = 16.sp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s1),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            block.metaDuration?.let {
+                                Text(
+                                    it,
+                                    style = EbbTypography.bodyM.copy(fontSize = 12.sp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                )
+                            }
+                            block.energyLevel?.let { EnergyBars(level = it) }
+                            if (block.hasReminder) {
+                                EbbSymbol(
+                                    "notifications",
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            if (block.pinned) {
+                                EbbSymbol("keep", fontSize = 14.sp, filled = true)
+                            }
+                        }
+                    }
+                } else {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s1),
@@ -510,14 +553,9 @@ private fun StandardTaskRow(
                     block.metaTimeRange?.let {
                         Text(
                             it,
-                            style =
-                                if (largeText) {
-                                    EbbTypography.bodyM.copy(fontSize = 12.sp, lineHeight = 14.sp)
-                                } else {
-                                    EbbTypography.bodyM
-                                },
+                            style = EbbTypography.bodyM,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = if (largeText) 2 else 1,
+                            maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false),
                         )
@@ -550,6 +588,7 @@ private fun StandardTaskRow(
                     if (block.pinned) {
                         EbbSymbol("keep", fontSize = 14.sp, filled = true)
                     }
+                }
                 }
             }
         }

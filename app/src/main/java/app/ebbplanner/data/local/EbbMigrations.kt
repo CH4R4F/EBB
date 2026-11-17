@@ -84,3 +84,10 @@ val MIGRATION_6_7 =
             RoutineOccurrenceBackfill.run(db)
         }
     }
+
+val MIGRATION_7_8 =
+    object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            RoutineOccurrenceBackfill.run(db)
+        }
+    }

@@ -136,4 +136,5 @@ enum class FocusAlarmKind {
     TIMES_UP,
     INTERVAL_BREAK,
     INTERVAL_WORK,
+    MANUAL_BREAK_END,
 }

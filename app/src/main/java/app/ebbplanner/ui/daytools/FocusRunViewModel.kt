@@ -82,9 +82,11 @@ class FocusRunViewModel
                         countUpStartedAtMs = saved.countUpStartedAtMs,
                         intervalCyclesCompleted = saved.intervalCyclesCompleted,
                         phaseStartedAtMs = saved.phaseStartedAtMs,
+                        manualBreak = saved.manualBreak,
                     ),
                     clock.millis(),
                 )
+                timer.catchUpExpiredPhases(clock.millis())
                 if (timer.phase() == FocusPhase.TimesUp) {
                     focusSessionStore.clear()
                     focusNotifier.cancel()
@@ -343,7 +345,10 @@ class FocusRunViewModel
 
         fun close() {
             tickJob?.cancel()
-            viewModelScope.launch { persistSession() }
+            viewModelScope.launch {
+                persistSession()
+                scheduleAlarm()
+            }
         }
 
         private fun scheduleAlarm() {
@@ -356,10 +361,16 @@ class FocusRunViewModel
                 val endAt = clock.millis() + snap.remainingMs
                 val kind =
                     when {
+                        timer.isIntervalMode() &&
+                            snap.phase == FocusPhase.Running &&
+                            timer.intervalCyclesCompleted() == FocusTimerController.INTERVAL_CYCLES - 1 ->
+                            FocusAlarmKind.TIMES_UP
                         timer.isIntervalMode() && snap.phase == FocusPhase.Running ->
                             FocusAlarmKind.INTERVAL_BREAK
                         timer.isIntervalMode() && snap.phase == FocusPhase.Break ->
                             FocusAlarmKind.INTERVAL_WORK
+                        timer.isManualBreak() && snap.phase == FocusPhase.Break ->
+                            FocusAlarmKind.MANUAL_BREAK_END
                         snap.phase == FocusPhase.Break -> FocusAlarmKind.INTERVAL_BREAK
                         else -> FocusAlarmKind.TIMES_UP
                     }
@@ -468,6 +479,7 @@ class FocusRunViewModel
                     countUpStartedAtMs = exported.countUpStartedAtMs,
                     intervalCyclesCompleted = exported.intervalCyclesCompleted,
                     phaseStartedAtMs = exported.phaseStartedAtMs,
+                    manualBreak = exported.manualBreak,
                 ),
             )
         }

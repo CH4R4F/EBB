@@ -42,6 +42,7 @@ class RoutineInstanceGenerator
                 if (!routine.enabled || !appliesOn(routine, date)) return@forEach
                 if (routineSkipDao.isSkipped(routine.id, occurrences) != null) return@forEach
                 if (taskDao.getRoutineOccurrence(routine.id, occurrences) != null) return@forEach
+                if (taskDao.getLiveRoutineOnDate(routine.id, occurrences) != null) return@forEach
                 val task =
                     TaskEntity(
                         id = UUID.randomUUID().toString(),
@@ -85,11 +86,21 @@ class RoutineInstanceGenerator
             routine: RoutineEntity,
         ) {
             val task = taskDao.getById(taskId) ?: return
+            val today = LocalDate.now()
             val occurrence =
                 when {
-                    task.date != null -> task.date
-                    task.placement == TaskEntity.PLACEMENT_SCHEDULED -> LocalDate.now().toString()
-                    else -> LocalDate.now().toString()
+                    task.placement == TaskEntity.PLACEMENT_INBOX ||
+                        task.placement == TaskEntity.PLACEMENT_SOMEDAY ||
+                        task.date.isNullOrBlank() ->
+                        firstApplicableOnOrAfter(routine, today).toString()
+                    else -> {
+                        val parsed = runCatching { LocalDate.parse(task.date) }.getOrNull()
+                        if (parsed != null && !parsed.isBefore(today) && appliesOn(routine, parsed)) {
+                            parsed.toString()
+                        } else {
+                            firstApplicableOnOrAfter(routine, today).toString()
+                        }
+                    }
                 }
             val now = System.currentTimeMillis()
             val updated =
@@ -159,11 +170,23 @@ class RoutineInstanceGenerator
                     task.routineOccurrenceDate ?: task.date
                         ?: return@forEach
                 val occDate = runCatching { LocalDate.parse(occ) }.getOrNull() ?: return@forEach
-                if (!appliesOn(routine, occDate)) {
+                if (!appliesOn(routine, occDate) && !task.routineInstanceDetached) {
                     taskDao.softDelete(task.id, System.currentTimeMillis(), System.currentTimeMillis())
                     reminderSync.cancelTask(task.id)
                 }
             }
+        }
+
+        private fun firstApplicableOnOrAfter(
+            routine: RoutineEntity,
+            from: LocalDate,
+        ): LocalDate {
+            var day = from
+            repeat(DEFAULT_WINDOW_DAYS * 2) {
+                if (appliesOn(routine, day)) return day
+                day = day.plusDays(1)
+            }
+            return from
         }
 
         private fun appliesOn(

@@ -24,6 +24,7 @@ class FocusTimesUpReceiver : BroadcastReceiver() {
         when (kind) {
             FocusAlarmKind.INTERVAL_BREAK -> notifier.showBreakTime(taskId, title.ifBlank { "Focus" })
             FocusAlarmKind.INTERVAL_WORK -> notifier.showBackToWork(taskId, title.ifBlank { "Focus" })
+            FocusAlarmKind.MANUAL_BREAK_END -> notifier.showBreakEnded(taskId, title.ifBlank { "Focus" })
             FocusAlarmKind.TIMES_UP -> notifier.showTimesUp(taskId, title.ifBlank { "Focus" })
         }
     }

@@ -32,6 +32,7 @@ data class PersistedFocusSession(
     val countUpStartedAtMs: Long,
     val intervalCyclesCompleted: Int,
     val phaseStartedAtMs: Long,
+    val manualBreak: Boolean = false,
 )
 
 @Singleton
@@ -59,6 +60,7 @@ class FocusSessionStore
                     countUpStartedAtMs = prefs[COUNT_UP_STARTED_AT_MS] ?: 0L,
                     intervalCyclesCompleted = prefs[INTERVAL_CYCLES_COMPLETED] ?: 0,
                     phaseStartedAtMs = prefs[PHASE_STARTED_AT_MS] ?: 0L,
+                    manualBreak = prefs[MANUAL_BREAK] ?: false,
                 )
             }
 
@@ -78,6 +80,7 @@ class FocusSessionStore
                 prefs[COUNT_UP_STARTED_AT_MS] = session.countUpStartedAtMs
                 prefs[INTERVAL_CYCLES_COMPLETED] = session.intervalCyclesCompleted
                 prefs[PHASE_STARTED_AT_MS] = session.phaseStartedAtMs
+                prefs[MANUAL_BREAK] = session.manualBreak
             }
         }
 
@@ -105,5 +108,6 @@ class FocusSessionStore
             private val COUNT_UP_STARTED_AT_MS = longPreferencesKey("count_up_started_at_ms")
             private val INTERVAL_CYCLES_COMPLETED = intPreferencesKey("interval_cycles_completed")
             private val PHASE_STARTED_AT_MS = longPreferencesKey("phase_started_at_ms")
+            private val MANUAL_BREAK = booleanPreferencesKey("manual_break")
         }
     }

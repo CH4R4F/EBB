@@ -30,6 +30,7 @@ class FocusAlarmWorker
             when (kind) {
                 FocusAlarmKind.INTERVAL_BREAK -> focusNotifier.showBreakTime(taskId, title.ifBlank { "Focus" })
                 FocusAlarmKind.INTERVAL_WORK -> focusNotifier.showBackToWork(taskId, title.ifBlank { "Focus" })
+                FocusAlarmKind.MANUAL_BREAK_END -> focusNotifier.showBreakEnded(taskId, title.ifBlank { "Focus" })
                 FocusAlarmKind.TIMES_UP -> focusNotifier.showTimesUp(taskId, title.ifBlank { "Focus" })
             }
             return Result.success()

@@ -36,6 +36,7 @@ data class FocusTimerPersistedState(
     val countUpStartedAtMs: Long,
     val intervalCyclesCompleted: Int,
     val phaseStartedAtMs: Long,
+    val manualBreak: Boolean,
 )
 
 class FocusTimerController {
@@ -48,12 +49,17 @@ class FocusTimerController {
     private var intervalMode: Boolean = false
     private var intervalCyclesCompleted: Int = 0
     private var phaseStartedAtMs: Long = 0L
+    private var manualBreak: Boolean = false
     private val intervalWorkMs = 25 * 60_000L
     private val intervalBreakMs = 5 * 60_000L
 
     fun isCountUp(): Boolean = countUp
 
     fun isIntervalMode(): Boolean = intervalMode
+
+    fun isManualBreak(): Boolean = manualBreak
+
+    fun intervalCyclesCompleted(): Int = intervalCyclesCompleted
 
     fun snapshot(nowMs: Long): FocusTimerSnapshot {
         val remaining = remainingMs(nowMs)
@@ -228,11 +234,26 @@ class FocusTimerController {
     ) {
         intervalMode = false
         countUp = false
+        manualBreak = true
         val duration = minutes.coerceAtLeast(1) * 60_000L
         totalMs = duration
         endAtMs = nowMs + duration
         phase = FocusPhase.Break
         phaseStartedAtMs = nowMs
+    }
+
+    fun catchUpExpiredPhases(nowMs: Long) {
+        var guard = 0
+        while (
+            guard++ < 24 &&
+            !countUp &&
+            (phase == FocusPhase.Running || phase == FocusPhase.Break) &&
+            nowMs >= endAtMs &&
+            endAtMs != Long.MAX_VALUE
+        ) {
+            tick(nowMs)
+            if (phase == FocusPhase.TimesUp || phase == FocusPhase.Setup) break
+        }
     }
 
     fun exportPersistedState(): FocusTimerPersistedState =
@@ -246,6 +267,7 @@ class FocusTimerController {
             countUpStartedAtMs = countUpStartedAtMs,
             intervalCyclesCompleted = intervalCyclesCompleted,
             phaseStartedAtMs = phaseStartedAtMs,
+            manualBreak = manualBreak,
         )
 
     fun restoreFromPersisted(
@@ -261,6 +283,7 @@ class FocusTimerController {
         countUpStartedAtMs = saved.countUpStartedAtMs
         intervalCyclesCompleted = saved.intervalCyclesCompleted
         phaseStartedAtMs = saved.phaseStartedAtMs
+        manualBreak = saved.manualBreak
         when (phase) {
             FocusPhase.Running, FocusPhase.Break ->
                 if (!countUp && nowMs >= endAtMs && endAtMs != Long.MAX_VALUE) {
@@ -307,6 +330,7 @@ class FocusTimerController {
                 countUpStartedAtMs = 0L,
                 intervalCyclesCompleted = 0,
                 phaseStartedAtMs = nowMs,
+                manualBreak = false,
             ),
             nowMs,
         )
@@ -348,6 +372,7 @@ class FocusTimerController {
         intervalMode = false
         countUpStartedAtMs = 0L
         intervalCyclesCompleted = 0
+        manualBreak = false
     }
 
     private fun formatMs(ms: Long): String {

@@ -182,6 +182,7 @@ class TaskRepository
                         task.copy(
                             date = shiftedSchedule.date.toString(),
                             startLocalTime = shiftedSchedule.startLocalTime,
+                            routineInstanceDetached = task.routineInstanceDetached || task.sourceRoutineId != null,
                             updatedAt = now,
                         )
                     taskDao.update(updated)
@@ -198,6 +199,7 @@ class TaskRepository
                         task.copy(
                             date = shiftedSchedule.date.toString(),
                             startLocalTime = shiftedSchedule.startLocalTime,
+                            routineInstanceDetached = task.routineInstanceDetached || task.sourceRoutineId != null,
                             updatedAt = now,
                         )
                     taskDao.update(updated)
@@ -219,6 +221,7 @@ class TaskRepository
                     task.copy(
                         date = shiftedSchedule.date.toString(),
                         startLocalTime = shiftedSchedule.startLocalTime,
+                        routineInstanceDetached = task.routineInstanceDetached || task.sourceRoutineId != null,
                         updatedAt = now,
                     )
                 taskDao.update(updated)
@@ -318,10 +321,18 @@ class TaskRepository
             val task = taskDao.getById(id) ?: return
             var updated = transform(task).copy(updatedAt = System.currentTimeMillis())
             if (task.sourceRoutineId != null) {
+                val breatherOnly =
+                    task.breatherBufferMin != updated.breatherBufferMin &&
+                        updated.title == task.title &&
+                        updated.startLocalTime == task.startLocalTime &&
+                        (updated.durationMin - task.durationMin) == (updated.breatherBufferMin - task.breatherBufferMin)
                 val customized =
-                    updated.title != task.title ||
-                        updated.durationMin != task.durationMin ||
-                        updated.startLocalTime != task.startLocalTime
+                    !breatherOnly &&
+                        (
+                            updated.title != task.title ||
+                                updated.durationMin != task.durationMin ||
+                                updated.startLocalTime != task.startLocalTime
+                        )
                 if (customized) {
                     updated = updated.copy(routineInstanceDetached = true)
                 }
