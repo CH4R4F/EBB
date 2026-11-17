@@ -4,7 +4,6 @@ package app.ebbplanner.ui.onboarding
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +28,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -103,7 +103,7 @@ fun OnboardingTryItTimelineSection(
     step: TryItStep,
     modifier: Modifier = Modifier,
 ) {
-    val dark = isSystemInDarkTheme()
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     Column(modifier = modifier.fillMaxWidth()) {
         Box(modifier = Modifier.fillMaxWidth()) {
             Surface(
@@ -111,7 +111,7 @@ fun OnboardingTryItTimelineSection(
                 shape = EbbShapes.lg,
                 color = MaterialTheme.colorScheme.surfaceContainer,
             ) {
-                TryItMiniDayTimeline(step = step, dark = dark)
+                TryItMiniDayTimeline(step = step, dark = MaterialTheme.colorScheme.background.luminance() < 0.5f)
             }
             if (step == TryItStep.Success) {
                 EbbSymbol(
@@ -176,6 +176,8 @@ private fun TryItMiniDayTimeline(
     step: TryItStep,
     dark: Boolean,
 ) {
+    val schemeDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val isDark = schemeDark || dark
     Box(
         modifier =
             Modifier
@@ -217,7 +219,7 @@ private fun TryItMiniDayTimeline(
                             .offset(y = 37.dp)
                             .fillMaxWidth()
                             .height(26.dp),
-                    dark = dark,
+                    dark = isDark,
                 )
             else -> Unit
         }
@@ -371,7 +373,7 @@ private fun PlacedTaskBlock(
 
 @Composable
 private fun GhostTaskBlock(modifier: Modifier) {
-    val dark = isSystemInDarkTheme()
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     Row(
         modifier =
             modifier
@@ -398,7 +400,6 @@ private fun GhostTaskBlock(modifier: Modifier) {
 
 @Composable
 private fun DraggingTaskOverlay(modifier: Modifier = Modifier) {
-    val dark = isSystemInDarkTheme()
     Surface(
         modifier = modifier.width(250.dp),
         shape = EbbShapes.md,
