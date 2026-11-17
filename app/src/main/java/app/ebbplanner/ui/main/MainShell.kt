@@ -2,9 +2,13 @@ package app.ebbplanner.ui.main
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import app.ebbplanner.reminders.FocusNotifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -32,6 +36,16 @@ import app.ebbplanner.ui.week.WeekScreen
 @Composable
 fun MainShell() {
     val navController = rememberNavController()
+    val activity = LocalContext.current as ComponentActivity
+    LaunchedEffect(activity.intent) {
+        val taskId = activity.intent?.getStringExtra(FocusNotifier.EXTRA_OPEN_FOCUS).orEmpty()
+        if (taskId.isNotBlank()) {
+            navController.navigate(AppRoutes.focusRun(taskId)) {
+                launchSingleTop = true
+            }
+            activity.intent?.removeExtra(FocusNotifier.EXTRA_OPEN_FOCUS)
+        }
+    }
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route ?: MainTab.Today.route
     val selected =

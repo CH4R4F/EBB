@@ -8,6 +8,7 @@ import app.ebbplanner.data.local.entity.SubtaskEntity
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.reminders.TaskReminderSync
+import app.ebbplanner.domain.day.DayTimeShift
 import app.ebbplanner.ui.time.ClockFormat
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -147,6 +148,7 @@ class TaskRepository
             date: LocalDate,
             offsetMinutes: Int,
             fromMinutes: Int,
+            startFromNow: Boolean = false,
         ): Int {
             val tasks =
                 observeTasksForDate(date).first().filter { task ->
@@ -155,18 +157,43 @@ class TaskRepository
                         task.status != TaskEntity.STATUS_DONE &&
                         !task.pinned
                 }
+            val movable =
+                tasks.mapNotNull { task ->
+                    val start = ClockFormat.parseMinutes(task.startLocalTime ?: return@mapNotNull null) ?: return@mapNotNull null
+                    if (start < fromMinutes) return@mapNotNull null
+                    task to start
+                }
+            val anchorOffset =
+                if (startFromNow && movable.isNotEmpty()) {
+                    fromMinutes - movable.minOf { it.second }
+                } else {
+                    offsetMinutes
+                }
             val now = System.currentTimeMillis()
             var shifted = 0
-            tasks.forEach { task ->
-                val start = ClockFormat.parseMinutes(task.startLocalTime ?: return@forEach) ?: return@forEach
-                if (start < fromMinutes) return@forEach
-                val shiftedTime = ClockFormat.minutesToLocalTime(start + offsetMinutes)
-                val updated = task.copy(startLocalTime = shiftedTime, updatedAt = now)
+            movable.forEach { (task, start) ->
+                val shiftedSchedule = DayTimeShift.shiftStart(date, start, anchorOffset)
+                val updated =
+                    task.copy(
+                        date = shiftedSchedule.date.toString(),
+                        startLocalTime = shiftedSchedule.startLocalTime,
+                        updatedAt = now,
+                    )
                 taskDao.update(updated)
                 reminderSync.syncTask(task.id)
                 shifted++
             }
             return shifted
+        }
+
+        suspend fun rescheduleTaskStart(
+            taskId: String,
+            date: LocalDate,
+            startMinutes: Int,
+            offsetMinutes: Int,
+        ) {
+            val shifted = DayTimeShift.shiftStart(date, startMinutes, offsetMinutes)
+            scheduleTask(taskId, TaskEntity.PLACEMENT_SCHEDULED, shifted.date, shifted.startLocalTime)
         }
 
         suspend fun shiftRestOfDayFromNotification(
@@ -182,6 +209,35 @@ class TaskRepository
         }
 
         suspend fun getTask(id: String): TaskEntity? = taskDao.getById(id)
+
+        suspend fun nextIncompleteTaskAfter(
+            date: LocalDate,
+            afterTaskId: String,
+        ): String? {
+            val after = taskDao.getById(afterTaskId)
+            val afterStart = after?.startLocalTime?.let { ClockFormat.parseMinutes(it) } ?: -1
+            val scheduledNext =
+                observeTasksForDate(date).first()
+                    .filter {
+                        it.id != afterTaskId &&
+                            it.status != TaskEntity.STATUS_DONE &&
+                            it.placement == TaskEntity.PLACEMENT_SCHEDULED &&
+                            it.startLocalTime != null
+                    }
+                    .mapNotNull { task ->
+                        val start = ClockFormat.parseMinutes(task.startLocalTime ?: return@mapNotNull null) ?: return@mapNotNull null
+                        if (start <= afterStart) return@mapNotNull null
+                        task.id to start
+                    }
+                    .minByOrNull { it.second }
+                    ?.first
+            if (scheduledNext != null) return scheduledNext
+            return observeTasksForDate(date).first().firstOrNull {
+                it.id != afterTaskId &&
+                    it.status != TaskEntity.STATUS_DONE &&
+                    it.placement == TaskEntity.PLACEMENT_ANYTIME
+            }?.id
+        }
 
         fun observeSubtasks(taskId: String) = subtaskDao.observeForTask(taskId)
 
@@ -255,8 +311,15 @@ class TaskRepository
             placement: String = TaskEntity.PLACEMENT_INBOX,
             startLocalTime: String? = null,
             durationMin: Int = TaskEntity.DEFAULT_DURATION_MIN,
-            reminderEnabled: Boolean = placement == TaskEntity.PLACEMENT_SCHEDULED,
+            reminderEnabled: Boolean? = null,
         ): TaskEntity {
+            val defaultReminders = userPreferencesRepository.remindersDefault.first()
+            val enableReminders =
+                when {
+                    reminderEnabled != null -> reminderEnabled
+                    placement != TaskEntity.PLACEMENT_SCHEDULED || startLocalTime == null -> false
+                    else -> defaultReminders
+                }
             val now = System.currentTimeMillis()
             val task =
                 TaskEntity(
@@ -267,7 +330,7 @@ class TaskRepository
                     startLocalTime = startLocalTime,
                     zoneId = zoneId.id,
                     durationMin = durationMin,
-                    reminderEnabled = reminderEnabled,
+                    reminderEnabled = enableReminders,
                     createdAt = now,
                     updatedAt = now,
                 )

@@ -40,6 +40,11 @@ data class MakeItFitPlan(
     val moves: List<FitMoveSuggestion>,
 )
 
+data class ScheduleDayResult(
+    val placedCount: Int,
+    val unplacedTaskIds: List<String>,
+)
+
 data class ShiftPreviewBlock(
     val id: String,
     val title: String,

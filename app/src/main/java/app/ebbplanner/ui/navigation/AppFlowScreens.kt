@@ -44,10 +44,12 @@ fun ShiftDayScreen(
             modifier = modifier.fillMaxSize(),
             shiftMinutes = ui.shiftMinutes,
             chipIndex = ui.chipIndex,
+            customMinutes = ui.customMinutes,
             previewBefore = ui.previewBefore,
             previewAfter = ui.previewAfter,
             backgroundState = ui.background,
             onChipSelected = viewModel::selectChip,
+            onCustomMinutesChanged = viewModel::setCustomMinutes,
             onApplyShift = { viewModel.applyShift { navController.popBackStack() } },
             onCancel = { navController.popBackStack() },
         )
@@ -66,9 +68,11 @@ fun PlanDayScreen(
             modifier = modifier.fillMaxSize(),
             tasks = state.tasks,
             emptyCandidates = !state.hasCandidates,
+            unplacedTitles = state.unplacedTitles,
             onClose = { navController.popBackStack() },
             onToggleTask = viewModel::toggleTask,
             onApply = { viewModel.applyPlan { navController.popBackStack() } },
+            onDismissUnplaced = viewModel::clearUnplaced,
         )
     }
 }
@@ -85,6 +89,7 @@ fun OverlapHelperScreen(
             modifier = modifier.fillMaxSize(),
             situation = ui.situation,
             selected = ui.selected,
+            backgroundState = ui.background,
             onSelectOption = viewModel::selectOption,
             onApply = { viewModel.apply { navController.popBackStack() } },
             onCancel = { navController.popBackStack() },
@@ -104,6 +109,8 @@ fun MakeItFitScreen(
             modifier = modifier.fillMaxSize(),
             plan = ui.plan,
             selectedMoveIds = ui.selectedMoveIds,
+            afterPlannedMinutes = ui.afterPlannedMinutes,
+            backgroundState = ui.background,
             onToggleMove = viewModel::toggleMove,
             onApply = { viewModel.applyMoves { navController.popBackStack() } },
             onCancel = { navController.popBackStack() },
@@ -133,9 +140,31 @@ fun FocusRunScreen(
                     onPause = viewModel::pause,
                     onResume = viewModel::resume,
                     onAddFive = viewModel::addFive,
-                    onDone = viewModel::markDone,
+                    onDone = {
+                        viewModel.markDone { nextId ->
+                            if (!nextId.isNullOrBlank()) {
+                                navController.navigate(AppRoutes.focusRun(nextId)) {
+                                    popUpTo(MainTab.Today.route) { saveState = true }
+                                    launchSingleTop = true
+                                }
+                            } else if (!navController.popBackStack(MainTab.Today.route, false)) {
+                                navController.popBackStack()
+                            }
+                        }
+                    },
                     onDistracted = viewModel::distracted,
-                    onTimesUpDone = viewModel::markDone,
+                    onTimesUpDone = {
+                        viewModel.markDone { nextId ->
+                            if (!nextId.isNullOrBlank()) {
+                                navController.navigate(AppRoutes.focusRun(nextId)) {
+                                    popUpTo(MainTab.Today.route) { saveState = true }
+                                    launchSingleTop = true
+                                }
+                            } else if (!navController.popBackStack(MainTab.Today.route, false)) {
+                                navController.popBackStack()
+                            }
+                        }
+                    },
                     onTimesUpAddFive = viewModel::timesUpAddFive,
                     onTimesUpAddFifteen = viewModel::timesUpAddFifteen,
                     onTimesUpShiftDay = {
@@ -144,6 +173,10 @@ fun FocusRunScreen(
                     },
                     onTimesUpBreak = viewModel::takeBreak,
                     onMenu = {},
+                    onTimerModeSelected = viewModel::setTimerMode,
+                    onRingBarSelected = { viewModel.setShowRing(it == 0) },
+                    onHideNumbersChanged = viewModel::setHideNumbers,
+                    onFixedMinutesSelected = viewModel::setFixedMinutes,
                 ),
         )
     }

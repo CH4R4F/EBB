@@ -56,17 +56,31 @@ enum class FocusVisualMode {
     BreakEnded,
 }
 
+data class FocusStepRow(
+    val title: String,
+    val done: Boolean,
+)
+
 data class FocusPresentationState(
     val taskId: String = "",
-    val title: String = "Write project brief",
-    val subtitle: String = "10:00–11:15 · steps 2/5",
+    val title: String = "",
+    val subtitle: String = "",
     val mode: FocusVisualMode = FocusVisualMode.Setup,
-    val timerLabel: String = "33:00",
-    val runningTitle: String = "Emails",
+    val timerLabel: String = "0:00",
+    val runningTitle: String = "",
     val topBarLabel: String = "Focus",
     val paused: Boolean = false,
-    val ringProgress: Float = 0.45f,
+    val ringProgress: Float = 0f,
     val showRing: Boolean = true,
+    val hideNumbers: Boolean = false,
+    val timerModeIndex: Int = 0,
+    val fixedMinutes: Int = 25,
+    val blockOptionSubtitle: String = "",
+    val fixedOptionSubtitle: String = "5 · 15 · 25 · 45 · 60 min",
+    val runningRemainingSubtitle: String = "",
+    val timesUpDetail: String = "",
+    val steps: List<FocusStepRow> = emptyList(),
+    val showSteps: Boolean = false,
 )
 
 @Composable
@@ -96,7 +110,7 @@ fun FocusScreenDesign(
                     )
                 }
                 when (state.mode) {
-                    FocusVisualMode.Setup -> FocusSetupBody(callbacks)
+                    FocusVisualMode.Setup -> FocusSetupBody(state, callbacks)
                     FocusVisualMode.RunningRing ->
                         FocusRunningBody(
                             state,
@@ -141,7 +155,10 @@ private fun FocusTopBar(
 }
 
 @Composable
-private fun FocusSetupBody(callbacks: FocusCallbacks) {
+private fun FocusSetupBody(
+    state: FocusPresentationState,
+    callbacks: FocusCallbacks,
+) {
     Column(Modifier.fillMaxSize()) {
         Column(
             modifier =
@@ -157,10 +174,34 @@ private fun FocusSetupBody(callbacks: FocusCallbacks) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = EbbSpacing.s4),
             )
-            TimerOption("hourglass_bottom", "Until block ends", "33 min · ends 11:15", selected = true)
-            TimerOption("timer", "Fixed length", "5 · 15 · 25 · 45 · 60 min", selected = false)
-            TimerOption("trending_up", "Count up", "Open-ended, for just starting", selected = false)
-            TimerOption("restart_alt", "Intervals", "25 work / 5 break × 4", selected = false)
+            TimerOption(
+                "hourglass_bottom",
+                "Until block ends",
+                state.blockOptionSubtitle.ifBlank { "Uses your scheduled block" },
+                selected = state.timerModeIndex == 0,
+                onClick = { callbacks.onTimerModeSelected(0) },
+            )
+            TimerOption(
+                "timer",
+                "Fixed length",
+                state.fixedOptionSubtitle,
+                selected = state.timerModeIndex == 1,
+                onClick = { callbacks.onTimerModeSelected(1) },
+            )
+            TimerOption(
+                "trending_up",
+                "Count up",
+                "Open-ended, for just starting",
+                selected = state.timerModeIndex == 2,
+                onClick = { callbacks.onTimerModeSelected(2) },
+            )
+            TimerOption(
+                "restart_alt",
+                "Intervals",
+                "25 work / 5 break × 4",
+                selected = state.timerModeIndex == 3,
+                onClick = { callbacks.onTimerModeSelected(3) },
+            )
             Text(
                 "Show as",
                 style = EbbTypography.labelL,
@@ -170,10 +211,16 @@ private fun FocusSetupBody(callbacks: FocusCallbacks) {
             EbbJoinedSegmentedControl(
                 labels = listOf("Ring", "Bar"),
                 icons = listOf(null, "linear_scale"),
-                selectedIndex = 0,
+                selectedIndex = if (state.showRing) 0 else 1,
                 selectionStyle = EbbSegmentSelectionStyle.SecondaryContainer,
+                onSelected = callbacks.onRingBarSelected,
             )
-            EbbSwitchRow("Hide numbers", "Just the shape, less clock-watching", checked = false)
+            EbbSwitchRow(
+                "Hide numbers",
+                "Just the shape, less clock-watching",
+                checked = state.hideNumbers,
+                onCheckedChange = callbacks.onHideNumbersChanged,
+            )
         }
         Column(
             modifier = Modifier.fillMaxWidth().padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s4),
@@ -230,8 +277,10 @@ private fun TimerOption(
     title: String,
     subtitle: String,
     selected: Boolean,
+    onClick: () -> Unit = {},
 ) {
     Surface(
+        onClick = onClick,
         shape = EbbShapes.md,
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
         border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
@@ -252,7 +301,7 @@ private fun TimerOption(
 private fun FocusRunningBody(
     state: FocusPresentationState,
     ring: Boolean,
-    timerSubtitle: String = "left of 1 h 15 min",
+    timerSubtitle: String = "",
     modifier: Modifier = Modifier,
     ringProgress: Float = 0.45f,
     ringDiameter: Dp = 272.dp,
@@ -269,8 +318,8 @@ private fun FocusRunningBody(
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 FocusProgressRing(
                     progress = ringProgress,
-                    label = state.timerLabel,
-                    subtitle = timerSubtitle,
+                    label = if (state.hideNumbers) "" else state.timerLabel,
+                    subtitle = timerSubtitle.ifBlank { state.runningRemainingSubtitle },
                     diameter = ringDiameter,
                     strokeWidth = 12.dp,
                 )
@@ -280,7 +329,9 @@ private fun FocusRunningBody(
                 Modifier.fillMaxWidth().weight(1f).padding(horizontal = EbbSpacing.s6),
                 verticalArrangement = Arrangement.Center,
             ) {
-                Text(state.timerLabel, style = EbbTypography.headlineL, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                if (!state.hideNumbers) {
+                    Text(state.timerLabel, style = EbbTypography.headlineL, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                }
                 Text(
                     "remaining",
                     style = EbbTypography.bodyM,
@@ -294,13 +345,16 @@ private fun FocusRunningBody(
                 )
             }
         }
-        FocusStepsCard()
+        if (state.showSteps && state.steps.isNotEmpty()) {
+            FocusStepsCard(state.steps)
+        }
         FocusControlRow(state, callbacks)
     }
 }
 
 @Composable
-private fun FocusStepsCard() {
+private fun FocusStepsCard(steps: List<FocusStepRow>) {
+    val done = steps.count { it.done }
     Surface(
         modifier = Modifier.fillMaxWidth().padding(horizontal = EbbSpacing.s4),
         shape = EbbShapes.md,
@@ -308,19 +362,26 @@ private fun FocusStepsCard() {
     ) {
         Column(Modifier.padding(vertical = 4.dp)) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Steps 2/5", style = EbbTypography.titleM, modifier = Modifier.weight(1f))
+                Text("Steps $done/${steps.size}", style = EbbTypography.titleM, modifier = Modifier.weight(1f))
                 EbbSymbol("expand_less", fontSize = 22.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            StepRow("Write the first draft")
-            StepRow("Ask Sam for feedback")
+            steps.forEach { step -> StepRow(step.title, step.done) }
         }
     }
 }
 
 @Composable
-private fun StepRow(label: String) {
+private fun StepRow(
+    label: String,
+    done: Boolean,
+) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-        Surface(Modifier.size(20.dp), shape = EbbShapes.sm, border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline)) {}
+        Surface(
+            Modifier.size(20.dp),
+            shape = EbbShapes.sm,
+            color = if (done) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+            border = if (done) null else BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
+        ) {}
         Text(label, style = EbbTypography.bodyL, modifier = Modifier.padding(start = 12.dp))
     }
 }
@@ -402,7 +463,7 @@ private fun FocusTimesUpInApp(
         state.copy(
             title = state.runningTitle,
             timerLabel = "0:00",
-            topBarLabel = "Fixed · 25 min",
+            topBarLabel = state.topBarLabel,
         )
     Box(modifier.fillMaxSize()) {
         FocusRunningBody(

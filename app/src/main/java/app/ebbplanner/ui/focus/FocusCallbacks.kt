@@ -15,4 +15,8 @@ data class FocusCallbacks(
     val onTimesUpShiftDay: () -> Unit = {},
     val onTimesUpBreak: () -> Unit = {},
     val onMenu: () -> Unit = {},
+    val onTimerModeSelected: (Int) -> Unit = {},
+    val onRingBarSelected: (Int) -> Unit = {},
+    val onHideNumbersChanged: (Boolean) -> Unit = {},
+    val onFixedMinutesSelected: (Int) -> Unit = {},
 )

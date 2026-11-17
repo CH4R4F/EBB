@@ -77,9 +77,11 @@ fun ShiftTheRestDesign(
     modifier: Modifier = Modifier,
     shiftMinutes: Int = 15,
     chipIndex: Int = 1,
+    customMinutes: Int = 15,
     previewBefore: List<ShiftPreviewBlock> = emptyList(),
     previewAfter: List<ShiftPreviewBlock> = emptyList(),
     onChipSelected: (Int) -> Unit = {},
+    onCustomMinutesChanged: (Int) -> Unit = {},
     onApplyShift: () -> Unit = {},
     onCancel: () -> Unit = {},
     backgroundState: app.ebbplanner.ui.today.TodayPresentationState? = null,
@@ -98,6 +100,15 @@ fun ShiftTheRestDesign(
         backgroundState = backgroundState,
     ) {
         ShiftAmountChips(selected = chipIndex, onSelected = onChipSelected)
+        if (chipIndex == 5) {
+            androidx.compose.material3.OutlinedTextField(
+                value = customMinutes.toString(),
+                onValueChange = { raw -> raw.toIntOrNull()?.let(onCustomMinutesChanged) },
+                label = { Text("Minutes to add") },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                singleLine = true,
+            )
+        }
         Row(
             Modifier.fillMaxWidth().padding(top = EbbSpacing.s3),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -126,6 +137,7 @@ fun OverlapHelperDesign(
     modifier: Modifier = Modifier,
     situation: OverlapSituation? = null,
     selected: OverlapResolutionType = OverlapResolutionType.PUSH_LATER,
+    backgroundState: app.ebbplanner.ui.today.TodayPresentationState? = null,
     onSelectOption: (OverlapResolutionType) -> Unit = {},
     onApply: () -> Unit = {},
     onCancel: () -> Unit = {},
@@ -141,6 +153,7 @@ fun OverlapHelperDesign(
         modifier = modifier,
         onDoneClick = onApply,
         onCancelClick = onCancel,
+        backgroundState = backgroundState,
     ) {
         if (situation != null) {
             OverlapTimelineCard(
@@ -174,6 +187,8 @@ fun MakeItFitDesign(
     modifier: Modifier = Modifier,
     plan: MakeItFitPlan? = null,
     selectedMoveIds: Set<String> = emptySet(),
+    afterPlannedMinutes: Int? = null,
+    backgroundState: app.ebbplanner.ui.today.TodayPresentationState? = null,
     onToggleMove: (String) -> Unit = {},
     onApply: () -> Unit = {},
     onCancel: () -> Unit = {},
@@ -182,6 +197,7 @@ fun MakeItFitDesign(
     val available = plan?.availableMinutes ?: 1
     val plannedFraction = if (available > 0) (planned.toFloat() / available).coerceAtMost(1f) else 1f
     val leftFraction = if (available > 0) 1f else 0f
+    val afterTotal = afterPlannedMinutes ?: plan?.afterPlannedMinutes
     EbbSheetScaffold(
         title = "Let's make it fit",
         subtitle = if (plan != null && planned > available) "This day is fuller than the time left." else "You're within today's time.",
@@ -191,6 +207,7 @@ fun MakeItFitDesign(
         modifier = modifier,
         onDoneClick = onApply,
         onCancelClick = onCancel,
+        backgroundState = backgroundState,
     ) {
         FitMeterRow(
             "Planned",
@@ -215,12 +232,14 @@ fun MakeItFitDesign(
                     onToggle = { onToggleMove(move.taskId) },
                 )
             }
-            Text(
-                "After: about ${formatMinutesShort(plan.afterPlannedMinutes)} planned",
-                style = EbbTypography.bodyM,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(top = 8.dp),
-            )
+            afterTotal?.let { after ->
+                Text(
+                    "After: about ${formatMinutesShort(after)} planned",
+                    style = EbbTypography.bodyM,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
         }
     }
 }
@@ -236,9 +255,11 @@ fun PlanMyDayDesign(
     modifier: Modifier = Modifier,
     tasks: List<PlanDayTaskRow> = emptyList(),
     emptyCandidates: Boolean = false,
+    unplacedTitles: List<String> = emptyList(),
     onClose: () -> Unit = {},
     onToggleTask: (String) -> Unit = {},
     onApply: () -> Unit = {},
+    onDismissUnplaced: () -> Unit = {},
 ) {
     Column(modifier.then(Modifier.fillMaxSize())) {
         Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -292,6 +313,28 @@ fun PlanMyDayDesign(
                         onToggle = { onToggleTask(row.id) },
                     )
                 }
+            }
+        }
+        if (unplacedTitles.isNotEmpty()) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = EbbSpacing.s4, vertical = 8.dp),
+            ) {
+                Text(
+                    "Couldn't fit today",
+                    style = EbbTypography.titleM,
+                    color = MaterialTheme.colorScheme.error,
+                )
+                unplacedTitles.forEach { title ->
+                    Text("· $title", style = EbbTypography.bodyM, modifier = Modifier.padding(top = 4.dp))
+                }
+                Text(
+                    "Got it",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = EbbTypography.labelL,
+                    modifier = Modifier.padding(top = 12.dp).clickable(onClick = onDismissUnplaced),
+                )
             }
         }
         Surface(

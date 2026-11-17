@@ -8,6 +8,7 @@ enum class FocusPhase {
     Paused,
     TimesUp,
     Done,
+    Break,
 }
 
 data class FocusTimerSnapshot(
@@ -95,12 +96,17 @@ class FocusTimerController {
     }
 
     fun tick(nowMs: Long): Boolean {
-        if (phase != FocusPhase.Running) return false
+        if (phase != FocusPhase.Running && phase != FocusPhase.Break) return false
         val expired = nowMs >= endAtMs
-        if (expired) {
-            enterTimesUp()
+        if (!expired) return false
+        if (phase == FocusPhase.Break) {
+            phase = FocusPhase.Setup
+            endAtMs = 0L
+            totalMs = 0L
+            return true
         }
-        return expired
+        enterTimesUp()
+        return true
     }
 
     fun markDone() {
@@ -114,13 +120,49 @@ class FocusTimerController {
         pausedRemainingMs = 0L
     }
 
+    fun startBreak(
+        nowMs: Long,
+        minutes: Int = 5,
+    ) {
+        val duration = minutes.coerceAtLeast(1) * 60_000L
+        totalMs = duration
+        endAtMs = nowMs + duration
+        phase = FocusPhase.Break
+    }
+
+    fun restore(
+        phase: FocusPhase,
+        endAtMs: Long,
+        totalMs: Long,
+        pausedRemainingMs: Long,
+        nowMs: Long,
+    ) {
+        this.phase = phase
+        this.endAtMs = endAtMs
+        this.totalMs = totalMs
+        this.pausedRemainingMs = pausedRemainingMs
+        when (phase) {
+            FocusPhase.Running, FocusPhase.Break ->
+                if (nowMs >= endAtMs) {
+                    if (phase == FocusPhase.Break) {
+                        this.phase = FocusPhase.Setup
+                        this.endAtMs = 0L
+                        this.totalMs = 0L
+                    } else {
+                        enterTimesUp()
+                    }
+                }
+            else -> Unit
+        }
+    }
+
     fun enterTimesUp() {
         phase = FocusPhase.TimesUp
     }
 
     private fun remainingMs(nowMs: Long): Long =
         when (phase) {
-            FocusPhase.Running -> max(0L, endAtMs - nowMs)
+            FocusPhase.Running, FocusPhase.Break -> max(0L, endAtMs - nowMs)
             FocusPhase.Paused -> pausedRemainingMs
             FocusPhase.TimesUp -> 0L
             else -> totalMs

@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -128,12 +129,20 @@ class TodayViewModel
                     } else {
                         TaskEntity.PLACEMENT_ANYTIME
                     }
+                val remindersOn = userPreferencesRepository.remindersDefault.first()
+                val reminderEnabled =
+                    if (placement == TaskEntity.PLACEMENT_SCHEDULED && start != null) {
+                        remindersOn
+                    } else {
+                        false
+                    }
                 taskRepository.addQuickCapture(
                     title = parsed.title,
                     date = date,
                     placement = placement,
                     startLocalTime = start,
                     durationMin = parsed.durationMin ?: TaskEntity.DEFAULT_DURATION_MIN,
+                    reminderEnabled = reminderEnabled,
                 )
             }
         }

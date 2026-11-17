@@ -26,6 +26,7 @@ data class PlanDayTaskRow(
 data class PlanDayUiState(
     val tasks: List<PlanDayTaskRow> = emptyList(),
     val hasCandidates: Boolean = false,
+    val unplacedTitles: List<String> = emptyList(),
 )
 
 @HiltViewModel
@@ -39,6 +40,7 @@ class PlanDayViewModel
     ) : ViewModel() {
         private val selectedIds = kotlinx.coroutines.flow.MutableStateFlow<Set<String>>(emptySet())
         private val selectionTouched = kotlinx.coroutines.flow.MutableStateFlow(false)
+        private val unplacedTitles = kotlinx.coroutines.flow.MutableStateFlow<List<String>>(emptyList())
 
         val uiState: StateFlow<PlanDayUiState> =
             combine(
@@ -46,7 +48,8 @@ class PlanDayViewModel
                 taskRepository.observeTasksForDate(clock.today()),
                 selectedIds,
                 selectionTouched,
-            ) { inbox, today, picked, touched ->
+                unplacedTitles,
+            ) { inbox, today, picked, touched, unplaced ->
                 val anytime =
                     today.filter {
                         it.placement == TaskEntity.PLACEMENT_ANYTIME &&
@@ -65,6 +68,7 @@ class PlanDayViewModel
                 PlanDayUiState(
                     tasks = rows,
                     hasCandidates = rows.isNotEmpty(),
+                    unplacedTitles = unplaced,
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlanDayUiState())
 
@@ -87,8 +91,19 @@ class PlanDayViewModel
                     } else {
                         emptyList()
                     }
-                dayPlanning.scheduleTasksOnDay(clock.today(), ids, wake, bed, now)
-                onComplete()
+                val result = dayPlanning.scheduleTasksOnDay(clock.today(), ids, wake, bed, now)
+                val unplaced =
+                    result.unplacedTaskIds.mapNotNull { id ->
+                        taskRepository.getTask(id)?.title
+                    }
+                unplacedTitles.value = unplaced
+                if (unplaced.isEmpty()) {
+                    onComplete()
+                }
             }
+        }
+
+        fun clearUnplaced() {
+            unplacedTitles.value = emptyList()
         }
     }

@@ -35,6 +35,10 @@
             android:exported="false" />
 
         <receiver
+            android:name=".reminders.FocusTimesUpReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".reminders.ReminderBootReceiver"
             android:exported="true">
             <intent-filter>

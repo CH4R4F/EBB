@@ -17,7 +17,10 @@ class DayPlanningUseCase
         private val clock: EbbClock,
     ) {
         @Suppress("LongMethod")
-        suspend fun analyzeOverlap(date: LocalDate): OverlapSituation? {
+        suspend fun analyzeOverlap(
+            date: LocalDate,
+            bedMinutes: Int,
+        ): OverlapSituation? {
             val withStarts = tasksWithStartMinutes(scheduledOpenTasks(date))
             val pair = firstOverlappingPair(withStarts) ?: return null
             val (first, startA) = pair.first
@@ -38,10 +41,20 @@ class DayPlanningUseCase
                 laterStart = startA
             }
             val earlierEnd = earlierStart + earlierTask.durationMin
-            val overlapMin = earlierEnd - laterStart
+            val laterEnd = laterStart + laterTask.durationMin
+            val overlapStart = maxOf(earlierStart, laterStart)
+            val overlapEnd = minOf(earlierEnd, laterEnd)
+            val overlapMin = (overlapEnd - overlapStart).coerceAtLeast(0)
             val pushStart = earlierEnd
             val shortenDuration = laterStart - earlierStart
-            val freeSlot = findNextFreeSlot(withStarts, earlierEnd, laterTask.durationMin)
+            val freeSlot =
+                findNextFreeSlot(
+                    withStarts,
+                    earlierEnd,
+                    laterTask.durationMin,
+                    excludeTaskId = laterTask.id,
+                    bedMinutes = bedMinutes,
+                )
             val options =
                 listOf(
                     OverlapOption(
@@ -82,6 +95,7 @@ class DayPlanningUseCase
         suspend fun applyOverlap(
             date: LocalDate,
             type: OverlapResolutionType,
+            bedMinutes: Int,
         ): Boolean {
             val withStarts = tasksWithStartMinutes(scheduledOpenTasks(date))
             val pair = firstOverlappingPair(withStarts) ?: return false
@@ -93,42 +107,44 @@ class DayPlanningUseCase
             when (type) {
                 OverlapResolutionType.KEEP_BOTH -> ok = true
                 OverlapResolutionType.PUSH_LATER -> {
+                    if (later.first.pinned) return false
                     val newStart = earlier.second + earlier.first.durationMin
-                    taskRepository.scheduleTask(
-                        later.first.id,
-                        TaskEntity.PLACEMENT_SCHEDULED,
-                        date,
-                        ClockFormat.minutesToLocalTime(newStart),
-                    )
+                    val offset = newStart - later.second
+                    taskRepository.rescheduleTaskStart(later.first.id, date, later.second, offset)
                 }
                 OverlapResolutionType.SHORTEN_EARLIER -> {
+                    if (earlier.first.pinned) return false
                     val newDuration = (later.second - earlier.second).coerceAtLeast(5)
                     taskRepository.updateTaskFields(earlier.first.id) {
                         it.copy(durationMin = newDuration)
                     }
                 }
                 OverlapResolutionType.NEXT_FREE_SLOT -> {
+                    if (later.first.pinned) return false
                     val slotStart = earlier.second + earlier.first.durationMin
                     val slot =
-                        findNextFreeSlot(withStarts, slotStart, later.first.durationMin)
+                        findNextFreeSlot(
+                            withStarts,
+                            slotStart,
+                            later.first.durationMin,
+                            excludeTaskId = later.first.id,
+                            bedMinutes = bedMinutes,
+                        )
                     if (slot == null) {
                         ok = false
                     } else {
-                        taskRepository.scheduleTask(
-                            later.first.id,
-                            TaskEntity.PLACEMENT_SCHEDULED,
-                            date,
-                            ClockFormat.minutesToLocalTime(slot),
-                        )
+                        val offset = slot - later.second
+                        taskRepository.rescheduleTaskStart(later.first.id, date, later.second, offset)
                     }
                 }
             }
             return ok
         }
 
-        suspend fun resolveFirstOverlapPushLater(date: LocalDate): Boolean {
-            return applyOverlap(date, OverlapResolutionType.PUSH_LATER)
-        }
+        suspend fun resolveFirstOverlapPushLater(
+            date: LocalDate,
+            bedMinutes: Int,
+        ): Boolean = applyOverlap(date, OverlapResolutionType.PUSH_LATER, bedMinutes)
 
         suspend fun buildMakeItFitPlan(
             date: LocalDate,
@@ -138,17 +154,22 @@ class DayPlanningUseCase
             val scheduled =
                 scheduledOpenTasks(date).filter { task ->
                     val raw = task.startLocalTime ?: return@filter false
-                    val start = ClockFormat.parseMinutes(raw) ?: return@filter false
-                    !task.pinned && start >= nowMinutes
+                    ClockFormat.parseMinutes(raw) != null
                 }
-            val planned = scheduled.sumOf { it.durationMin }
+            val planned =
+                scheduled
+                    .filter { it.status != TaskEntity.STATUS_DONE }
+                    .sumOf { it.durationMin }
             val available = (bedMinutes - nowMinutes).coerceAtLeast(0)
             val moves = mutableListOf<FitMoveSuggestion>()
-            var runningPlanned = planned
             val victims =
-                scheduled.sortedByDescending { ClockFormat.parseMinutes(it.startLocalTime ?: "00:00") ?: 0 }
+                scheduled
+                    .filter { task ->
+                        val start = ClockFormat.parseMinutes(task.startLocalTime ?: return@filter false) ?: return@filter false
+                        !task.pinned && start >= nowMinutes && task.status != TaskEntity.STATUS_DONE
+                    }.sortedByDescending { ClockFormat.parseMinutes(it.startLocalTime ?: "00:00") ?: 0 }
             for (task in victims) {
-                if (runningPlanned <= available) break
+                if (planned <= available && moves.isEmpty()) break
                 moves +=
                     FitMoveSuggestion(
                         taskId = task.id,
@@ -157,14 +178,22 @@ class DayPlanningUseCase
                         reason = "Move to Inbox — frees ${task.durationMin} min",
                         selected = true,
                     )
-                runningPlanned -= task.durationMin
             }
+            val defaultSelectedFreed = moves.filter { it.selected }.sumOf { it.durationMin }
             return MakeItFitPlan(
                 plannedMinutes = planned,
                 availableMinutes = available,
-                afterPlannedMinutes = runningPlanned.coerceAtMost(available),
+                afterPlannedMinutes = planned - defaultSelectedFreed,
                 moves = moves,
             )
+        }
+
+        fun afterPlannedMinutes(
+            plan: MakeItFitPlan,
+            selectedTaskIds: Set<String>,
+        ): Int {
+            val freed = plan.moves.filter { it.taskId in selectedTaskIds }.sumOf { it.durationMin }
+            return (plan.plannedMinutes - freed).coerceAtLeast(0)
         }
 
         suspend fun applyMakeItFit(
@@ -196,8 +225,8 @@ class DayPlanningUseCase
             wakeMinutes: Int,
             bedMinutes: Int,
             nowMinutes: Int,
-        ): Int {
-            if (taskIds.isEmpty()) return 0
+        ): ScheduleDayResult {
+            if (taskIds.isEmpty()) return ScheduleDayResult(0, emptyList())
             val scheduled = scheduledOpenTasks(date)
             val busy =
                 DayGapScheduler.busyFromScheduled(
@@ -222,7 +251,8 @@ class DayPlanningUseCase
                     ClockFormat.minutesToLocalTime(start),
                 )
             }
-            return placements.size
+            val unplaced = durations.map { it.first }.filter { it !in placements.keys }
+            return ScheduleDayResult(placements.size, unplaced)
         }
 
         suspend fun scheduledOpenTasks(date: LocalDate): List<TaskEntity> =
@@ -260,11 +290,16 @@ class DayPlanningUseCase
             withStarts: List<Pair<TaskEntity, Int>>,
             earliest: Int,
             duration: Int,
+            excludeTaskId: String?,
+            bedMinutes: Int?,
         ): Int? {
             val busy =
                 DayGapScheduler.busyFromScheduled(
-                    withStarts.map { (task, start) -> Triple(task.id, start, task.durationMin) },
+                    withStarts
+                        .filter { (task, _) -> task.id != excludeTaskId }
+                        .map { (task, start) -> Triple(task.id, start, task.durationMin) },
                 )
-            return DayGapScheduler.findSlotPublic(earliest, duration, busy, 24 * 60)
+            val bed = bedMinutes ?: (24 * 60)
+            return DayGapScheduler.findSlotPublic(earliest, duration, busy, bed)
         }
     }

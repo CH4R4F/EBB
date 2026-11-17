@@ -3,6 +3,7 @@
 package app.ebbplanner.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -72,6 +73,7 @@ fun EbbJoinedSegmentedControl(
     selectionStyle: EbbSegmentSelectionStyle = EbbSegmentSelectionStyle.PrimaryContainer,
     modifier: Modifier = Modifier,
     @Suppress("UNUSED_PARAMETER") selectedUsesTertiary: Boolean = false,
+    onSelected: (Int) -> Unit = {},
 ) {
     val pill = RoundedCornerShape(20.dp)
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
@@ -99,7 +101,12 @@ fun EbbJoinedSegmentedControl(
                 val bg = if (selected) selectedBg else MaterialTheme.colorScheme.surface
                 val fg = if (selected) selectedFg else MaterialTheme.colorScheme.onSurface
                 Row(
-                    modifier = Modifier.weight(1f).fillMaxHeight().background(bg),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .background(bg)
+                            .clickable { onSelected(index) },
                     horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -208,6 +215,7 @@ fun EbbSwitchRow(
     subtitle: String,
     checked: Boolean,
     modifier: Modifier = Modifier,
+    onCheckedChange: (Boolean) -> Unit = {},
 ) {
     Row(modifier = modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
@@ -216,7 +224,7 @@ fun EbbSwitchRow(
         }
         Switch(
             checked = checked,
-            onCheckedChange = {},
+            onCheckedChange = onCheckedChange,
             colors =
                 SwitchDefaults.colors(
                     checkedTrackColor = MaterialTheme.colorScheme.primary,
