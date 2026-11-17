@@ -39,6 +39,7 @@ object TodayPresentationMapper {
             progressPercent = progressPercent(state.minutesPlanned, state.wakeMinutes, state.bedMinutes),
             anytimeChips = state.anytimeTasks.map { it.title },
             blocks = blocks,
+            events = state.calendarEvents.map { it.toPresentation() },
             nowMinutes = if (isToday(state.date)) nowMinutes else null,
             showNowLine = isToday(state.date),
         )

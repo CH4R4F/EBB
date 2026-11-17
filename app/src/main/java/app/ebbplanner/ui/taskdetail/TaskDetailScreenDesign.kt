@@ -1,8 +1,11 @@
-@file:Suppress("LongMethod")
+@file:Suppress("LongMethod", "MagicNumber", "MaxLineLength", "NewLineAtEndOfFile")
 
 package app.ebbplanner.ui.taskdetail
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,20 +14,25 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
+import app.ebbplanner.ui.theme.EbbTaskColors
 import app.ebbplanner.ui.theme.EbbTypography
 
 @Composable
@@ -32,82 +40,316 @@ fun TaskDetailScreenDesign(
     state: TaskDetailPresentationState,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(horizontal = EbbSpacing.s1),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
-                EbbSymbol("close", fontSize = 22.sp)
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            TaskDetailTopBar()
+            state.recurringBanner?.let { banner ->
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                ) {
+                    Text(
+                        banner,
+                        modifier = Modifier.padding(EbbSpacing.s3),
+                        style = EbbTypography.bodyM,
+                    )
+                }
             }
-            androidx.compose.foundation.layout.Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
-                EbbSymbol("more_vert", fontSize = 22.sp)
+            Column(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = EbbSpacing.s4)
+                        .padding(bottom = 96.dp),
+            ) {
+                TitleRow(state)
+                DetailListRow(
+                    icon = "event",
+                    line1 = state.whenLabel,
+                    line2 = state.dateLabel,
+                    tall = true,
+                )
+                EstimateRow(state.estimate)
+                PinnedRow(state.pinned)
+                EnergySegmentedRow(state.energySelected)
+                ColorIconRow(state)
+                DetailListRow(icon = "notifications", line1 = state.remindersLabel, line2 = "Reminders", tall = true)
+                DetailListRow(icon = "repeat", line1 = state.repeatLabel, line2 = "Repeat", tall = true)
+                DetailListRow(icon = "air", line1 = state.breatherLabel, line2 = "Breather after", tall = true)
+                HorizontalDivider(modifier = Modifier.padding(vertical = EbbSpacing.s2))
+                StepsHeader(state.subtaskProgress)
+                state.subtasks.forEach { SubtaskRow(it) }
+                AddStepRow()
+                if (state.notes.isNotBlank()) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = EbbSpacing.s2))
+                    Text("Notes", style = EbbTypography.labelL, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(state.notes, style = EbbTypography.bodyM, modifier = Modifier.padding(top = EbbSpacing.s2))
+                }
+            }
+        }
+        TaskDetailBottomBar(modifier = Modifier.align(Alignment.BottomCenter))
+    }
+}
+
+@Composable
+private fun TaskDetailTopBar() {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(horizontal = EbbSpacing.s1),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
+            EbbSymbol("close", fontSize = 22.sp)
+        }
+        androidx.compose.foundation.layout.Spacer(modifier = Modifier.weight(1f))
+        IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
+            EbbSymbol("more_vert", fontSize = 22.sp)
+        }
+    }
+}
+
+@Composable
+private fun TitleRow(state: TaskDetailPresentationState) {
+    Row(
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s3),
+        modifier = Modifier.padding(vertical = EbbSpacing.s2),
+    ) {
+        TaskCompletionRing(done = state.done)
+        Text(
+            state.title,
+            style = EbbTypography.headlineM,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun TaskCompletionRing(done: Boolean) {
+    val color =
+        if (done) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.outline
+        }
+    Surface(
+        modifier = Modifier.size(28.dp),
+        shape = CircleShape,
+        border = BorderStroke(2.dp, color),
+        color = MaterialTheme.colorScheme.background,
+    ) {}
+}
+
+@Composable
+private fun DetailListRow(
+    icon: String,
+    line1: String,
+    line2: String,
+    tall: Boolean = false,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(if (tall) 72.dp else 56.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(
+            modifier = Modifier.size(40.dp),
+            shape = EbbShapes.sm,
+            color = MaterialTheme.colorScheme.surfaceVariant,
+        ) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                EbbSymbol(icon, fontSize = 20.sp)
             }
         }
         Column(
             modifier =
                 Modifier
                     .weight(1f)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = EbbSpacing.s4),
+                    .padding(horizontal = EbbSpacing.s3),
         ) {
-            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s3)) {
-                TaskRing()
-                Text(state.title, style = EbbTypography.headlineM, modifier = Modifier.weight(1f))
-            }
-            DetailRow("event", state.whenLabel, state.dateLabel)
-            DetailRow("timer", state.estimate, "Estimate")
-            DetailRow("bolt", "High", "Energy", energy = state.energySelected)
-            DetailRow("palette", state.colorLabel, "Color & icon")
-            DetailRow("notifications", state.remindersLabel, "Reminders")
-            DetailRow("repeat", state.repeatLabel, "Repeat")
-            HorizontalDivider(modifier = Modifier.padding(vertical = EbbSpacing.s3))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Text("Steps ", style = EbbTypography.titleM)
-                Text(
-                    state.subtaskProgress,
-                    style = EbbTypography.bodyM,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            state.subtasks.forEach { sub ->
-                SubtaskRow(sub)
-            }
-            if (state.notes.isNotBlank()) {
-                HorizontalDivider(modifier = Modifier.padding(vertical = EbbSpacing.s3))
-                Text("Notes", style = EbbTypography.labelL, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(state.notes, style = EbbTypography.bodyM, modifier = Modifier.padding(top = EbbSpacing.s2))
-            }
+            Text(line1, style = EbbTypography.bodyL)
+            Text(line2, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        TaskDetailBottomBar()
+        EbbSymbol("chevron_right", fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
-private fun TaskRing() {
-    Surface(
-        modifier = Modifier.size(28.dp),
-        shape = EbbShapes.full,
-        border =
-            androidx.compose.foundation.BorderStroke(
-                2.dp,
-                MaterialTheme.colorScheme.outline,
-            ),
-    ) {}
+private fun EstimateRow(estimate: String) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(72.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(modifier = Modifier.size(40.dp), shape = EbbShapes.sm, color = MaterialTheme.colorScheme.surfaceVariant) {
+            Box(contentAlignment = Alignment.Center) {
+                EbbSymbol("timer", fontSize = 20.sp)
+            }
+        }
+        Column(modifier = Modifier.weight(1f).padding(horizontal = EbbSpacing.s3)) {
+            Text(estimate, style = EbbTypography.bodyL)
+            Text("Estimate", style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s1)) {
+            RoundAdjustButton("remove")
+            RoundAdjustButton("add")
+        }
+    }
 }
 
 @Composable
-private fun DetailRow(
-    icon: String,
-    line1: String,
-    line2: String,
-    energy: Int? = null,
+private fun RoundAdjustButton(icon: String) {
+    Surface(
+        modifier = Modifier.size(40.dp),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            EbbSymbol(icon, fontSize = 20.sp)
+        }
+    }
+}
+
+@Composable
+private fun PinnedRow(pinned: Boolean) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(72.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(modifier = Modifier.size(40.dp), shape = EbbShapes.sm, color = MaterialTheme.colorScheme.surfaceVariant) {
+            Box(contentAlignment = Alignment.Center) {
+                EbbSymbol("keep", fontSize = 20.sp, filled = pinned)
+            }
+        }
+        Column(modifier = Modifier.weight(1f).padding(horizontal = EbbSpacing.s3)) {
+            Text("Pinned", style = EbbTypography.bodyL)
+            Text("Stays put when you shift your day", style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(
+            checked = pinned,
+            onCheckedChange = {},
+            colors =
+                SwitchDefaults.colors(
+                    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                    checkedTrackColor = MaterialTheme.colorScheme.primary,
+                ),
+        )
+    }
+}
+
+@Composable
+private fun EnergySegmentedRow(selected: Int) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(72.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(modifier = Modifier.size(40.dp), shape = EbbShapes.sm, color = MaterialTheme.colorScheme.surfaceVariant) {
+            Box(contentAlignment = Alignment.Center) {
+                EbbSymbol("bolt", fontSize = 20.sp)
+            }
+        }
+        Column(modifier = Modifier.weight(1f).padding(horizontal = EbbSpacing.s3)) {
+            Text("Energy", style = EbbTypography.bodyL)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s1)) {
+            EnergyChip("Low", 1, selected == 1)
+            EnergyChip("Med", 2, selected == 2)
+            EnergyChip("High", 3, selected == 3)
+        }
+    }
+}
+
+@Composable
+private fun EnergyChip(
+    label: String,
+    level: Int,
+    selected: Boolean,
 ) {
+    Surface(
+        shape = EbbShapes.full,
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+        border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            EnergyBars(level)
+            Text(label, style = EbbTypography.labelM)
+        }
+    }
+}
+
+@Composable
+private fun EnergyBars(level: Int) {
+    Row(horizontalArrangement = Arrangement.spacedBy(1.dp), verticalAlignment = Alignment.Bottom) {
+        listOf(4.dp, 6.dp, 8.dp).forEachIndexed { index, h ->
+            Box(
+                modifier =
+                    Modifier
+                        .size(width = 3.dp, height = h)
+                        .background(
+                            if (index < level) {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                MaterialTheme.colorScheme.outline
+                            },
+                            EbbShapes.xs,
+                        ),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ColorIconRow(state: TaskDetailPresentationState) {
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(72.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(modifier = Modifier.size(40.dp), shape = EbbShapes.sm, color = MaterialTheme.colorScheme.surfaceVariant) {
+            Box(contentAlignment = Alignment.Center) {
+                EbbSymbol("palette", fontSize = 20.sp)
+            }
+        }
+        Column(modifier = Modifier.weight(1f).padding(horizontal = EbbSpacing.s3)) {
+            Text(state.colorLabel, style = EbbTypography.bodyL)
+            Text("Color & icon", style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Surface(
+            modifier = Modifier.size(40.dp),
+            shape = EbbShapes.md,
+            color = EbbTaskColors.tint(state.colorKey, dark),
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                EbbSymbol(state.colorIconKey, fontSize = 20.sp)
+            }
+        }
+        EbbSymbol("chevron_right", fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun StepsHeader(progress: String) {
     Row(
         modifier =
             Modifier
@@ -115,16 +357,15 @@ private fun DetailRow(
                 .padding(vertical = EbbSpacing.s2),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        EbbSymbol(icon, fontSize = 20.sp, modifier = Modifier.padding(end = EbbSpacing.s3))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(line1, style = EbbTypography.bodyL)
-            Text(line2, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        if (energy != null) {
-            Text("High", style = EbbTypography.labelL)
-        } else {
-            EbbSymbol("chevron_right", fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        Text("Steps ", style = EbbTypography.titleM)
+        Text(progress, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        androidx.compose.foundation.layout.Spacer(modifier = Modifier.weight(1f))
+        Text(
+            "Break it down",
+            style = EbbTypography.labelL,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        EbbSymbol("call_split", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
     }
 }
 
@@ -137,39 +378,99 @@ private fun SubtaskRow(row: TaskSubtaskRow) {
                 .height(48.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        EbbSymbol(
-            if (row.done) "check_box" else "check_box_outline_blank",
-            fontSize = 20.sp,
-            filled = row.done,
-            modifier = Modifier.padding(end = EbbSpacing.s2),
+        Surface(
+            modifier = Modifier.size(24.dp),
+            shape = EbbShapes.xs,
+            color = if (row.done) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+            border =
+                if (row.done) {
+                    null
+                } else {
+                    BorderStroke(2.dp, MaterialTheme.colorScheme.outline)
+                },
+        ) {
+            if (row.done) {
+                Box(contentAlignment = Alignment.Center) {
+                    EbbSymbol("check", fontSize = 16.sp, color = MaterialTheme.colorScheme.onPrimary)
+                }
+            }
+        }
+        Text(
+            row.title,
+            style = EbbTypography.bodyL,
+            modifier = Modifier.weight(1f).padding(horizontal = EbbSpacing.s2),
         )
-        Text(row.title, style = EbbTypography.bodyL, modifier = Modifier.weight(1f))
         Text(row.estimate, style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        EbbSymbol(
+            "drag_indicator",
+            fontSize = 20.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = EbbSpacing.s2),
+        )
     }
 }
 
 @Composable
-private fun TaskDetailBottomBar() {
+private fun AddStepRow() {
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(EbbSpacing.s4),
+                .height(48.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
     ) {
-        Surface(
-            shape = EbbShapes.full,
-            color = MaterialTheme.colorScheme.surface,
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        EbbSymbol("add", fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            "Add a step",
+            style = EbbTypography.bodyM,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = EbbSpacing.s2),
+        )
+    }
+}
+
+@Composable
+private fun TaskDetailBottomBar(modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.background,
+        shadowElevation = 8.dp,
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s3),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
         ) {
-            Text("Schedule…", modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp))
-        }
-        androidx.compose.foundation.layout.Spacer(modifier = Modifier.weight(1f))
-        Surface(shape = EbbShapes.full, color = MaterialTheme.colorScheme.primary) {
-            Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                EbbSymbol("play_arrow", fontSize = 18.sp, color = MaterialTheme.colorScheme.onPrimary)
-                Text("Start focus", color = MaterialTheme.colorScheme.onPrimary, style = EbbTypography.labelL)
+            Surface(
+                shape = EbbShapes.full,
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s1),
+                ) {
+                    EbbSymbol("event_available", fontSize = 18.sp)
+                    Text("Schedule…", style = EbbTypography.labelL)
+                }
+            }
+            IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
+                EbbSymbol("spa", fontSize = 22.sp)
+            }
+            androidx.compose.foundation.layout.Spacer(modifier = Modifier.weight(1f))
+            Surface(shape = EbbShapes.full, color = MaterialTheme.colorScheme.primary) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s1),
+                ) {
+                    EbbSymbol("play_arrow", fontSize = 18.sp, color = MaterialTheme.colorScheme.onPrimary)
+                    Text("Start focus", color = MaterialTheme.colorScheme.onPrimary, style = EbbTypography.labelL)
+                }
             }
         }
     }
@@ -182,43 +483,5 @@ fun TaskDetailAppPreview(
 ) {
     app.ebbplanner.ui.onboarding.OnboardingAppPreview(darkTheme = darkTheme) {
         TaskDetailScreenDesign(state = state)
-    }
-}
-
-@Composable
-fun EstimatePickerDesign(
-    state: EstimatePickerState,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(EbbSpacing.s4),
-    ) {
-        Text("Estimate", style = EbbTypography.titleL)
-        Row(
-            modifier = Modifier.padding(top = EbbSpacing.s3),
-            horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
-        ) {
-            state.options.forEach { min ->
-                val sel = min == state.selectedMinutes
-                Surface(
-                    shape = EbbShapes.full,
-                    color =
-                        if (sel) {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surfaceVariant
-                        },
-                ) {
-                    Text(
-                        "$min min",
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        style = EbbTypography.labelL,
-                    )
-                }
-            }
-        }
     }
 }

@@ -22,11 +22,51 @@ class TaskDetailPaparazziTest {
     }
 
     @Test
-    fun t3_estimate_picker_dark() {
-        paparazzi.snapshot("t3_estimate_picker_dark") {
-            app.ebbplanner.ui.onboarding.OnboardingAppPreview(darkTheme = true) {
-                EstimatePickerDesign(estimatePickerDefault())
-            }
+    fun t2_task_detail_new_dark() {
+        paparazzi.snapshot("t2_task_detail_new_dark") {
+            TaskDetailAppPreview(darkTheme = true, state = taskDetailNew())
+        }
+    }
+
+    @Test
+    fun t2_task_detail_done_dark() {
+        paparazzi.snapshot("t2_task_detail_done_dark") {
+            TaskDetailAppPreview(darkTheme = true, state = taskDetailDone())
+        }
+    }
+
+    @Test
+    fun t2_task_detail_recurring_dark() {
+        paparazzi.snapshot("t2_task_detail_recurring_dark") {
+            TaskDetailAppPreview(darkTheme = true, state = taskDetailRecurring())
+        }
+    }
+
+    @Test
+    fun t2_task_detail_many_subtasks_dark() {
+        paparazzi.snapshot("t2_task_detail_many_subtasks_dark") {
+            TaskDetailAppPreview(darkTheme = true, state = taskDetailManySubtasks())
+        }
+    }
+
+    @Test
+    fun t3_estimate_picker_presets_dark() {
+        paparazzi.snapshot("t3_estimate_picker_presets_dark") {
+            EstimatePickerAppPreview(darkTheme = true, state = estimatePickerPresets())
+        }
+    }
+
+    @Test
+    fun t3_estimate_picker_custom_dark() {
+        paparazzi.snapshot("t3_estimate_picker_custom_dark") {
+            EstimatePickerAppPreview(darkTheme = true, state = estimatePickerCustom())
+        }
+    }
+
+    @Test
+    fun t3_estimate_picker_big_prompt_dark() {
+        paparazzi.snapshot("t3_estimate_picker_big_prompt_dark") {
+            EstimatePickerAppPreview(darkTheme = true, state = estimatePickerBigPrompt())
         }
     }
 }

@@ -1,7 +1,8 @@
-@file:Suppress("LongMethod")
+@file:Suppress("LongMethod", "MaxLineLength", "NewLineAtEndOfFile")
 
 package app.ebbplanner.ui.inbox
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -13,20 +14,26 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,29 +50,85 @@ fun InboxScreenDesign(
     state: InboxPresentationState,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
-        InboxTopBar(title = state.title)
-        Text(
-            state.subtitle,
-            style = EbbTypography.bodyM,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = EbbSpacing.s4),
-        )
-        InboxFilterRow(
-            filters = state.filters,
-            selected = state.selectedFilter,
-            modifier = Modifier.padding(vertical = EbbSpacing.s3),
-        )
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = EbbSpacing.s4),
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        bottomBar = { EbbBottomNavigation(selected = MainTab.Inbox) },
+        floatingActionButton = {
+            if (state.showFab) {
+                FloatingActionButton(
+                    onClick = {},
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+                ) {
+                    EbbSymbol("add", fontSize = 24.sp, color = MaterialTheme.colorScheme.onPrimary)
+                }
+            }
+        },
+    ) { padding ->
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
         ) {
-            items(state.tasks, key = { it.id }) { task ->
-                InboxTaskCard(task)
+            InboxTopBar(title = state.title)
+            Text(
+                state.subtitle,
+                style = EbbTypography.bodyM,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier =
+                    Modifier
+                        .padding(horizontal = EbbSpacing.s4)
+                        .offset(y = (-8).dp),
+            )
+            state.dragToTodayHint?.let {
+                InboxHintBanner(it)
+            }
+            InboxFilterRow(
+                filters = state.filters,
+                selected = state.selectedFilter,
+                modifier = Modifier.padding(top = EbbSpacing.s2, bottom = EbbSpacing.s2),
+            )
+            when (state.visualMode) {
+                InboxVisualMode.Loading -> InboxLoadingSkeleton()
+                InboxVisualMode.Empty, InboxVisualMode.FilteredEmpty -> InboxEmptyBody(state.emptyMessage)
+                else ->
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
+                        contentPadding =
+                            androidx.compose.foundation.layout.PaddingValues(
+                                horizontal = EbbSpacing.s4,
+                                vertical = EbbSpacing.s1,
+                            ),
+                    ) {
+                        items(state.tasks, key = { it.id }) { task ->
+                            val swipe = state.swipeReveal?.takeIf { it.taskId == task.id }
+                            InboxTaskCard(task = task, swipeReveal = swipe)
+                        }
+                    }
             }
         }
-        EbbBottomNavigation(selected = MainTab.Inbox)
+    }
+}
+
+@Composable
+private fun InboxHintBanner(message: String) {
+    Surface(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s1),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = EbbShapes.md,
+    ) {
+        Text(
+            message,
+            modifier = Modifier.padding(EbbSpacing.s3),
+            style = EbbTypography.bodyM,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
     }
 }
 
@@ -111,12 +174,8 @@ private fun InboxFilterRow(
             val isSel = index == selected
             Surface(
                 shape = EbbShapes.full,
-                color =
-                    if (isSel) {
-                        MaterialTheme.colorScheme.primaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.surfaceVariant
-                    },
+                color = if (isSel) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                border = if (isSel) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -134,68 +193,158 @@ private fun InboxFilterRow(
 }
 
 @Composable
-private fun InboxTaskCard(task: InboxTaskRow) {
+private fun InboxTaskCard(
+    task: InboxTaskRow,
+    swipeReveal: InboxSwipeReveal?,
+) {
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = EbbShapes.md,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-    ) {
-        Row(
-            modifier = Modifier.height(72.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .width(4.dp)
-                        .fillMaxHeight()
-                        .background(EbbTaskColors.strong(task.colorKey)),
-            )
+    Box(modifier = Modifier.fillMaxWidth()) {
+        if (swipeReveal != null) {
             Surface(
-                modifier = Modifier.padding(start = 12.dp).size(40.dp),
-                shape = EbbShapes.sm,
-                color = EbbTaskColors.tint(task.colorKey, dark),
-            ) {
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                    EbbSymbol(task.iconKey, fontSize = 20.sp)
-                }
-            }
-            Column(
                 modifier =
                     Modifier
-                        .weight(1f)
-                        .padding(horizontal = EbbSpacing.s2),
+                        .fillMaxWidth()
+                        .height(64.dp),
+                shape = EbbShapes.md,
+                color = MaterialTheme.colorScheme.primaryContainer,
             ) {
-                Text(
-                    task.title,
-                    style = EbbTypography.titleM,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2)) {
-                    EbbSymbol("schedule", fontSize = 14.sp)
+                Row(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = EbbSpacing.s4),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(
-                        task.estimate,
-                        style = EbbTypography.bodyM,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        swipeReveal.label,
+                        style = EbbTypography.labelL,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
-                    InboxEnergyBars(task.energyLevel)
-                    if (task.hasReminder) {
-                        EbbSymbol("notifications", fontSize = 14.sp)
-                    }
-                    task.checklist?.let {
-                        EbbSymbol("checklist", fontSize = 14.sp)
-                        Text(it, style = EbbTypography.labelM)
-                    }
+                    EbbSymbol(
+                        swipeReveal.icon,
+                        fontSize = 20.sp,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(start = EbbSpacing.s2),
+                    )
                 }
             }
-            EbbSymbol(
-                "drag_indicator",
-                fontSize = 22.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(end = 8.dp),
-            )
+        }
+        val shiftX =
+            when (swipeReveal?.side) {
+                InboxSwipeSide.Left -> (-120).dp
+                InboxSwipeSide.Right -> 120.dp
+                null -> 0.dp
+            }
+        Surface(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .offset(x = shiftX),
+            shape = EbbShapes.md,
+            color = MaterialTheme.colorScheme.surfaceContainer,
+        ) {
+            Row(
+                modifier = Modifier.height(64.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier =
+                        Modifier
+                            .width(4.dp)
+                            .fillMaxHeight()
+                            .background(EbbTaskColors.strong(task.colorKey)),
+                )
+                InboxCheckRing(
+                    done = task.done,
+                    selected = task.selected,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+                Surface(
+                    modifier = Modifier.padding(start = 8.dp).size(40.dp),
+                    shape = EbbShapes.sm,
+                    color = EbbTaskColors.tint(task.colorKey, dark),
+                ) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        EbbSymbol(task.iconKey, fontSize = 20.sp)
+                    }
+                }
+                Column(
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .padding(horizontal = EbbSpacing.s2),
+                ) {
+                    Text(
+                        task.title,
+                        style = EbbTypography.titleM,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        EbbSymbol("schedule", fontSize = 14.sp)
+                        Text(
+                            task.estimate,
+                            style = EbbTypography.bodyM,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        InboxEnergyBars(task.energyLevel)
+                        if (task.hasReminder) {
+                            EbbSymbol("notifications", fontSize = 14.sp)
+                        }
+                        task.checklist?.let {
+                            EbbSymbol("checklist", fontSize = 14.sp)
+                            Text(it, style = EbbTypography.labelM)
+                        }
+                    }
+                }
+                EbbSymbol(
+                    "drag_indicator",
+                    fontSize = 22.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(end = 8.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun InboxCheckRing(
+    done: Boolean,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val ringColor =
+        when {
+            selected -> MaterialTheme.colorScheme.primary
+            done -> MaterialTheme.colorScheme.primary
+            else -> MaterialTheme.colorScheme.outline
+        }
+    Box(
+        modifier =
+            modifier
+                .size(24.dp)
+                .background(MaterialTheme.colorScheme.surface, CircleShape)
+                .then(
+                    Modifier.background(
+                        color = androidx.compose.ui.graphics.Color.Transparent,
+                        shape = CircleShape,
+                    ),
+                ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Surface(
+            modifier = Modifier.size(22.dp),
+            shape = CircleShape,
+            border = BorderStroke(2.dp, ringColor),
+            color = androidx.compose.ui.graphics.Color.Transparent,
+        ) {
+            if (done || selected) {
+                Box(contentAlignment = Alignment.Center) {
+                    EbbSymbol("check", fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
+                }
+            }
         }
     }
 }
@@ -222,6 +371,42 @@ private fun InboxEnergyBars(level: Int) {
                         ),
             )
         }
+    }
+}
+
+@Composable
+private fun InboxLoadingSkeleton() {
+    Column(
+        modifier = Modifier.padding(horizontal = EbbSpacing.s4),
+        verticalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
+    ) {
+        repeat(5) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(64.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant, EbbShapes.md),
+            )
+        }
+    }
+}
+
+@Composable
+private fun InboxEmptyBody(message: String?) {
+    Box(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(EbbSpacing.s6),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            message.orEmpty(),
+            style = EbbTypography.bodyL,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 

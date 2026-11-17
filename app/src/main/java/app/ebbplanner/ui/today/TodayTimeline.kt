@@ -26,9 +26,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
@@ -107,7 +110,7 @@ fun TodayTimeline(
                         .padding(start = timelineHourRail + 4.dp, end = 8.dp)
                         .offset(y = y)
                         .fillMaxWidth()
-                        .height(h),
+                        .height(h.coerceAtLeast(32.dp)),
             )
         }
 
@@ -319,7 +322,7 @@ private fun ScheduledTaskBlock(
         Surface(
             modifier = Modifier.fillMaxSize(),
             shape = shape,
-            color = if (block.isCurrent) fill.copy(alpha = 0.45f) else fill,
+            color = fill,
             shadowElevation = if (elevated) 8.dp else 0.dp,
         ) {
             if (block.short) {
@@ -569,16 +572,23 @@ private fun GapChip(
     label: String,
     modifier: Modifier = Modifier,
 ) {
+    val outline = MaterialTheme.colorScheme.outline
     Box(
         modifier =
-            modifier
-                .border(
-                    1.dp,
-                    MaterialTheme.colorScheme.outline,
-                    EbbShapes.full,
+            modifier.drawBehind {
+                val stroke =
+                    Stroke(
+                        width = 1.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f), 0f),
+                    )
+                drawRoundRect(
+                    color = outline,
+                    size = size,
+                    cornerRadius = CornerRadius(16.dp.toPx(), 16.dp.toPx()),
+                    style = stroke,
                 )
-                .padding(horizontal = 12.dp),
-        contentAlignment = Alignment.CenterStart,
+            },
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = label,

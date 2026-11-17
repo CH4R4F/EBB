@@ -2,6 +2,7 @@
 
 package app.ebbplanner.ui.today
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -135,7 +136,7 @@ fun TodayDayHead(
             Surface(
                 onClick = {},
                 shape = EbbShapes.full,
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                color = MaterialTheme.colorScheme.primaryContainer,
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = EbbSpacing.s3, vertical = 10.dp),
@@ -145,12 +146,12 @@ fun TodayDayHead(
                     EbbSymbol(
                         "more_time",
                         fontSize = 18.sp,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                     Text(
                         stringResource(R.string.today_shift),
                         style = EbbTypography.labelL,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }
             }
@@ -227,7 +228,12 @@ fun TodayAnytimeTray(
             }
             Surface(
                 shape = EbbShapes.full,
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                color = MaterialTheme.colorScheme.surface,
+                border =
+                    BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.outline,
+                    ),
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),

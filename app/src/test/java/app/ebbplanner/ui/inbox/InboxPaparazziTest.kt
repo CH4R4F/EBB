@@ -14,10 +14,32 @@ class InboxPaparazziTest {
             renderingMode = SessionParams.RenderingMode.SHRINK,
         )
 
-    @Test
-    fun m2_inbox_populated_dark() {
-        paparazzi.snapshot("m2_inbox_populated_dark") {
-            InboxAppPreview(darkTheme = true, state = inboxPopulated())
+    @Test fun m2_inbox_populated_dark() = snap("m2_inbox_populated_dark", inboxPopulated())
+
+    @Test fun m2_inbox_empty_dark() = snap("m2_inbox_empty_dark", inboxEmpty())
+
+    @Test fun m2_inbox_filtered_empty_dark() = snap("m2_inbox_filtered_empty_dark", inboxFilteredEmpty())
+
+    @Test fun m2_inbox_many_dark() = snap("m2_inbox_many_dark", inboxMany())
+
+    @Test fun m2_inbox_loading_dark() = snap("m2_inbox_loading_dark", inboxLoading())
+
+    @Test fun m2_inbox_multiselect_dark() = snap("m2_inbox_multiselect_dark", inboxMultiselect())
+
+    @Test fun m2_inbox_swipe_left_dark() = snap("m2_inbox_swipe_left_dark", inboxSwipeLeft())
+
+    @Test fun m2_inbox_swipe_right_dark() = snap("m2_inbox_swipe_right_dark", inboxSwipeRight())
+
+    @Test fun m2_inbox_tidy_up_dark() = snap("m2_inbox_tidy_up_dark", inboxTidyUp())
+
+    @Test fun m2_inbox_drag_to_today_dark() = snap("m2_inbox_drag_to_today_dark", inboxDragToToday())
+
+    private fun snap(
+        name: String,
+        state: InboxPresentationState,
+    ) {
+        paparazzi.snapshot(name) {
+            InboxAppPreview(darkTheme = true, state = state)
         }
     }
 }

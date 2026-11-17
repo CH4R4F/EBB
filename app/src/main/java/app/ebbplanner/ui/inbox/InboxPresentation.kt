@@ -1,3 +1,5 @@
+@file:Suppress("NewLineAtEndOfFile")
+
 package app.ebbplanner.ui.inbox
 
 data class InboxTaskRow(
@@ -9,7 +11,21 @@ data class InboxTaskRow(
     val energyLevel: Int = 2,
     val hasReminder: Boolean = false,
     val checklist: String? = null,
+    val done: Boolean = false,
+    val selected: Boolean = false,
 )
+
+data class InboxSwipeReveal(
+    val taskId: String,
+    val label: String,
+    val icon: String,
+    val side: InboxSwipeSide,
+)
+
+enum class InboxSwipeSide {
+    Left,
+    Right,
+}
 
 data class InboxPresentationState(
     val title: String = "Inbox",
@@ -18,11 +34,17 @@ data class InboxPresentationState(
     val selectedFilter: Int = 0,
     val tasks: List<InboxTaskRow> = emptyList(),
     val visualMode: InboxVisualMode = InboxVisualMode.Normal,
+    val swipeReveal: InboxSwipeReveal? = null,
+    val dragToTodayHint: String? = null,
+    val emptyMessage: String? = null,
+    val showFab: Boolean = true,
 )
 
 enum class InboxVisualMode {
     Normal,
     Empty,
+    FilteredEmpty,
+    Many,
     Loading,
     Multiselect,
     SwipeLeft,

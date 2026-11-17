@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import app.cash.turbine.test
 import app.ebbplanner.MainDispatcherRule
+import app.ebbplanner.data.calendar.CalendarEventsReader
 import app.ebbplanner.data.local.EbbDatabase
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.preferences.UserPreferencesRepository
@@ -78,7 +79,13 @@ class TodayViewModelTest {
                 ),
             )
 
-            val viewModel = TodayViewModel(taskRepository, preferencesRepository)
+            val context: Context = ApplicationProvider.getApplicationContext()
+            val viewModel =
+                TodayViewModel(
+                    taskRepository,
+                    preferencesRepository,
+                    CalendarEventsReader(context),
+                )
             advanceUntilIdle()
             viewModel.uiState.test {
                 var state = awaitItem()

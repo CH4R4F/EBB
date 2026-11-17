@@ -2,6 +2,7 @@ package app.ebbplanner.ui.today
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.ebbplanner.data.calendar.CalendarEventsReader
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.data.repository.TaskRepository
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -26,6 +28,7 @@ data class TodayUiState(
     val bedMinutes: Int = UserPreferencesRepository.DEFAULT_BED_MINUTES,
     val scheduledTasks: List<TaskEntity> = emptyList(),
     val anytimeTasks: List<TaskEntity> = emptyList(),
+    val calendarEvents: List<TodayCalendarEventUi> = emptyList(),
     val minutesPlanned: Int = 0,
     val isLoading: Boolean = true,
 )
@@ -36,6 +39,7 @@ class TodayViewModel
     constructor(
         private val taskRepository: TaskRepository,
         private val userPreferencesRepository: UserPreferencesRepository,
+        private val calendarEventsReader: CalendarEventsReader,
     ) : ViewModel() {
         private val selectedDate = MutableStateFlow(LocalDate.now())
         private val dateFormatter = DateTimeFormatter.ofPattern("EEE d MMM")
@@ -45,14 +49,17 @@ class TodayViewModel
             combine(
                 selectedDate,
                 selectedDate.flatMapLatest { taskRepository.observeTasksForDate(it) },
+                selectedDate.flatMapLatest { date -> flowOf(calendarEventsReader.eventsForDay(date)) },
                 userPreferencesRepository.dayWakeMinutes,
                 userPreferencesRepository.dayBedMinutes,
-            ) { date, tasks, wake, bed ->
+            ) { date, tasks, calendarSnapshots, wake, bed ->
                 val scheduled =
                     tasks.filter {
                         it.placement == TaskEntity.PLACEMENT_SCHEDULED && it.startLocalTime != null
                     }
                 val anytime = tasks.filter { it.placement == TaskEntity.PLACEMENT_ANYTIME }
+                val calendarEvents =
+                    calendarSnapshots.map { snapshot -> snapshot.toTodayUi() }
                 TodayUiState(
                     date = date,
                     dateLabel = date.format(dateFormatter),
@@ -60,6 +67,7 @@ class TodayViewModel
                     bedMinutes = bed,
                     scheduledTasks = scheduled,
                     anytimeTasks = anytime,
+                    calendarEvents = calendarEvents,
                     minutesPlanned = scheduled.sumOf { it.durationMin },
                     isLoading = false,
                 )

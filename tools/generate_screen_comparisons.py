@@ -44,8 +44,22 @@ PAIRS: dict[str, str] = {
     "t1_quick_capture_paste_prompt_dark.png": "16-t1-quick-capture-paste-prompt-dark.png",
     "t1_quick_capture_nl_highlight_dark.png": "16-t1-quick-capture-nl-highlight-v1x-dark.png",
     "m2_inbox_populated_dark.png": "11-m2-inbox-populated-dark.png",
+    "m2_inbox_empty_dark.png": "11-m2-inbox-empty-dark.png",
+    "m2_inbox_filtered_empty_dark.png": "11-m2-inbox-filtered-empty-dark.png",
+    "m2_inbox_many_dark.png": "11-m2-inbox-many-dark.png",
+    "m2_inbox_loading_dark.png": "11-m2-inbox-loading-dark.png",
+    "m2_inbox_multiselect_dark.png": "11-m2-inbox-multiselect-dark.png",
+    "m2_inbox_swipe_left_dark.png": "11-m2-inbox-swipe-left-dark.png",
+    "m2_inbox_swipe_right_dark.png": "11-m2-inbox-swipe-right-dark.png",
+    "m2_inbox_tidy_up_dark.png": "11-m2-inbox-tidy-up-dark.png",
     "t2_task_detail_existing_dark.png": "17-t2-task-detail-existing-dark.png",
-    "t3_estimate_picker_dark.png": "18-t3-estimate-picker-presets-dark.png",
+    "t2_task_detail_new_dark.png": "17-t2-task-detail-new-dark.png",
+    "t2_task_detail_done_dark.png": "17-t2-task-detail-done-dark.png",
+    "t2_task_detail_recurring_dark.png": "17-t2-task-detail-recurring-dark.png",
+    "t2_task_detail_many_subtasks_dark.png": "17-t2-task-detail-many-subtasks-dark.png",
+    "t3_estimate_picker_presets_dark.png": "18-t3-estimate-picker-presets-dark.png",
+    "t3_estimate_picker_custom_dark.png": "18-t3-estimate-picker-custom-dark.png",
+    "t3_estimate_picker_big_prompt_dark.png": "18-t3-estimate-picker-big-prompt-dark.png",
 }
 
 
