@@ -50,6 +50,16 @@ fun EbbNavHost() {
         navController.navigate(EbbDestinations.ONBOARDING_NOTIFICATIONS)
     }
 
+    fun afterNotifications() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            navController.navigate(EbbDestinations.ONBOARDING_EXACT_ALARMS)
+        } else {
+            navController.navigate(EbbDestinations.ONBOARDING_CALENDAR) {
+                popUpTo(EbbDestinations.ONBOARDING_NOTIFICATIONS) { inclusive = true }
+            }
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -99,7 +109,7 @@ fun EbbNavHost() {
                 val notificationPermissionLauncher =
                     rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
                         onboardingViewModel.setRemindersEnabled(granted)
-                        navController.navigate(EbbDestinations.ONBOARDING_EXACT_ALARMS)
+                        afterNotifications()
                     }
                 OnboardingNotificationsScreen(
                     onAllow = {
@@ -107,12 +117,12 @@ fun EbbNavHost() {
                             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                         } else {
                             onboardingViewModel.setRemindersEnabled(true)
-                            navController.navigate(EbbDestinations.ONBOARDING_EXACT_ALARMS)
+                            afterNotifications()
                         }
                     },
                     onSkip = {
                         onboardingViewModel.setRemindersEnabled(false)
-                        navController.navigate(EbbDestinations.ONBOARDING_EXACT_ALARMS)
+                        afterNotifications()
                     },
                 )
             }

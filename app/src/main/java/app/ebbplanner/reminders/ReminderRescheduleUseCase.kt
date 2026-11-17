@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -29,40 +30,36 @@ class ReminderRescheduleUseCase
             }
         }
 
-        fun snoozeTask(
+        suspend fun snoozeTask(
             taskId: String?,
             title: String?,
         ) {
             if (taskId == null) return
-            scope.launch {
-                val taskTitle = title ?: taskRepository.getTask(taskId)?.title ?: return@launch
-                taskReminderSync.cancelTask(taskId)
-                val request =
-                    ReminderRequest(
-                        taskId = taskId,
-                        fireAtEpochMillis = System.currentTimeMillis() + SNOOZE_MILLIS,
-                        kind = ReminderKind.TaskStart,
-                        title = taskTitle,
-                        exact = true,
-                    )
-                taskReminderSync.scheduleOneOff(request)
-            }
+            val taskTitle = title ?: taskRepository.getTask(taskId)?.title ?: return
+            taskReminderSync.cancelTask(taskId)
+            val request =
+                ReminderRequest(
+                    taskId = taskId,
+                    fireAtEpochMillis = System.currentTimeMillis() + SNOOZE_MILLIS,
+                    kind = ReminderKind.Snooze,
+                    title = taskTitle,
+                    exact = true,
+                )
+            taskReminderSync.scheduleOneOff(request)
         }
 
-        fun markDoneFromNotification(taskId: String?) {
+        suspend fun markDoneFromNotification(taskId: String?) {
             if (taskId == null) return
-            scope.launch {
-                taskRepository.markTaskDone(taskId)
-                dismissNotification(taskId)
-            }
+            taskRepository.markTaskDone(taskId)
+            dismissNotification(taskId)
         }
 
-        fun shiftDayFromNotification(taskId: String?) {
+        suspend fun shiftDayFromNotification(taskId: String?) {
             if (taskId == null) return
-            scope.launch {
-                taskRepository.shiftScheduledTaskByMinutes(taskId, SHIFT_MINUTES)
-                dismissNotification(taskId)
-            }
+            val task = taskRepository.getTask(taskId) ?: return
+            val date = task.date?.let { LocalDate.parse(it) } ?: LocalDate.now()
+            taskRepository.shiftRestOfDayFromNotification(date, taskId, SHIFT_MINUTES)
+            dismissNotification(taskId)
         }
 
         fun dismissNotification(taskId: String?) {

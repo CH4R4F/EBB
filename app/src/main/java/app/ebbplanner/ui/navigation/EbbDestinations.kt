@@ -18,7 +18,11 @@ object AppRoutes {
     const val TASK_DETAIL = "flow/task/{taskId}/{sheet}"
     const val SHIFT_DAY = "flow/shift"
     const val PLAN_DAY = "flow/plan"
+    const val OVERLAP_HELPER = "flow/overlap"
+    const val MAKE_IT_FIT = "flow/make-it-fit"
     const val FOCUS_RUN = "flow/focus"
+    const val SEARCH = "flow/search"
+    const val SETTINGS = "flow/settings"
     const val ROUTINE_EDIT = "main/routines/edit/{routineId}"
 
     fun taskDetail(

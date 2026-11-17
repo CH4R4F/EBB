@@ -34,6 +34,12 @@ fun TodayScreenDesign(
     onPlanDayClick: () -> Unit = {},
     onAddTaskClick: () -> Unit = {},
     onShiftClick: () -> Unit = {},
+    onOpenOverlap: () -> Unit = {},
+    onOpenMakeItFit: () -> Unit = {},
+    onPrevDay: () -> Unit = {},
+    onNextDay: () -> Unit = {},
+    onAnytimeClick: (String) -> Unit = {},
+    onAnytimeDone: (String) -> Unit = {},
     onTaskClick: (String) -> Unit = {},
     onTaskLongPress: (String) -> Unit = {},
     onMarkTaskDone: (String) -> Unit = {},
@@ -72,14 +78,22 @@ fun TodayScreenDesign(
                     dateLabel = state.dateLabel,
                     multiselect = state.visualMode == TodayVisualMode.Multiselect,
                     multiselectCount = state.multiselectCount,
+                    onPrevDay = onPrevDay,
+                    onNextDay = onNextDay,
+                    onSearch = null,
                 )
                 when {
-                    state.bannerMessage != null -> TodayBanner(state.bannerMessage)
+                    state.bannerMessage != null ->
+                        TodayBanner(state.bannerMessage, onClick = onOpenMakeItFit)
                 }
-                state.overlapHint?.let { TodayOverlapHint(it) }
+                state.overlapHint?.let { TodayOverlapHint(it, onClick = onOpenOverlap) }
                 if (state.visualMode != TodayVisualMode.Multiselect) {
                     TodayDayHead(state = state, onShiftClick = onShiftClick)
-                    TodayAnytimeTray(chips = state.anytimeChips)
+                    TodayAnytimeTray(
+                        chips = state.anytimeChips,
+                        onChipClick = onAnytimeClick,
+                        onChipDone = onAnytimeDone,
+                    )
                 }
                 Column(
                     modifier =

@@ -1,31 +1,46 @@
+@file:Suppress("NewLineAtEndOfFile")
+
 package app.ebbplanner.reminders
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class ReminderActionReceiver : BroadcastReceiver() {
     @Inject lateinit var rescheduleUseCase: ReminderRescheduleUseCase
 
+    private val receiverScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun onReceive(
         context: Context,
         intent: Intent,
     ) {
+        val pendingResult = goAsync()
         val taskId = intent.getStringExtra(EXTRA_TASK_ID)
         val title = intent.getStringExtra(EXTRA_TITLE)
-        when (intent.action) {
-            ACTION_SNOOZE -> {
-                rescheduleUseCase.dismissNotification(taskId)
-                rescheduleUseCase.snoozeTask(taskId, title)
-            }
-            ACTION_DONE -> {
-                rescheduleUseCase.markDoneFromNotification(taskId)
-            }
-            ACTION_SHIFT -> {
-                rescheduleUseCase.shiftDayFromNotification(taskId)
+        receiverScope.launch {
+            try {
+                when (intent.action) {
+                    ACTION_SNOOZE -> {
+                        rescheduleUseCase.dismissNotification(taskId)
+                        rescheduleUseCase.snoozeTask(taskId, title)
+                    }
+                    ACTION_DONE -> {
+                        rescheduleUseCase.markDoneFromNotification(taskId)
+                    }
+                    ACTION_SHIFT -> {
+                        rescheduleUseCase.shiftDayFromNotification(taskId)
+                    }
+                }
+            } finally {
+                pendingResult.finish()
             }
         }
     }

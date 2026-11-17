@@ -69,6 +69,11 @@ data class TodayTimelineGap(
     val label: String,
 )
 
+data class TodayAnytimeChip(
+    val id: String,
+    val title: String,
+)
+
 data class TodayPresentationState(
     val dateLabel: String = "Mon 16 Nov",
     val dayKind: TodayDayKind = TodayDayKind.Today,
@@ -77,7 +82,7 @@ data class TodayPresentationState(
     val progressPercent: Int = 30,
     val bedtimeLabel: String = "23:00",
     val doneCount: Int = 2,
-    val anytimeChips: List<String> = listOf("Water plants", "Reply to Sam"),
+    val anytimeChips: List<TodayAnytimeChip> = emptyList(),
     val blocks: List<TodayScheduledBlock> = emptyList(),
     val events: List<TodayCalendarEvent> = emptyList(),
     val gaps: List<TodayTimelineGap> = emptyList(),

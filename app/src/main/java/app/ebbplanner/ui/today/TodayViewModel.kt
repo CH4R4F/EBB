@@ -106,6 +106,14 @@ class TodayViewModel
             selectedDate.value = date
         }
 
+        fun goToPreviousDay() {
+            selectedDate.value = selectedDate.value.minusDays(1)
+        }
+
+        fun goToNextDay() {
+            selectedDate.value = selectedDate.value.minusDays(-1)
+        }
+
         fun captureTask(raw: String) {
             if (raw.isBlank()) return
             viewModelScope.launch {

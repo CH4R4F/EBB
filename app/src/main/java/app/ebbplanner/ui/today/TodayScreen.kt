@@ -14,35 +14,36 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 const val TODAY_DATE_HEADER_TAG = "today_date_header"
 const val TODAY_TIMELINE_TAG = "today_timeline"
 
+@Suppress("LongParameterList")
 @Composable
 fun TodayScreen(
     modifier: Modifier = Modifier,
     viewModel: TodayViewModel = hiltViewModel(),
     onOpenPlanDay: () -> Unit = {},
     onOpenShiftDay: () -> Unit = {},
+    onOpenOverlap: () -> Unit = {},
+    onOpenMakeItFit: () -> Unit = {},
     onOpenTask: (String) -> Unit = {},
     onOpenTaskSchedule: (String) -> Unit = {},
 ) {
     val presentation by viewModel.presentationState.collectAsStateWithLifecycle()
+
     var showCapture by rememberSaveable { mutableStateOf(false) }
-    val capturePresentation =
-        presentation.copy(
-            quickCapture =
-                if (showCapture) {
-                    QuickCapturePresentationState(mode = QuickCaptureMode.Empty)
-                } else {
-                    null
-                },
-        )
 
     TodayScreenDesign(
-        state = capturePresentation,
+        state = presentation,
         modifier = modifier.fillMaxSize().testTag(TODAY_TIMELINE_TAG),
         showBottomNav = false,
         onFabClick = { showCapture = true },
         onPlanDayClick = onOpenPlanDay,
         onAddTaskClick = { showCapture = true },
         onShiftClick = onOpenShiftDay,
+        onOpenOverlap = onOpenOverlap,
+        onOpenMakeItFit = onOpenMakeItFit,
+        onPrevDay = viewModel::goToPreviousDay,
+        onNextDay = viewModel::goToNextDay,
+        onAnytimeClick = onOpenTask,
+        onAnytimeDone = viewModel::markTaskDone,
         onTaskClick = onOpenTask,
         onTaskLongPress = onOpenTaskSchedule,
         onMarkTaskDone = viewModel::markTaskDone,

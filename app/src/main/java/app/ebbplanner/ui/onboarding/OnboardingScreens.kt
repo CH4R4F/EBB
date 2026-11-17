@@ -45,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -893,7 +894,11 @@ fun OnboardingDoneScreen(
                 )
                 SummaryChip(
                     "calendar_month",
-                    stringResource(R.string.onboarding_done_calendar_chip_format, state.linkedCalendarCount),
+                    pluralStringResource(
+                        R.plurals.onboarding_calendar_count,
+                        state.linkedCalendarCount,
+                        state.linkedCalendarCount,
+                    ),
                 )
             }
             Row(

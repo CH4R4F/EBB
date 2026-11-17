@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -48,10 +49,17 @@ fun EbbSheetScaffold(
     showBottomActions: Boolean = true,
     sheetWrapContent: Boolean = false,
     cancelLabel: String = "Cancel",
+    onDoneClick: () -> Unit = {},
+    onCancelClick: () -> Unit = {},
+    backgroundState: app.ebbplanner.ui.today.TodayPresentationState? = null,
     content: @Composable () -> Unit,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
-        TodayScreenDesign(state = todayPopulatedDark(), showBottomNav = true, modifier = Modifier.fillMaxSize())
+        TodayScreenDesign(
+            state = backgroundState ?: todayPopulatedDark(),
+            showBottomNav = true,
+            modifier = Modifier.fillMaxSize(),
+        )
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f)))
         val sheetModifier =
             if (sheetTopInset > 0.dp) {
@@ -111,6 +119,8 @@ fun EbbSheetScaffold(
                         doneLabel = doneLabel,
                         doneLeadingIcon = doneLeadingIcon,
                         cancelLabel = cancelLabel,
+                        onDoneClick = onDoneClick,
+                        onCancelClick = onCancelClick,
                     )
                 }
             }
@@ -130,6 +140,8 @@ fun SheetActions(
     doneLabel: String = "Done",
     doneLeadingIcon: String? = null,
     cancelLabel: String = "Cancel",
+    onDoneClick: () -> Unit = {},
+    onCancelClick: () -> Unit = {},
 ) {
     HorizontalDivider()
     Row(
@@ -141,9 +153,16 @@ fun SheetActions(
             cancelLabel,
             style = EbbTypography.labelL,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = EbbSpacing.s3, vertical = 10.dp),
+            modifier =
+                Modifier
+                    .clickable(onClick = onCancelClick)
+                    .padding(horizontal = EbbSpacing.s3, vertical = 10.dp),
         )
-        Surface(shape = EbbShapes.full, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp)) {
+        Surface(
+            shape = EbbShapes.full,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 8.dp).clickable(onClick = onDoneClick),
+        ) {
             Row(
                 Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,

@@ -1,5 +1,7 @@
 package app.ebbplanner.ui.taskdetail
 
+import app.ebbplanner.data.local.entity.TaskEntity
+
 data class TaskSubtaskRow(
     val title: String,
     val estimate: String,
@@ -8,30 +10,32 @@ data class TaskSubtaskRow(
 
 data class TaskDetailPresentationState(
     val id: String = "",
-    val title: String = "Write project brief",
+    val title: String = "",
     val scheduleLabel: String = "",
-    val whenLabel: String = "Today · 10:00–11:15",
-    val dateLabel: String = "Mon 16 Nov",
-    val estimate: String = "1 h 15 min",
+    val whenLabel: String = "",
+    val dateLabel: String = "",
+    val estimate: String = "",
     val pinned: Boolean = false,
     val energySelected: Int = 3,
-    val colorLabel: String = "Amber · Edit note",
-    val colorIconKey: String = "edit_note",
-    val colorKey: String = "amber",
-    val remindersLabel: String = "At start · 5 min before",
+    val colorLabel: String = "",
+    val colorIconKey: String = "task",
+    val colorKey: String = "slate",
+    val remindersLabel: String = "",
     val repeatLabel: String = "Doesn't repeat",
     val breatherSubtitle: String = "Default (5 min)",
     val recurringBanner: String? = null,
     val subtasks: List<TaskSubtaskRow> = emptyList(),
-    val subtaskProgress: String = "2/5",
+    val subtaskProgress: String = "",
     val notes: String = "",
-    val mode: TaskDetailMode = TaskDetailMode.Existing,
+    val mode: TaskDetailMode = TaskDetailMode.Loading,
     val done: Boolean = false,
-    val durationMin: Int = 30,
-    val remindersEnabled: Boolean = true,
+    val durationMin: Int = TaskEntity.DEFAULT_DURATION_MIN,
+    val remindersEnabled: Boolean = false,
 )
 
 enum class TaskDetailMode {
+    Loading,
+    NotFound,
     New,
     Existing,
     Done,

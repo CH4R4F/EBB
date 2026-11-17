@@ -46,6 +46,7 @@ import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTaskColors
 import app.ebbplanner.ui.theme.EbbTypography
+import app.ebbplanner.ui.time.ClockFormat
 
 internal val timelineDpPerMinute = 72.dp / 60f
 internal val timelineOriginY = 36.dp
@@ -631,6 +632,9 @@ private fun GapChip(
             text = label,
             style = EbbTypography.labelM,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 8.dp),
         )
     }
 }
@@ -697,11 +701,7 @@ private fun TodayScheduledBlock.hasMetaRow(): Boolean =
     metaTimeRange != null || metaDuration != null || energyLevel != null || checklist != null ||
         hasReminder || pinned
 
-private fun formatClock(minutes: Int): String {
-    val h = minutes / 60
-    val m = minutes % 60
-    return "%d:%02d".format(h, m)
-}
+private fun formatClock(minutes: Int): String = ClockFormat.minutesToClock(minutes)
 
 private fun formatRange(
     startMinutes: Int,

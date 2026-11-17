@@ -48,6 +48,29 @@ fun TaskDetailScreenDesign(
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
             TaskDetailTopBar(done = state.done, onClose = callbacks.onClose, onMarkDone = callbacks.onMarkDone)
+            when (state.mode) {
+                TaskDetailMode.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Loading…", style = EbbTypography.bodyM)
+                    }
+                    return
+                }
+                TaskDetailMode.NotFound -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Task not found", style = EbbTypography.titleM)
+                            Text(
+                                "It may have been deleted.",
+                                style = EbbTypography.bodyM,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = EbbSpacing.s2),
+                            )
+                        }
+                    }
+                    return
+                }
+                else -> Unit
+            }
             state.recurringBanner?.let { banner ->
                 Surface(
                     modifier = Modifier.fillMaxWidth(),

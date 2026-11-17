@@ -3,6 +3,7 @@
 package app.ebbplanner.ui.today
 
 import app.ebbplanner.data.local.entity.TaskEntity
+import app.ebbplanner.ui.time.ClockFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -30,6 +31,9 @@ object TodayPresentationMapper {
         }
         val blocks = scheduled.mapNotNull { task -> task.toBlock(nowMinutes) }
         val minutesLeft = (state.bedMinutes - nowMinutes).coerceAtLeast(0)
+        val plannedRemaining = scheduled.filter { it.status != TaskEntity.STATUS_DONE }.sumOf { it.durationMin }
+        val overfull = isToday(state.date) && plannedRemaining > minutesLeft
+        val overlap = detectOverlap(blocks)
         return TodayPresentationState(
             dateLabel = state.dateLabel.ifBlank { state.date.format(dateFormatter) },
             timeLeftLabel = formatMinutesLong(minutesLeft),
@@ -42,16 +46,37 @@ object TodayPresentationMapper {
                     state.wakeMinutes,
                     state.bedMinutes,
                 ),
-            anytimeChips = state.anytimeTasks.map { it.title },
+            anytimeChips = state.anytimeTasks.map { TodayAnytimeChip(it.id, it.title) },
             blocks = blocks,
             events = state.calendarEvents.map { it.toPresentation() },
             nowMinutes = if (isToday(state.date)) nowMinutes else null,
             showNowLine = isToday(state.date),
+            bannerMessage = if (overfull) "Fuller than the time left · Make it fit" else null,
+            overlapHint = if (overlap) "These overlap" else null,
+            visualMode =
+                when {
+                    overlap -> TodayVisualMode.Overlap
+                    overfull -> TodayVisualMode.Overfull
+                    else -> TodayVisualMode.Normal
+                },
         )
     }
 
+    private fun detectOverlap(blocks: List<TodayScheduledBlock>): Boolean {
+        for (i in blocks.indices) {
+            val a = blocks[i]
+            val aEnd = a.startMinutes + a.durationMin
+            for (j in i + 1 until blocks.size) {
+                val b = blocks[j]
+                val bEnd = b.startMinutes + b.durationMin
+                if (a.startMinutes < bEnd && b.startMinutes < aEnd) return true
+            }
+        }
+        return false
+    }
+
     private fun TaskEntity.toBlock(nowMinutes: Int): TodayScheduledBlock? {
-        val start = startLocalTime?.let { parseMinutes(it) } ?: return null
+        val start = startLocalTime?.let { ClockFormat.parseMinutes(it) } ?: return null
         val isDone = status == TaskEntity.STATUS_DONE
         val end = start + durationMin
         return TodayScheduledBlock(
@@ -65,7 +90,9 @@ object TodayPresentationMapper {
             isPast = end <= nowMinutes,
             isCurrent = !isDone && start <= nowMinutes && end > nowMinutes,
             short = durationMin < 20,
-            metaTimeRange = "${formatClock(start)}–${formatClock(end)}",
+            pinned = pinned,
+            hasReminder = reminderEnabled,
+            metaTimeRange = "${ClockFormat.minutesToClock(start)}–${ClockFormat.minutesToClock(end)}",
             metaDuration = "$durationMin min",
             minutesLeftLabel =
                 if (!isDone && start <= nowMinutes && end > nowMinutes) {
@@ -83,22 +110,7 @@ object TodayPresentationMapper {
         return now.hour * 60 + now.minute
     }
 
-    private fun parseMinutes(value: String): Int? {
-        val parts = value.split(":")
-        if (parts.size != 2) return null
-        val h = parts[0].toIntOrNull() ?: return null
-        val m = parts[1].toIntOrNull() ?: 0
-        return h * 60 + m
-    }
-
-    private fun formatClock(minutes: Int): String {
-        val normalized = ((minutes % (24 * 60)) + (24 * 60)) % (24 * 60)
-        val h = normalized / 60
-        val m = normalized % 60
-        return "%d:%02d".format(h, m)
-    }
-
-    private fun formatBed(minutes: Int): String = formatClock(minutes)
+    private fun formatBed(minutes: Int): String = ClockFormat.minutesToClock(minutes)
 
     private fun formatTimeLeft(
         bed: Int,

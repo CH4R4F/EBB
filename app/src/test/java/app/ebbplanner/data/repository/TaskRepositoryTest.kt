@@ -91,11 +91,25 @@ class TaskRepositoryTest {
         }
 
     @Test
+    fun shiftRestOfDay_offsetsUnpinnedFutureTasks() =
+        runTest {
+            val today = LocalDate.of(2025, 11, 17)
+            val now = System.currentTimeMillis()
+            val pinned = repository.addQuickCapture("Pinned", today, TaskEntity.PLACEMENT_SCHEDULED, "09:00")
+            repository.updateTaskFields(pinned.id) { it.copy(pinned = true) }
+            val movable = repository.addQuickCapture("Move", today, TaskEntity.PLACEMENT_SCHEDULED, "10:00")
+            repository.shiftRestOfDay(today, 15, fromMinutes = 9 * 60 + 30)
+            assertEquals("09:00", repository.getTask(pinned.id)?.startLocalTime)
+            assertEquals("10:15", repository.getTask(movable.id)?.startLocalTime)
+        }
+
+    @Test
     fun deleteTask_softDeletes() =
         runTest {
             val today = LocalDate.of(2025, 11, 17)
             val task = repository.addQuickCapture("Temp", today, TaskEntity.PLACEMENT_ANYTIME)
             repository.deleteTask(task.id)
             assertEquals(null, repository.getTask(task.id))
+            coVerify { reminderSync.cancelTask(task.id) }
         }
 }

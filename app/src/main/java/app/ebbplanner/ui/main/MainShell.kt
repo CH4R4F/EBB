@@ -18,6 +18,8 @@ import app.ebbplanner.ui.navigation.AppRoutes
 import app.ebbplanner.ui.navigation.FocusRunScreen
 import app.ebbplanner.ui.navigation.MainTab
 import app.ebbplanner.ui.navigation.PlanDayScreen
+import app.ebbplanner.ui.navigation.MakeItFitScreen
+import app.ebbplanner.ui.navigation.OverlapHelperScreen
 import app.ebbplanner.ui.navigation.ShiftDayScreen
 import app.ebbplanner.ui.navigation.TaskDetailRoute
 import app.ebbplanner.ui.routines.RoutinesScreen
@@ -63,6 +65,8 @@ fun MainShell() {
                 TodayScreen(
                     onOpenPlanDay = { navController.navigate(AppRoutes.PLAN_DAY) },
                     onOpenShiftDay = { navController.navigate(AppRoutes.SHIFT_DAY) },
+                    onOpenOverlap = { navController.navigate(AppRoutes.OVERLAP_HELPER) },
+                    onOpenMakeItFit = { navController.navigate(AppRoutes.MAKE_IT_FIT) },
                     onOpenTask = { id -> navController.navigate(AppRoutes.taskDetail(id)) },
                     onOpenTaskSchedule = { id ->
                         val sheet = TaskSheetType.toRouteArg(TaskSheetType.Schedule)
@@ -85,8 +89,12 @@ fun MainShell() {
                     onClose = { navController.popBackStack() },
                 )
             }
-            composable(AppRoutes.SHIFT_DAY) { ShiftDayScreen() }
-            composable(AppRoutes.PLAN_DAY) { PlanDayScreen() }
+            composable(AppRoutes.SHIFT_DAY) { ShiftDayScreen(navController = navController) }
+            composable(AppRoutes.PLAN_DAY) { PlanDayScreen(onClose = { navController.popBackStack() }) }
+            composable(AppRoutes.OVERLAP_HELPER) {
+                OverlapHelperScreen(onClose = { navController.popBackStack() })
+            }
+            composable(AppRoutes.MAKE_IT_FIT) { MakeItFitScreen(onClose = { navController.popBackStack() }) }
             composable(AppRoutes.FOCUS_RUN) { FocusRunScreen() }
             composable(
                 route = AppRoutes.TASK_DETAIL,

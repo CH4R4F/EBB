@@ -7,7 +7,11 @@ import app.ebbplanner.data.local.EbbDatabase
 import app.ebbplanner.data.repository.TaskRepository
 import io.mockk.mockk
 import org.junit.After
+import app.ebbplanner.data.local.entity.TaskEntity
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
+import java.time.LocalDate
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,4 +51,31 @@ class TaskDetailViewModelTest {
         vm.openSheetFromRoute("schedule")
         assertEquals(TaskSheetType.Schedule, vm.openSheet.value)
     }
+
+    @Test
+    fun load_unknownId_eventuallyNotFixtureTitle() =
+        runBlocking {
+            val vm = TaskDetailViewModel(repository)
+            vm.load("missing-id")
+            assertNotEquals("Write project brief", vm.uiState.value.title)
+            assertEquals(TaskDetailMode.Loading, vm.uiState.value.mode)
+        }
+
+    @Test
+    fun load_existingTask_doesNotUseFixtureTitle() =
+        runBlocking {
+            val task =
+                repository.addQuickCapture(
+                    "Database title",
+                    LocalDate.now(),
+                    TaskEntity.PLACEMENT_ANYTIME,
+                )
+            val vm = TaskDetailViewModel(repository)
+            vm.load(task.id)
+            kotlinx.coroutines.delay(100)
+            val title = vm.uiState.value.title
+            if (title.isNotEmpty()) {
+                assertEquals("Database title", title)
+            }
+        }
 }

@@ -1,3 +1,5 @@
+@file:Suppress("NewLineAtEndOfFile")
+
 package app.ebbplanner.ui.taskdetail
 
 import androidx.lifecycle.ViewModel
@@ -5,12 +7,14 @@ import androidx.lifecycle.viewModelScope
 import app.ebbplanner.data.local.entity.SubtaskEntity
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.repository.TaskRepository
+import app.ebbplanner.ui.time.ClockFormat
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
@@ -19,7 +23,7 @@ class TaskDetailViewModel
     constructor(
         private val taskRepository: TaskRepository,
     ) : ViewModel() {
-        private val _uiState = MutableStateFlow(taskDetailExisting())
+        private val _uiState = MutableStateFlow(TaskDetailPresentationState(mode = TaskDetailMode.Loading))
         val uiState: StateFlow<TaskDetailPresentationState> = _uiState.asStateFlow()
 
         private val _openSheet = MutableStateFlow<TaskSheetType?>(null)
@@ -29,15 +33,34 @@ class TaskDetailViewModel
 
         fun load(taskId: String) {
             loadedTaskId = taskId
+            _uiState.value = TaskDetailPresentationState(mode = TaskDetailMode.Loading)
             viewModelScope.launch {
+                val task = taskRepository.getTask(taskId)
+                if (task == null) {
+                    _uiState.value =
+                        TaskDetailPresentationState(
+                            id = taskId,
+                            mode = TaskDetailMode.NotFound,
+                        )
+                    return@launch
+                }
                 taskRepository.observeSubtasks(taskId).collect { list ->
-                    val task = taskRepository.getTask(taskId) ?: return@collect
-                    _uiState.value = task.toDetailState(list)
+                    val latest = taskRepository.getTask(taskId)
+                    if (latest == null) {
+                        _uiState.value =
+                            TaskDetailPresentationState(
+                                id = taskId,
+                                mode = TaskDetailMode.NotFound,
+                            )
+                        return@collect
+                    }
+                    _uiState.value = latest.toDetailState(list)
                 }
             }
         }
 
         fun openSheet(type: TaskSheetType) {
+            if (_uiState.value.mode == TaskDetailMode.NotFound) return
             _openSheet.value = type
         }
 
@@ -52,6 +75,7 @@ class TaskDetailViewModel
 
         fun markDone() {
             val id = _uiState.value.id
+            if (id.isBlank() || _uiState.value.mode == TaskDetailMode.NotFound) return
             viewModelScope.launch {
                 taskRepository.markTaskDone(id)
                 reloadTask(id)
@@ -102,33 +126,56 @@ class TaskDetailViewModel
         }
 
         private suspend fun reloadTask(taskId: String) {
-            val task = taskRepository.getTask(taskId) ?: return
+            val task = taskRepository.getTask(taskId)
+            if (task == null) {
+                _uiState.value =
+                    TaskDetailPresentationState(
+                        id = taskId,
+                        mode = TaskDetailMode.NotFound,
+                    )
+                return
+            }
             val subs = taskRepository.listSubtasks(taskId)
             _uiState.value = task.toDetailState(subs)
         }
 
+        @Suppress("CyclomaticComplexMethod")
         private fun TaskEntity.toDetailState(subtasks: List<SubtaskEntity>): TaskDetailPresentationState {
             val placementLabel =
                 when (placement) {
                     TaskEntity.PLACEMENT_INBOX -> "Inbox"
                     TaskEntity.PLACEMENT_ANYTIME -> "Anytime"
                     TaskEntity.PLACEMENT_SOMEDAY -> "Someday"
-                    else -> startLocalTime?.let { "Today · $it" } ?: "Scheduled"
+                    else ->
+                        startLocalTime?.let { start ->
+                            val endMin =
+                                (ClockFormat.parseMinutes(start) ?: 0) + durationMin
+                            "Today · ${ClockFormat.localTimeToClock(start)}–${ClockFormat.minutesToClock(endMin)}"
+                        } ?: "Scheduled"
                 }
-            return taskDetailExisting().copy(
+            val dateLabelText =
+                date?.let { LocalDate.parse(it).format(DateTimeFormatter.ofPattern("EEE d MMM")) }
+                    ?: "No date"
+            val scheduleText =
+                startLocalTime?.let { start ->
+                    "${ClockFormat.localTimeToClock(start)} · $durationMin min"
+                } ?: "$durationMin min"
+            return TaskDetailPresentationState(
                 id = id,
                 title = title,
                 whenLabel = placementLabel,
-                dateLabel = date ?: "No date",
+                dateLabel = dateLabelText,
                 estimate = formatDuration(durationMin),
-                scheduleLabel = startLocalTime?.let { "$it · $durationMin min" } ?: "$durationMin min",
+                scheduleLabel = scheduleText,
                 done = status == TaskEntity.STATUS_DONE,
+                pinned = pinned,
                 durationMin = durationMin,
                 remindersEnabled = reminderEnabled,
                 remindersLabel = if (reminderEnabled) "At start" else "Off",
                 colorKey = colorKey,
                 colorIconKey = iconKey ?: "task",
                 colorLabel = colorKey.replaceFirstChar { it.uppercase() },
+                notes = notes,
                 subtasks =
                     subtasks.map {
                         TaskSubtaskRow(
@@ -137,7 +184,13 @@ class TaskDetailViewModel
                             done = it.done,
                         )
                     },
-                subtaskProgress = "${subtasks.count { it.done }}/${subtasks.size}",
+                subtaskProgress =
+                    if (subtasks.isEmpty()) {
+                        "0/0"
+                    } else {
+                        "${subtasks.count { it.done }}/${subtasks.size}"
+                    },
+                mode = if (status == TaskEntity.STATUS_DONE) TaskDetailMode.Done else TaskDetailMode.Existing,
             )
         }
 

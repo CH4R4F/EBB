@@ -55,16 +55,46 @@ class TaskReminderSync
 
         suspend fun scheduleOneOff(request: ReminderRequest) =
             withContext(Dispatchers.IO) {
+                val now = System.currentTimeMillis()
+                reminderDao.upsertAll(
+                    listOf(
+                        ReminderEntity(
+                            id = UUID.randomUUID().toString(),
+                            taskId = request.taskId,
+                            fireAtEpochMillis = request.fireAtEpochMillis,
+                            kind = request.kind.name,
+                            title = request.title,
+                            exact = request.exact,
+                            createdAt = now,
+                            updatedAt = now,
+                        ),
+                    ),
+                )
                 scheduler.scheduleTask(request, alarmGrant.isGranted())
             }
 
         suspend fun rescheduleAllEnabledFuture() =
             withContext(Dispatchers.IO) {
                 val now = System.currentTimeMillis()
+                val snoozes =
+                    reminderDao.getAll().filter {
+                        it.kind == ReminderKind.Snooze.name && it.fireAtEpochMillis > now
+                    }
                 val tasks = taskDao.getActiveScheduledWithReminders()
                 val requests =
                     tasks.mapNotNull { task ->
-                        task.toReminderRequest()?.takeIf { it.fireAtEpochMillis > now }
+                        val snoozed = snoozes.firstOrNull { it.taskId == task.id }
+                        if (snoozed != null) {
+                            ReminderRequest(
+                                taskId = task.id,
+                                fireAtEpochMillis = snoozed.fireAtEpochMillis,
+                                kind = ReminderKind.Snooze,
+                                title = snoozed.title,
+                                exact = snoozed.exact,
+                            )
+                        } else {
+                            task.toReminderRequest()?.takeIf { it.fireAtEpochMillis > now }
+                        }
                     }
                 val existing = reminderDao.getAll()
                 existing.forEach { scheduler.cancelForTask(it.taskId) }

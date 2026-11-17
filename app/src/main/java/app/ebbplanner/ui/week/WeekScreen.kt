@@ -17,5 +17,6 @@ fun WeekScreen(
         modifier = modifier,
         onPreviousWeek = viewModel::previousWeek,
         onNextWeek = viewModel::nextWeek,
+        onThisWeek = viewModel::jumpToThisWeek,
     )
 }

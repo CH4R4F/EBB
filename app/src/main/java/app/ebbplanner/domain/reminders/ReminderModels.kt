@@ -11,6 +11,7 @@ data class ReminderRequest(
 enum class ReminderKind {
     TaskStart,
     Breather,
+    Snooze,
 }
 
 enum class ReminderDeliveryMode {

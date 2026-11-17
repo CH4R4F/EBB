@@ -91,8 +91,10 @@
     <string name="onboarding_done_reminders_on">Reminders on</string>
     <string name="onboarding_done_reminders_off">Reminders off</string>
     <string name="onboarding_done_breather_chip">%1$d min breathers</string>
-    <string name="onboarding_done_calendar_chip">2 calendars</string>
-    <string name="onboarding_done_calendar_chip_format">%1$d calendars</string>
+    <plurals name="onboarding_calendar_count">
+        <item quantity="one">%d calendar</item>
+        <item quantity="other">%d calendars</item>
+    </plurals>
     <string name="onboarding_add_sample_tasks">Add sample tasks</string>
     <string name="onboarding_add_sample_tasks_hint">“Drink water”, “Plan tomorrow” — easy to remove</string>
     <string name="onboarding_open_my_day">Open my day</string>
@@ -121,6 +123,12 @@
     <string name="today_empty_body">Drop something in, or plan the day when you\'re ready.</string>
     <string name="today_plan_day">Plan my day</string>
     <string name="today_add_task">Add a task</string>
+
+    <string name="inbox_empty_message">Nothing in your Inbox. Capture a thought anytime.</string>
+    <plurals name="inbox_thought_count">
+        <item quantity="one">%d thought</item>
+        <item quantity="other">%d thoughts</item>
+    </plurals>
 
     <string name="quick_capture_title">Quick capture</string>
     <string name="quick_capture_hint">What\'s on your mind?</string>

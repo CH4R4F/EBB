@@ -86,16 +86,25 @@ fun DayToolsAppPreview(
 }
 
 @Composable
-fun ShiftTheRestDesign(modifier: Modifier = Modifier) {
+fun ShiftTheRestDesign(
+    modifier: Modifier = Modifier,
+    shiftMinutes: Int = 15,
+    onApplyShift: () -> Unit = {},
+    onCancel: () -> Unit = {},
+    backgroundState: app.ebbplanner.ui.today.TodayPresentationState? = null,
+) {
     EbbSheetScaffold(
         title = "Running behind? No problem.",
         subtitle = "Move everything after now, together.",
-        doneLabel = "Shift +15 min",
+        doneLabel = "Shift +$shiftMinutes min",
         doneLeadingIcon = "more_time",
         sheetTopInset = DAY_TOOL_SHEET_TOP_INSET,
-        sheetContainerColor = EbbPalette.darkSurfaceContainerHigh,
+        sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         sheetWrapContent = true,
         modifier = modifier,
+        onDoneClick = onApplyShift,
+        onCancelClick = onCancel,
+        backgroundState = backgroundState,
     ) {
         ShiftAmountChips(selected = 1)
         Row(

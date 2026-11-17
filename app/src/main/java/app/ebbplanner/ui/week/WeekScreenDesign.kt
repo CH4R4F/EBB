@@ -47,6 +47,7 @@ fun WeekScreenDesign(
     modifier: Modifier = Modifier,
     onPreviousWeek: () -> Unit = {},
     onNextWeek: () -> Unit = {},
+    onThisWeek: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -72,7 +73,12 @@ fun WeekScreenDesign(
                 range = state.rangeLabel,
                 onPreviousWeek = onPreviousWeek,
                 onNextWeek = onNextWeek,
+                onThisWeek = onThisWeek,
             )
+            if (state.mode == WeekVisualMode.Loading) {
+                WeekLoadingSkeleton()
+                return@Column
+            }
             state.bannerMessage?.let { WeekBanner(it) }
             state.dragLabel?.let { WeekDragChip(it) }
             if (state.mode == WeekVisualMode.Landscape) {
@@ -99,6 +105,7 @@ private fun WeekTopBar(
     range: String,
     onPreviousWeek: () -> Unit,
     onNextWeek: () -> Unit,
+    onThisWeek: () -> Unit = {},
 ) {
     Row(
         modifier =
@@ -111,8 +118,21 @@ private fun WeekTopBar(
         IconButton(onClick = onPreviousWeek) { EbbSymbol("chevron_left", fontSize = 22.sp) }
         Text(range, style = EbbTypography.headlineM, modifier = Modifier.weight(1f), maxLines = 1)
         IconButton(onClick = onNextWeek) { EbbSymbol("chevron_right", fontSize = 22.sp) }
-        TextButton(onClick = {}) { Text("This week", style = EbbTypography.labelL) }
-        IconButton(onClick = {}) { EbbSymbol("more_vert", fontSize = 22.sp) }
+        TextButton(onClick = onThisWeek) { Text("This week", style = EbbTypography.labelL) }
+        IconButton(onClick = onThisWeek) { EbbSymbol("more_vert", fontSize = 22.sp) }
+    }
+}
+
+@Composable
+private fun WeekLoadingSkeleton() {
+    Column(modifier = Modifier.padding(EbbSpacing.s4), verticalArrangement = Arrangement.spacedBy(EbbSpacing.s2)) {
+        repeat(4) {
+            Surface(
+                modifier = Modifier.fillMaxWidth().height(72.dp),
+                shape = EbbShapes.lg,
+                color = MaterialTheme.colorScheme.surfaceVariant,
+            ) {}
+        }
     }
 }
 

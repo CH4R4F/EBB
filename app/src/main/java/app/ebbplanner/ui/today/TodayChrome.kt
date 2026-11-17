@@ -6,6 +6,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,12 +45,18 @@ import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTypography
 
+@Suppress("LongParameterList")
 @Composable
 fun TodayTopBar(
     dateLabel: String,
     multiselect: Boolean,
     multiselectCount: Int,
     modifier: Modifier = Modifier,
+    onPrevDay: () -> Unit = {},
+    onNextDay: () -> Unit = {},
+    onSearch: (() -> Unit)? = null,
+    onSettings: () -> Unit = {},
+    onMore: () -> Unit = {},
 ) {
     Row(
         modifier =
@@ -70,7 +77,7 @@ fun TodayTopBar(
             }
         } else {
             Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
+                IconButton(onClick = onPrevDay, modifier = Modifier.size(48.dp)) {
                     EbbSymbol("chevron_left", fontSize = 24.sp)
                 }
                 Text(
@@ -83,17 +90,19 @@ fun TodayTopBar(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
+                IconButton(onClick = onNextDay, modifier = Modifier.size(48.dp)) {
                     EbbSymbol("chevron_right", fontSize = 24.sp)
                 }
             }
-            IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
-                EbbSymbol("search", fontSize = 22.sp)
+            if (onSearch != null) {
+                IconButton(onClick = onSearch, modifier = Modifier.size(48.dp)) {
+                    EbbSymbol("search", fontSize = 22.sp)
+                }
             }
-            IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
+            IconButton(onClick = onSettings, modifier = Modifier.size(48.dp)) {
                 EbbSymbol("settings", fontSize = 22.sp)
             }
-            IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
+            IconButton(onClick = onMore, modifier = Modifier.size(48.dp)) {
                 EbbSymbol("more_vert", fontSize = 22.sp)
             }
         }
@@ -199,8 +208,10 @@ private fun DayProgressRing(percent: Int) {
 
 @Composable
 fun TodayAnytimeTray(
-    chips: List<String>,
+    chips: List<TodayAnytimeChip>,
     modifier: Modifier = Modifier,
+    onChipClick: (String) -> Unit = {},
+    onChipDone: (String) -> Unit = {},
 ) {
     Row(
         modifier =
@@ -219,17 +230,29 @@ fun TodayAnytimeTray(
             modifier = Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
         ) {
-            chips.forEach { title ->
+            chips.forEach { chip ->
                 Surface(
                     shape = EbbShapes.full,
                     color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.clickable { onChipClick(chip.id) },
                 ) {
-                    Text(
-                        text = title,
-                        style = EbbTypography.labelL,
-                        color = MaterialTheme.colorScheme.onSurface,
+                    Row(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    )
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            text = chip.title,
+                            style = EbbTypography.labelL,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        IconButton(
+                            onClick = { onChipDone(chip.id) },
+                            modifier = Modifier.size(28.dp),
+                        ) {
+                            EbbSymbol("check", fontSize = 16.sp)
+                        }
+                    }
                 }
             }
             Surface(
@@ -262,9 +285,10 @@ fun TodayAnytimeTray(
 fun TodayBanner(
     message: String,
     modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().clickable(onClick = onClick),
         color = MaterialTheme.colorScheme.tertiaryContainer,
     ) {
         Row(
@@ -282,9 +306,10 @@ fun TodayBanner(
 fun TodayOverlapHint(
     hint: String,
     modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
 ) {
     Surface(
-        modifier = modifier.padding(horizontal = EbbSpacing.s3),
+        modifier = modifier.padding(horizontal = EbbSpacing.s3).clickable(onClick = onClick),
         shape = EbbShapes.full,
         color = MaterialTheme.colorScheme.surfaceVariant,
         border =

@@ -3,6 +3,7 @@ package app.ebbplanner.di
 import android.content.Context
 import androidx.room.Room
 import app.ebbplanner.data.local.EbbDatabase
+import app.ebbplanner.data.local.MIGRATION_2_3
 import app.ebbplanner.data.local.MIGRATION_3_4
 import app.ebbplanner.data.local.dao.DayPlanDao
 import app.ebbplanner.data.local.dao.ReminderDao
@@ -29,8 +30,7 @@ object DatabaseModule {
             EbbDatabase::class.java,
             "ebb.db",
         )
-            .addMigrations(MIGRATION_3_4)
-            .fallbackToDestructiveMigration()
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
             .build()
 
     @Provides
