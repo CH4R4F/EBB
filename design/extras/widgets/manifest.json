@@ -1,0 +1,715 @@
+{
+ "widgets": [
+  {
+   "widget": "W1",
+   "name": "Now & Next",
+   "tier": "MVP",
+   "size": "2x1",
+   "label": "2×1",
+   "files": {
+    "now": {
+     "light": "widgets/png/W1/W1-2x1-now-light.png",
+     "dark": "widgets/png/W1/W1-2x1-now-dark.png",
+     "dynLight": "widgets/png/W1/W1-2x1-now-dynLight.png",
+     "dynDark": "widgets/png/W1/W1-2x1-now-dynDark.png",
+     "light-transparent50": "widgets/png/W1/W1-2x1-now-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W1/W1-2x1-now-dark-transparent50.png"
+    },
+    "free": {
+     "light": "widgets/png/W1/W1-2x1-free-light.png",
+     "dark": "widgets/png/W1/W1-2x1-free-dark.png"
+    },
+    "nothing": {
+     "light": "widgets/png/W1/W1-2x1-nothing-light.png",
+     "dark": "widgets/png/W1/W1-2x1-nothing-dark.png"
+    },
+    "finished": {
+     "light": "widgets/png/W1/W1-2x1-finished-light.png",
+     "dark": "widgets/png/W1/W1-2x1-finished-dark.png"
+    },
+    "hidden": {
+     "light": "widgets/png/W1/W1-2x1-hidden-light.png",
+     "dark": "widgets/png/W1/W1-2x1-hidden-dark.png"
+    },
+    "stale": {
+     "light": "widgets/png/W1/W1-2x1-stale-light.png",
+     "dark": "widgets/png/W1/W1-2x1-stale-dark.png"
+    }
+   },
+   "picker": {
+    "light": "widgets/picker/W1-picker-preview-light.png",
+    "dark": "widgets/picker/W1-picker-preview-dark.png"
+   }
+  },
+  {
+   "widget": "W1",
+   "name": "Now & Next",
+   "tier": "MVP",
+   "size": "4x1",
+   "label": "4×1",
+   "files": {
+    "now": {
+     "light": "widgets/png/W1/W1-4x1-now-light.png",
+     "dark": "widgets/png/W1/W1-4x1-now-dark.png",
+     "dynLight": "widgets/png/W1/W1-4x1-now-dynLight.png",
+     "dynDark": "widgets/png/W1/W1-4x1-now-dynDark.png",
+     "light-transparent50": "widgets/png/W1/W1-4x1-now-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W1/W1-4x1-now-dark-transparent50.png"
+    },
+    "free": {
+     "light": "widgets/png/W1/W1-4x1-free-light.png",
+     "dark": "widgets/png/W1/W1-4x1-free-dark.png"
+    },
+    "nothing": {
+     "light": "widgets/png/W1/W1-4x1-nothing-light.png",
+     "dark": "widgets/png/W1/W1-4x1-nothing-dark.png"
+    },
+    "finished": {
+     "light": "widgets/png/W1/W1-4x1-finished-light.png",
+     "dark": "widgets/png/W1/W1-4x1-finished-dark.png"
+    },
+    "hidden": {
+     "light": "widgets/png/W1/W1-4x1-hidden-light.png",
+     "dark": "widgets/png/W1/W1-4x1-hidden-dark.png"
+    },
+    "stale": {
+     "light": "widgets/png/W1/W1-4x1-stale-light.png",
+     "dark": "widgets/png/W1/W1-4x1-stale-dark.png"
+    }
+   }
+  },
+  {
+   "widget": "W1",
+   "name": "Now & Next",
+   "tier": "MVP",
+   "size": "4x2",
+   "label": "4×2",
+   "files": {
+    "now": {
+     "light": "widgets/png/W1/W1-4x2-now-light.png",
+     "dark": "widgets/png/W1/W1-4x2-now-dark.png",
+     "dynLight": "widgets/png/W1/W1-4x2-now-dynLight.png",
+     "dynDark": "widgets/png/W1/W1-4x2-now-dynDark.png",
+     "light-transparent50": "widgets/png/W1/W1-4x2-now-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W1/W1-4x2-now-dark-transparent50.png"
+    },
+    "free": {
+     "light": "widgets/png/W1/W1-4x2-free-light.png",
+     "dark": "widgets/png/W1/W1-4x2-free-dark.png"
+    },
+    "nothing": {
+     "light": "widgets/png/W1/W1-4x2-nothing-light.png",
+     "dark": "widgets/png/W1/W1-4x2-nothing-dark.png"
+    },
+    "finished": {
+     "light": "widgets/png/W1/W1-4x2-finished-light.png",
+     "dark": "widgets/png/W1/W1-4x2-finished-dark.png"
+    },
+    "hidden": {
+     "light": "widgets/png/W1/W1-4x2-hidden-light.png",
+     "dark": "widgets/png/W1/W1-4x2-hidden-dark.png"
+    },
+    "stale": {
+     "light": "widgets/png/W1/W1-4x2-stale-light.png",
+     "dark": "widgets/png/W1/W1-4x2-stale-dark.png"
+    }
+   }
+  },
+  {
+   "widget": "W2",
+   "name": "Today timeline",
+   "tier": "MVP",
+   "size": "4x2",
+   "label": "4×2",
+   "files": {
+    "populated": {
+     "light": "widgets/png/W2/W2-4x2-populated-light.png",
+     "dark": "widgets/png/W2/W2-4x2-populated-dark.png",
+     "dynLight": "widgets/png/W2/W2-4x2-populated-dynLight.png",
+     "dynDark": "widgets/png/W2/W2-4x2-populated-dynDark.png",
+     "light-transparent50": "widgets/png/W2/W2-4x2-populated-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W2/W2-4x2-populated-dark-transparent50.png"
+    },
+    "empty": {
+     "light": "widgets/png/W2/W2-4x2-empty-light.png",
+     "dark": "widgets/png/W2/W2-4x2-empty-dark.png"
+    },
+    "alldone": {
+     "light": "widgets/png/W2/W2-4x2-alldone-light.png",
+     "dark": "widgets/png/W2/W2-4x2-alldone-dark.png"
+    },
+    "loading": {
+     "light": "widgets/png/W2/W2-4x2-loading-light.png",
+     "dark": "widgets/png/W2/W2-4x2-loading-dark.png"
+    },
+    "bedtime": {
+     "light": "widgets/png/W2/W2-4x2-bedtime-light.png",
+     "dark": "widgets/png/W2/W2-4x2-bedtime-dark.png"
+    }
+   },
+   "picker": {
+    "light": "widgets/picker/W2-picker-preview-light.png",
+    "dark": "widgets/picker/W2-picker-preview-dark.png"
+   }
+  },
+  {
+   "widget": "W2",
+   "name": "Today timeline",
+   "tier": "MVP",
+   "size": "4x4",
+   "label": "4×3–4×4 list",
+   "files": {
+    "populated": {
+     "light": "widgets/png/W2/W2-4x4-populated-light.png",
+     "dark": "widgets/png/W2/W2-4x4-populated-dark.png",
+     "dynLight": "widgets/png/W2/W2-4x4-populated-dynLight.png",
+     "dynDark": "widgets/png/W2/W2-4x4-populated-dynDark.png",
+     "light-transparent50": "widgets/png/W2/W2-4x4-populated-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W2/W2-4x4-populated-dark-transparent50.png"
+    },
+    "empty": {
+     "light": "widgets/png/W2/W2-4x4-empty-light.png",
+     "dark": "widgets/png/W2/W2-4x4-empty-dark.png"
+    },
+    "alldone": {
+     "light": "widgets/png/W2/W2-4x4-alldone-light.png",
+     "dark": "widgets/png/W2/W2-4x4-alldone-dark.png"
+    },
+    "loading": {
+     "light": "widgets/png/W2/W2-4x4-loading-light.png",
+     "dark": "widgets/png/W2/W2-4x4-loading-dark.png"
+    },
+    "bedtime": {
+     "light": "widgets/png/W2/W2-4x4-bedtime-light.png",
+     "dark": "widgets/png/W2/W2-4x4-bedtime-dark.png"
+    }
+   }
+  },
+  {
+   "widget": "W2",
+   "name": "Today timeline",
+   "tier": "MVP",
+   "size": "5x4",
+   "label": "5×4+ / tablet",
+   "files": {
+    "populated": {
+     "light": "widgets/png/W2/W2-5x4-populated-light.png",
+     "dark": "widgets/png/W2/W2-5x4-populated-dark.png",
+     "dynLight": "widgets/png/W2/W2-5x4-populated-dynLight.png",
+     "dynDark": "widgets/png/W2/W2-5x4-populated-dynDark.png",
+     "light-transparent50": "widgets/png/W2/W2-5x4-populated-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W2/W2-5x4-populated-dark-transparent50.png"
+    },
+    "empty": {
+     "light": "widgets/png/W2/W2-5x4-empty-light.png",
+     "dark": "widgets/png/W2/W2-5x4-empty-dark.png"
+    },
+    "alldone": {
+     "light": "widgets/png/W2/W2-5x4-alldone-light.png",
+     "dark": "widgets/png/W2/W2-5x4-alldone-dark.png"
+    },
+    "loading": {
+     "light": "widgets/png/W2/W2-5x4-loading-light.png",
+     "dark": "widgets/png/W2/W2-5x4-loading-dark.png"
+    },
+    "bedtime": {
+     "light": "widgets/png/W2/W2-5x4-bedtime-light.png",
+     "dark": "widgets/png/W2/W2-5x4-bedtime-dark.png"
+    }
+   }
+  },
+  {
+   "widget": "W3",
+   "name": "Quick capture",
+   "tier": "MVP",
+   "size": "1x1",
+   "label": "1×1",
+   "files": {
+    "default": {
+     "light": "widgets/png/W3/W3-1x1-default-light.png",
+     "dark": "widgets/png/W3/W3-1x1-default-dark.png",
+     "dynLight": "widgets/png/W3/W3-1x1-default-dynLight.png",
+     "dynDark": "widgets/png/W3/W3-1x1-default-dynDark.png",
+     "light-transparent50": "widgets/png/W3/W3-1x1-default-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W3/W3-1x1-default-dark-transparent50.png"
+    },
+    "novoice": {
+     "light": "widgets/png/W3/W3-1x1-novoice-light.png",
+     "dark": "widgets/png/W3/W3-1x1-novoice-dark.png"
+    }
+   },
+   "picker": {
+    "light": "widgets/picker/W3-picker-preview-light.png",
+    "dark": "widgets/picker/W3-picker-preview-dark.png"
+   }
+  },
+  {
+   "widget": "W3",
+   "name": "Quick capture",
+   "tier": "MVP",
+   "size": "2x1",
+   "label": "2×1",
+   "files": {
+    "default": {
+     "light": "widgets/png/W3/W3-2x1-default-light.png",
+     "dark": "widgets/png/W3/W3-2x1-default-dark.png",
+     "dynLight": "widgets/png/W3/W3-2x1-default-dynLight.png",
+     "dynDark": "widgets/png/W3/W3-2x1-default-dynDark.png",
+     "light-transparent50": "widgets/png/W3/W3-2x1-default-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W3/W3-2x1-default-dark-transparent50.png"
+    },
+    "novoice": {
+     "light": "widgets/png/W3/W3-2x1-novoice-light.png",
+     "dark": "widgets/png/W3/W3-2x1-novoice-dark.png"
+    }
+   }
+  },
+  {
+   "widget": "W3",
+   "name": "Quick capture",
+   "tier": "MVP",
+   "size": "4x1",
+   "label": "4×1",
+   "files": {
+    "default": {
+     "light": "widgets/png/W3/W3-4x1-default-light.png",
+     "dark": "widgets/png/W3/W3-4x1-default-dark.png",
+     "dynLight": "widgets/png/W3/W3-4x1-default-dynLight.png",
+     "dynDark": "widgets/png/W3/W3-4x1-default-dynDark.png",
+     "light-transparent50": "widgets/png/W3/W3-4x1-default-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W3/W3-4x1-default-dark-transparent50.png"
+    },
+    "novoice": {
+     "light": "widgets/png/W3/W3-4x1-novoice-light.png",
+     "dark": "widgets/png/W3/W3-4x1-novoice-dark.png"
+    }
+   }
+  },
+  {
+   "widget": "W4",
+   "name": "Focus timer",
+   "tier": "MVP",
+   "size": "2x2",
+   "label": "2×2",
+   "files": {
+    "idle": {
+     "light": "widgets/png/W4/W4-2x2-idle-light.png",
+     "dark": "widgets/png/W4/W4-2x2-idle-dark.png"
+    },
+    "running": {
+     "light": "widgets/png/W4/W4-2x2-running-light.png",
+     "dark": "widgets/png/W4/W4-2x2-running-dark.png",
+     "dynLight": "widgets/png/W4/W4-2x2-running-dynLight.png",
+     "dynDark": "widgets/png/W4/W4-2x2-running-dynDark.png",
+     "light-transparent50": "widgets/png/W4/W4-2x2-running-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W4/W4-2x2-running-dark-transparent50.png"
+    },
+    "paused": {
+     "light": "widgets/png/W4/W4-2x2-paused-light.png",
+     "dark": "widgets/png/W4/W4-2x2-paused-dark.png"
+    },
+    "break": {
+     "light": "widgets/png/W4/W4-2x2-break-light.png",
+     "dark": "widgets/png/W4/W4-2x2-break-dark.png"
+    },
+    "finished": {
+     "light": "widgets/png/W4/W4-2x2-finished-light.png",
+     "dark": "widgets/png/W4/W4-2x2-finished-dark.png"
+    },
+    "notask": {
+     "light": "widgets/png/W4/W4-2x2-notask-light.png",
+     "dark": "widgets/png/W4/W4-2x2-notask-dark.png"
+    }
+   },
+   "picker": {
+    "light": "widgets/picker/W4-picker-preview-light.png",
+    "dark": "widgets/picker/W4-picker-preview-dark.png"
+   }
+  },
+  {
+   "widget": "W4",
+   "name": "Focus timer",
+   "tier": "MVP",
+   "size": "4x2",
+   "label": "4×2",
+   "files": {
+    "idle": {
+     "light": "widgets/png/W4/W4-4x2-idle-light.png",
+     "dark": "widgets/png/W4/W4-4x2-idle-dark.png"
+    },
+    "running": {
+     "light": "widgets/png/W4/W4-4x2-running-light.png",
+     "dark": "widgets/png/W4/W4-4x2-running-dark.png",
+     "dynLight": "widgets/png/W4/W4-4x2-running-dynLight.png",
+     "dynDark": "widgets/png/W4/W4-4x2-running-dynDark.png",
+     "light-transparent50": "widgets/png/W4/W4-4x2-running-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W4/W4-4x2-running-dark-transparent50.png"
+    },
+    "paused": {
+     "light": "widgets/png/W4/W4-4x2-paused-light.png",
+     "dark": "widgets/png/W4/W4-4x2-paused-dark.png"
+    },
+    "break": {
+     "light": "widgets/png/W4/W4-4x2-break-light.png",
+     "dark": "widgets/png/W4/W4-4x2-break-dark.png"
+    },
+    "finished": {
+     "light": "widgets/png/W4/W4-4x2-finished-light.png",
+     "dark": "widgets/png/W4/W4-4x2-finished-dark.png"
+    },
+    "notask": {
+     "light": "widgets/png/W4/W4-4x2-notask-light.png",
+     "dark": "widgets/png/W4/W4-4x2-notask-dark.png"
+    }
+   }
+  },
+  {
+   "widget": "W5",
+   "name": "Inbox glance",
+   "tier": "MVP",
+   "size": "2x2",
+   "label": "2×2",
+   "files": {
+    "populated": {
+     "light": "widgets/png/W5/W5-2x2-populated-light.png",
+     "dark": "widgets/png/W5/W5-2x2-populated-dark.png",
+     "dynLight": "widgets/png/W5/W5-2x2-populated-dynLight.png",
+     "dynDark": "widgets/png/W5/W5-2x2-populated-dynDark.png",
+     "light-transparent50": "widgets/png/W5/W5-2x2-populated-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W5/W5-2x2-populated-dark-transparent50.png"
+    },
+    "empty": {
+     "light": "widgets/png/W5/W5-2x2-empty-light.png",
+     "dark": "widgets/png/W5/W5-2x2-empty-dark.png"
+    },
+    "hidden": {
+     "light": "widgets/png/W5/W5-2x2-hidden-light.png",
+     "dark": "widgets/png/W5/W5-2x2-hidden-dark.png"
+    }
+   },
+   "picker": {
+    "light": "widgets/picker/W5-picker-preview-light.png",
+    "dark": "widgets/picker/W5-picker-preview-dark.png"
+   }
+  },
+  {
+   "widget": "W5",
+   "name": "Inbox glance",
+   "tier": "MVP",
+   "size": "4x3",
+   "label": "4×2–4×3",
+   "files": {
+    "populated": {
+     "light": "widgets/png/W5/W5-4x3-populated-light.png",
+     "dark": "widgets/png/W5/W5-4x3-populated-dark.png",
+     "dynLight": "widgets/png/W5/W5-4x3-populated-dynLight.png",
+     "dynDark": "widgets/png/W5/W5-4x3-populated-dynDark.png",
+     "light-transparent50": "widgets/png/W5/W5-4x3-populated-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W5/W5-4x3-populated-dark-transparent50.png"
+    },
+    "empty": {
+     "light": "widgets/png/W5/W5-4x3-empty-light.png",
+     "dark": "widgets/png/W5/W5-4x3-empty-dark.png"
+    },
+    "hidden": {
+     "light": "widgets/png/W5/W5-4x3-hidden-light.png",
+     "dark": "widgets/png/W5/W5-4x3-hidden-dark.png"
+    }
+   }
+  },
+  {
+   "widget": "W6",
+   "name": "Day progress",
+   "tier": "MVP",
+   "size": "1x1",
+   "label": "1×1",
+   "files": {
+    "morning": {
+     "light": "widgets/png/W6/W6-1x1-morning-light.png",
+     "dark": "widgets/png/W6/W6-1x1-morning-dark.png"
+    },
+    "midday": {
+     "light": "widgets/png/W6/W6-1x1-midday-light.png",
+     "dark": "widgets/png/W6/W6-1x1-midday-dark.png",
+     "dynLight": "widgets/png/W6/W6-1x1-midday-dynLight.png",
+     "dynDark": "widgets/png/W6/W6-1x1-midday-dynDark.png",
+     "light-transparent50": "widgets/png/W6/W6-1x1-midday-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W6/W6-1x1-midday-dark-transparent50.png"
+    },
+    "evening": {
+     "light": "widgets/png/W6/W6-1x1-evening-light.png",
+     "dark": "widgets/png/W6/W6-1x1-evening-dark.png"
+    },
+    "bedtime": {
+     "light": "widgets/png/W6/W6-1x1-bedtime-light.png",
+     "dark": "widgets/png/W6/W6-1x1-bedtime-dark.png"
+    }
+   },
+   "picker": {
+    "light": "widgets/picker/W6-picker-preview-light.png",
+    "dark": "widgets/picker/W6-picker-preview-dark.png"
+   }
+  },
+  {
+   "widget": "W6",
+   "name": "Day progress",
+   "tier": "MVP",
+   "size": "2x1",
+   "label": "2×1",
+   "files": {
+    "morning": {
+     "light": "widgets/png/W6/W6-2x1-morning-light.png",
+     "dark": "widgets/png/W6/W6-2x1-morning-dark.png"
+    },
+    "midday": {
+     "light": "widgets/png/W6/W6-2x1-midday-light.png",
+     "dark": "widgets/png/W6/W6-2x1-midday-dark.png",
+     "dynLight": "widgets/png/W6/W6-2x1-midday-dynLight.png",
+     "dynDark": "widgets/png/W6/W6-2x1-midday-dynDark.png",
+     "light-transparent50": "widgets/png/W6/W6-2x1-midday-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W6/W6-2x1-midday-dark-transparent50.png"
+    },
+    "evening": {
+     "light": "widgets/png/W6/W6-2x1-evening-light.png",
+     "dark": "widgets/png/W6/W6-2x1-evening-dark.png"
+    },
+    "bedtime": {
+     "light": "widgets/png/W6/W6-2x1-bedtime-light.png",
+     "dark": "widgets/png/W6/W6-2x1-bedtime-dark.png"
+    }
+   }
+  },
+  {
+   "widget": "W6",
+   "name": "Day progress",
+   "tier": "MVP",
+   "size": "2x2",
+   "label": "2×2",
+   "files": {
+    "morning": {
+     "light": "widgets/png/W6/W6-2x2-morning-light.png",
+     "dark": "widgets/png/W6/W6-2x2-morning-dark.png"
+    },
+    "midday": {
+     "light": "widgets/png/W6/W6-2x2-midday-light.png",
+     "dark": "widgets/png/W6/W6-2x2-midday-dark.png",
+     "dynLight": "widgets/png/W6/W6-2x2-midday-dynLight.png",
+     "dynDark": "widgets/png/W6/W6-2x2-midday-dynDark.png",
+     "light-transparent50": "widgets/png/W6/W6-2x2-midday-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W6/W6-2x2-midday-dark-transparent50.png"
+    },
+    "evening": {
+     "light": "widgets/png/W6/W6-2x2-evening-light.png",
+     "dark": "widgets/png/W6/W6-2x2-evening-dark.png"
+    },
+    "bedtime": {
+     "light": "widgets/png/W6/W6-2x2-bedtime-light.png",
+     "dark": "widgets/png/W6/W6-2x2-bedtime-dark.png"
+    }
+   }
+  },
+  {
+   "widget": "W7",
+   "name": "Routine checklist",
+   "tier": "v1.x",
+   "size": "2x2",
+   "label": "2×2",
+   "files": {
+    "notstarted": {
+     "light": "widgets/png/W7/W7-2x2-notstarted-light.png",
+     "dark": "widgets/png/W7/W7-2x2-notstarted-dark.png"
+    },
+    "inprogress": {
+     "light": "widgets/png/W7/W7-2x2-inprogress-light.png",
+     "dark": "widgets/png/W7/W7-2x2-inprogress-dark.png",
+     "dynLight": "widgets/png/W7/W7-2x2-inprogress-dynLight.png",
+     "dynDark": "widgets/png/W7/W7-2x2-inprogress-dynDark.png",
+     "light-transparent50": "widgets/png/W7/W7-2x2-inprogress-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W7/W7-2x2-inprogress-dark-transparent50.png"
+    },
+    "done": {
+     "light": "widgets/png/W7/W7-2x2-done-light.png",
+     "dark": "widgets/png/W7/W7-2x2-done-dark.png"
+    },
+    "none": {
+     "light": "widgets/png/W7/W7-2x2-none-light.png",
+     "dark": "widgets/png/W7/W7-2x2-none-dark.png"
+    }
+   },
+   "picker": {
+    "light": "widgets/picker/W7-picker-preview-light.png",
+    "dark": "widgets/picker/W7-picker-preview-dark.png"
+   }
+  },
+  {
+   "widget": "W7",
+   "name": "Routine checklist",
+   "tier": "v1.x",
+   "size": "4x3",
+   "label": "4×3",
+   "files": {
+    "notstarted": {
+     "light": "widgets/png/W7/W7-4x3-notstarted-light.png",
+     "dark": "widgets/png/W7/W7-4x3-notstarted-dark.png"
+    },
+    "inprogress": {
+     "light": "widgets/png/W7/W7-4x3-inprogress-light.png",
+     "dark": "widgets/png/W7/W7-4x3-inprogress-dark.png",
+     "dynLight": "widgets/png/W7/W7-4x3-inprogress-dynLight.png",
+     "dynDark": "widgets/png/W7/W7-4x3-inprogress-dynDark.png",
+     "light-transparent50": "widgets/png/W7/W7-4x3-inprogress-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W7/W7-4x3-inprogress-dark-transparent50.png"
+    },
+    "done": {
+     "light": "widgets/png/W7/W7-4x3-done-light.png",
+     "dark": "widgets/png/W7/W7-4x3-done-dark.png"
+    },
+    "none": {
+     "light": "widgets/png/W7/W7-4x3-none-light.png",
+     "dark": "widgets/png/W7/W7-4x3-none-dark.png"
+    }
+   }
+  },
+  {
+   "widget": "W8",
+   "name": "Week glance",
+   "tier": "v1.x",
+   "size": "4x2",
+   "label": "4×2",
+   "files": {
+    "normal": {
+     "light": "widgets/png/W8/W8-4x2-normal-light.png",
+     "dark": "widgets/png/W8/W8-4x2-normal-dark.png",
+     "dynLight": "widgets/png/W8/W8-4x2-normal-dynLight.png",
+     "dynDark": "widgets/png/W8/W8-4x2-normal-dynDark.png",
+     "light-transparent50": "widgets/png/W8/W8-4x2-normal-light-transparent50.png",
+     "dark-transparent50": "widgets/png/W8/W8-4x2-normal-dark-transparent50.png"
+    },
+    "empty": {
+     "light": "widgets/png/W8/W8-4x2-empty-light.png",
+     "dark": "widgets/png/W8/W8-4x2-empty-dark.png"
+    }
+   },
+   "picker": {
+    "light": "widgets/picker/W8-picker-preview-light.png",
+    "dark": "widgets/picker/W8-picker-preview-dark.png"
+   }
+  }
+ ],
+ "homes": [
+  {
+   "id": "A",
+   "theme": "light",
+   "title": "Now & Next, Day progress, Focus, Capture",
+   "file": "widgets/home/home-A-light.png"
+  },
+  {
+   "id": "A",
+   "theme": "dark",
+   "title": "Now & Next, Day progress, Focus, Capture",
+   "file": "widgets/home/home-A-dark.png"
+  },
+  {
+   "id": "A",
+   "theme": "dynLight",
+   "title": "Now & Next, Day progress, Focus, Capture",
+   "file": "widgets/home/home-A-dynLight.png"
+  },
+  {
+   "id": "A",
+   "theme": "dynDark",
+   "title": "Now & Next, Day progress, Focus, Capture",
+   "file": "widgets/home/home-A-dynDark.png"
+  },
+  {
+   "id": "B",
+   "theme": "light",
+   "title": "Today list, Inbox, Routine, small capture & progress",
+   "file": "widgets/home/home-B-light.png"
+  },
+  {
+   "id": "B",
+   "theme": "dark",
+   "title": "Today list, Inbox, Routine, small capture & progress",
+   "file": "widgets/home/home-B-dark.png"
+  },
+  {
+   "id": "B",
+   "theme": "dynLight",
+   "title": "Today list, Inbox, Routine, small capture & progress",
+   "file": "widgets/home/home-B-dynLight.png"
+  },
+  {
+   "id": "B",
+   "theme": "dynDark",
+   "title": "Today list, Inbox, Routine, small capture & progress",
+   "file": "widgets/home/home-B-dynDark.png"
+  },
+  {
+   "id": "C",
+   "theme": "light",
+   "title": "Timeline strip, Focus 4×2, Week, Now & Next 4×1",
+   "file": "widgets/home/home-C-light.png"
+  },
+  {
+   "id": "C",
+   "theme": "dark",
+   "title": "Timeline strip, Focus 4×2, Week, Now & Next 4×1",
+   "file": "widgets/home/home-C-dark.png"
+  },
+  {
+   "id": "C",
+   "theme": "dynLight",
+   "title": "Timeline strip, Focus 4×2, Week, Now & Next 4×1",
+   "file": "widgets/home/home-C-dynLight.png"
+  },
+  {
+   "id": "C",
+   "theme": "dynDark",
+   "title": "Timeline strip, Focus 4×2, Week, Now & Next 4×1",
+   "file": "widgets/home/home-C-dynDark.png"
+  },
+  {
+   "id": "D",
+   "theme": "light",
+   "title": "Routine 4×3, Inbox 4×3",
+   "file": "widgets/home/home-D-light.png"
+  },
+  {
+   "id": "D",
+   "theme": "dark",
+   "title": "Routine 4×3, Inbox 4×3",
+   "file": "widgets/home/home-D-dark.png"
+  },
+  {
+   "id": "D",
+   "theme": "dynLight",
+   "title": "Routine 4×3, Inbox 4×3",
+   "file": "widgets/home/home-D-dynLight.png"
+  },
+  {
+   "id": "D",
+   "theme": "dynDark",
+   "title": "Routine 4×3, Inbox 4×3",
+   "file": "widgets/home/home-D-dynDark.png"
+  },
+  {
+   "id": "E-tablet",
+   "theme": "light",
+   "title": "Tablet: Today timeline 5×4+ with tray",
+   "file": "widgets/home/home-E-tablet-light.png"
+  },
+  {
+   "id": "E-tablet",
+   "theme": "dark",
+   "title": "Tablet: Today timeline 5×4+ with tray",
+   "file": "widgets/home/home-E-tablet-dark.png"
+  },
+  {
+   "id": "E-tablet",
+   "theme": "dynLight",
+   "title": "Tablet: Today timeline 5×4+ with tray",
+   "file": "widgets/home/home-E-tablet-dynLight.png"
+  }
+ ]
+}

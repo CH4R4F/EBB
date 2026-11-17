@@ -1,0 +1,9 @@
+<!-- res/values/themes.xml (light) & values-night/themes.xml (dark) -->
+<style name="Theme.Ebb.Starting" parent="Theme.SplashScreen">
+  <item name="windowSplashScreenBackground">@color/splash_bg</item>  <!-- light #FAF8F5 · dark #121614 -->
+  <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+  <item name="windowSplashScreenIconBackgroundColor">#2F6F6A</item>   <!-- 160dp circle behind the 240dp icon -->
+  <item name="android:windowSplashScreenBrandingImage">@drawable/splash_wordmark</item> <!-- optional 200×80dp "ebb" wordmark -->
+  <item name="postSplashScreenTheme">@style/Theme.Ebb</item>
+</style>
+<!-- No animated icon loop (reduced motion friendly); keep on screen only until first frame. -->

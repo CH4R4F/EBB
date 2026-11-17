@@ -1,0 +1,236 @@
+[
+ {
+  "id": "empty-today",
+  "name": "Empty Today",
+  "where": "M1 empty",
+  "svg": {
+   "light": "illustrations/svg/empty-today-light.svg",
+   "dark": "illustrations/svg/empty-today-dark.svg"
+  }
+ },
+ {
+  "id": "empty-inbox",
+  "name": "Empty Inbox",
+  "where": "M2 empty — \"Your head is clear. Nice.\"",
+  "svg": {
+   "light": "illustrations/svg/empty-inbox-light.svg",
+   "dark": "illustrations/svg/empty-inbox-dark.svg"
+  }
+ },
+ {
+  "id": "empty-week",
+  "name": "Empty Week",
+  "where": "M3 empty",
+  "svg": {
+   "light": "illustrations/svg/empty-week-light.svg",
+   "dark": "illustrations/svg/empty-week-dark.svg"
+  }
+ },
+ {
+  "id": "empty-routines",
+  "name": "Empty Routines",
+  "where": "M4 empty",
+  "svg": {
+   "light": "illustrations/svg/empty-routines-light.svg",
+   "dark": "illustrations/svg/empty-routines-dark.svg"
+  }
+ },
+ {
+  "id": "empty-search",
+  "name": "Empty search",
+  "where": "M5 no results",
+  "svg": {
+   "light": "illustrations/svg/empty-search-light.svg",
+   "dark": "illustrations/svg/empty-search-dark.svg"
+  }
+ },
+ {
+  "id": "welcome",
+  "name": "Welcome (O1)",
+  "where": "O1",
+  "svg": {
+   "light": "illustrations/svg/welcome-light.svg",
+   "dark": "illustrations/svg/welcome-dark.svg"
+  }
+ },
+ {
+  "id": "promise",
+  "name": "Our promise (O2)",
+  "where": "O2",
+  "svg": {
+   "light": "illustrations/svg/promise-light.svg",
+   "dark": "illustrations/svg/promise-dark.svg"
+  }
+ },
+ {
+  "id": "day-shape",
+  "name": "Your day shape (O3)",
+  "where": "O3",
+  "svg": {
+   "light": "illustrations/svg/day-shape-light.svg",
+   "dark": "illustrations/svg/day-shape-dark.svg"
+  }
+ },
+ {
+  "id": "notifications-primer",
+  "name": "Notifications primer (O5)",
+  "where": "O5",
+  "svg": {
+   "light": "illustrations/svg/notifications-primer-light.svg",
+   "dark": "illustrations/svg/notifications-primer-dark.svg"
+  }
+ },
+ {
+  "id": "exact-alarms-primer",
+  "name": "Exact alarms primer (O6)",
+  "where": "O6",
+  "svg": {
+   "light": "illustrations/svg/exact-alarms-primer-light.svg",
+   "dark": "illustrations/svg/exact-alarms-primer-dark.svg"
+  }
+ },
+ {
+  "id": "calendar-primer",
+  "name": "Calendar primer (O7)",
+  "where": "O7",
+  "svg": {
+   "light": "illustrations/svg/calendar-primer-light.svg",
+   "dark": "illustrations/svg/calendar-primer-dark.svg"
+  }
+ },
+ {
+  "id": "youre-set",
+  "name": "You’re set (O9)",
+  "where": "O9",
+  "svg": {
+   "light": "illustrations/svg/youre-set-light.svg",
+   "dark": "illustrations/svg/youre-set-dark.svg"
+  }
+ },
+ {
+  "id": "welcome-back",
+  "name": "Welcome back (D6)",
+  "where": "D6",
+  "svg": {
+   "light": "illustrations/svg/welcome-back-light.svg",
+   "dark": "illustrations/svg/welcome-back-dark.svg"
+  }
+ },
+ {
+  "id": "end-of-day-rest",
+  "name": "End-of-day rest (D5)",
+  "where": "D5 close — \"Rest well.\"",
+  "svg": {
+   "light": "illustrations/svg/end-of-day-rest-light.svg",
+   "dark": "illustrations/svg/end-of-day-rest-dark.svg"
+  }
+ },
+ {
+  "id": "nothing-done",
+  "name": "Nothing-done day (D5)",
+  "where": "D5 nothing-done — \"Some days are like that. Tomorrow’s a fresh page.\"",
+  "svg": {
+   "light": "illustrations/svg/nothing-done-light.svg",
+   "dark": "illustrations/svg/nothing-done-dark.svg"
+  }
+ },
+ {
+  "id": "focus-break",
+  "name": "Focus break (F4)",
+  "where": "F4",
+  "svg": {
+   "light": "illustrations/svg/focus-break-light.svg",
+   "dark": "illustrations/svg/focus-break-dark.svg"
+  }
+ },
+ {
+  "id": "hyperfocus",
+  "name": "Hyperfocus check-in — water & stretch (F3)",
+  "where": "F3",
+  "svg": {
+   "light": "illustrations/svg/hyperfocus-light.svg",
+   "dark": "illustrations/svg/hyperfocus-dark.svg"
+  }
+ },
+ {
+  "id": "garden-1",
+  "name": "Garden stage 1 (G1)",
+  "where": "G1 v1.x",
+  "svg": {
+   "light": "illustrations/svg/garden-1-light.svg",
+   "dark": "illustrations/svg/garden-1-dark.svg"
+  }
+ },
+ {
+  "id": "garden-2",
+  "name": "Garden stage 2 (G1)",
+  "where": "G1 v1.x",
+  "svg": {
+   "light": "illustrations/svg/garden-2-light.svg",
+   "dark": "illustrations/svg/garden-2-dark.svg"
+  }
+ },
+ {
+  "id": "garden-3",
+  "name": "Garden stage 3 (G1)",
+  "where": "G1 v1.x",
+  "svg": {
+   "light": "illustrations/svg/garden-3-light.svg",
+   "dark": "illustrations/svg/garden-3-dark.svg"
+  }
+ },
+ {
+  "id": "garden-4",
+  "name": "Garden stage 4 (G1)",
+  "where": "G1 v1.x",
+  "svg": {
+   "light": "illustrations/svg/garden-4-light.svg",
+   "dark": "illustrations/svg/garden-4-dark.svg"
+  }
+ },
+ {
+  "id": "garden-5",
+  "name": "Garden stage 5 (G1)",
+  "where": "G1 v1.x",
+  "svg": {
+   "light": "illustrations/svg/garden-5-light.svg",
+   "dark": "illustrations/svg/garden-5-dark.svg"
+  }
+ },
+ {
+  "id": "backup",
+  "name": "Backup (S10)",
+  "where": "S10",
+  "svg": {
+   "light": "illustrations/svg/backup-light.svg",
+   "dark": "illustrations/svg/backup-dark.svg"
+  }
+ },
+ {
+  "id": "sync",
+  "name": "Sync (S11)",
+  "where": "S11 v1.x",
+  "svg": {
+   "light": "illustrations/svg/sync-light.svg",
+   "dark": "illustrations/svg/sync-dark.svg"
+  }
+ },
+ {
+  "id": "error",
+  "name": "Something went wrong (generic)",
+  "where": "Global error state",
+  "svg": {
+   "light": "illustrations/svg/error-light.svg",
+   "dark": "illustrations/svg/error-dark.svg"
+  }
+ },
+ {
+  "id": "privacy",
+  "name": "Privacy (S15)",
+  "where": "S15",
+  "svg": {
+   "light": "illustrations/svg/privacy-light.svg",
+   "dark": "illustrations/svg/privacy-dark.svg"
+  }
+ }
+]

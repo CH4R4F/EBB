@@ -1,0 +1,346 @@
+{
+ "notifs": [
+  {
+   "id": "N1",
+   "name": "Start reminder",
+   "channel": "Task start reminders (high)",
+   "tier": "MVP",
+   "files": {
+    "collapsed-light": "notifications/png/N1-collapsed-light.png",
+    "expanded-light": "notifications/png/N1-expanded-light.png",
+    "public-light": "notifications/png/N1-public-light.png",
+    "collapsed-dark": "notifications/png/N1-collapsed-dark.png",
+    "expanded-dark": "notifications/png/N1-expanded-dark.png",
+    "public-dark": "notifications/png/N1-public-dark.png"
+   }
+  },
+  {
+   "id": "N2",
+   "name": "Heads-up (early)",
+   "channel": "Heads-up & wrap-up (default)",
+   "tier": "MVP",
+   "files": {
+    "collapsed-light": "notifications/png/N2-collapsed-light.png",
+    "expanded-light": "notifications/png/N2-expanded-light.png",
+    "public-light": "notifications/png/N2-public-light.png",
+    "collapsed-dark": "notifications/png/N2-collapsed-dark.png",
+    "expanded-dark": "notifications/png/N2-expanded-dark.png",
+    "public-dark": "notifications/png/N2-public-dark.png"
+   }
+  },
+  {
+   "id": "N3",
+   "name": "Time's up / wrap-up",
+   "channel": "Heads-up & wrap-up (default)",
+   "tier": "MVP",
+   "files": {
+    "collapsed-light": "notifications/png/N3-collapsed-light.png",
+    "expanded-light": "notifications/png/N3-expanded-light.png",
+    "public-light": "notifications/png/N3-public-light.png",
+    "collapsed-dark": "notifications/png/N3-collapsed-dark.png",
+    "expanded-dark": "notifications/png/N3-expanded-dark.png",
+    "public-dark": "notifications/png/N3-public-dark.png"
+   }
+  },
+  {
+   "id": "N4",
+   "name": "Nag repeat (gentle second nudge)",
+   "channel": "Task start reminders (high)",
+   "tier": "MVP",
+   "files": {
+    "collapsed-light": "notifications/png/N4-collapsed-light.png",
+    "expanded-light": "notifications/png/N4-expanded-light.png",
+    "public-light": "notifications/png/N4-public-light.png",
+    "collapsed-dark": "notifications/png/N4-collapsed-dark.png",
+    "expanded-dark": "notifications/png/N4-expanded-dark.png",
+    "public-dark": "notifications/png/N4-public-dark.png"
+   }
+  },
+  {
+   "id": "N5",
+   "name": "Grouped",
+   "channel": "Task start reminders (high)",
+   "tier": "MVP",
+   "files": {
+    "collapsed-light": "notifications/png/N5-collapsed-light.png",
+    "expanded-light": "notifications/png/N5-expanded-light.png",
+    "public-light": "notifications/png/N5-public-light.png",
+    "collapsed-dark": "notifications/png/N5-collapsed-dark.png",
+    "expanded-dark": "notifications/png/N5-expanded-dark.png",
+    "public-dark": "notifications/png/N5-public-dark.png"
+   }
+  },
+  {
+   "id": "N6",
+   "name": "Focus ongoing",
+   "channel": "Focus timer (ongoing, silent)",
+   "tier": "MVP",
+   "files": {
+    "collapsed-light": "notifications/png/N6-collapsed-light.png",
+    "expanded-light": "notifications/png/N6-expanded-light.png",
+    "public-light": "notifications/png/N6-public-light.png",
+    "collapsed-dark": "notifications/png/N6-collapsed-dark.png",
+    "expanded-dark": "notifications/png/N6-expanded-dark.png",
+    "public-dark": "notifications/png/N6-public-dark.png"
+   }
+  },
+  {
+   "id": "N7",
+   "name": "Morning planning prompt",
+   "channel": "Planning & review prompts (low)",
+   "tier": "MVP",
+   "files": {
+    "collapsed-light": "notifications/png/N7-collapsed-light.png",
+    "expanded-light": "notifications/png/N7-expanded-light.png",
+    "public-light": "notifications/png/N7-public-light.png",
+    "collapsed-dark": "notifications/png/N7-collapsed-dark.png",
+    "expanded-dark": "notifications/png/N7-expanded-dark.png",
+    "public-dark": "notifications/png/N7-public-dark.png"
+   }
+  },
+  {
+   "id": "N8",
+   "name": "Evening review prompt",
+   "channel": "Planning & review prompts (low)",
+   "tier": "MVP",
+   "files": {
+    "collapsed-light": "notifications/png/N8-collapsed-light.png",
+    "expanded-light": "notifications/png/N8-expanded-light.png",
+    "public-light": "notifications/png/N8-public-light.png",
+    "collapsed-dark": "notifications/png/N8-collapsed-dark.png",
+    "expanded-dark": "notifications/png/N8-expanded-dark.png",
+    "public-dark": "notifications/png/N8-public-dark.png"
+   }
+  },
+  {
+   "id": "N9",
+   "name": "Ongoing \"Now\" (v1.x)",
+   "channel": "Focus timer / Now (ongoing, low)",
+   "tier": "v1.x",
+   "files": {
+    "collapsed-light": "notifications/png/N9-collapsed-light.png",
+    "expanded-light": "notifications/png/N9-expanded-light.png",
+    "public-light": "notifications/png/N9-public-light.png",
+    "collapsed-dark": "notifications/png/N9-collapsed-dark.png",
+    "expanded-dark": "notifications/png/N9-expanded-dark.png",
+    "public-dark": "notifications/png/N9-public-dark.png"
+   }
+  }
+ ],
+ "composites": [
+  {
+   "title": "Notification shade",
+   "theme": "light",
+   "file": "notifications/composite/shade-light.png"
+  },
+  {
+   "title": "Lock screen — public (private mode)",
+   "theme": "light",
+   "file": "notifications/composite/lockscreen-public-light.png"
+  },
+  {
+   "title": "Heads-up N1 over home",
+   "theme": "light",
+   "file": "notifications/composite/heads-up-N1-light.png"
+  },
+  {
+   "title": "Notification shade",
+   "theme": "dark",
+   "file": "notifications/composite/shade-dark.png"
+  },
+  {
+   "title": "Lock screen — public (private mode)",
+   "theme": "dark",
+   "file": "notifications/composite/lockscreen-public-dark.png"
+  },
+  {
+   "title": "Heads-up N1 over home",
+   "theme": "dark",
+   "file": "notifications/composite/heads-up-N1-dark.png"
+  }
+ ],
+ "qs": [
+  {
+   "tile": "QS1",
+   "kind": "capture",
+   "state": "active",
+   "size": "large",
+   "theme": "light",
+   "file": "quick-settings/png/QS1-capture-active-large-light.png"
+  },
+  {
+   "tile": "QS1",
+   "kind": "capture",
+   "state": "active",
+   "size": "small",
+   "theme": "light",
+   "file": "quick-settings/png/QS1-capture-active-small-light.png"
+  },
+  {
+   "tile": "QS2",
+   "kind": "focus",
+   "state": "inactive",
+   "size": "large",
+   "theme": "light",
+   "file": "quick-settings/png/QS2-focus-inactive-large-light.png"
+  },
+  {
+   "tile": "QS2",
+   "kind": "focus",
+   "state": "inactive",
+   "size": "small",
+   "theme": "light",
+   "file": "quick-settings/png/QS2-focus-inactive-small-light.png"
+  },
+  {
+   "tile": "QS2",
+   "kind": "focus",
+   "state": "active",
+   "size": "large",
+   "theme": "light",
+   "file": "quick-settings/png/QS2-focus-active-large-light.png"
+  },
+  {
+   "tile": "QS2",
+   "kind": "focus",
+   "state": "active",
+   "size": "small",
+   "theme": "light",
+   "file": "quick-settings/png/QS2-focus-active-small-light.png"
+  },
+  {
+   "tile": "panel",
+   "state": "focus inactive",
+   "theme": "light",
+   "file": "quick-settings/panel/qs-panel-focus-inactive-light.png"
+  },
+  {
+   "tile": "panel",
+   "state": "focus active",
+   "theme": "light",
+   "file": "quick-settings/panel/qs-panel-focus-active-light.png"
+  },
+  {
+   "tile": "QS1",
+   "kind": "capture",
+   "state": "active",
+   "size": "large",
+   "theme": "dark",
+   "file": "quick-settings/png/QS1-capture-active-large-dark.png"
+  },
+  {
+   "tile": "QS1",
+   "kind": "capture",
+   "state": "active",
+   "size": "small",
+   "theme": "dark",
+   "file": "quick-settings/png/QS1-capture-active-small-dark.png"
+  },
+  {
+   "tile": "QS2",
+   "kind": "focus",
+   "state": "inactive",
+   "size": "large",
+   "theme": "dark",
+   "file": "quick-settings/png/QS2-focus-inactive-large-dark.png"
+  },
+  {
+   "tile": "QS2",
+   "kind": "focus",
+   "state": "inactive",
+   "size": "small",
+   "theme": "dark",
+   "file": "quick-settings/png/QS2-focus-inactive-small-dark.png"
+  },
+  {
+   "tile": "QS2",
+   "kind": "focus",
+   "state": "active",
+   "size": "large",
+   "theme": "dark",
+   "file": "quick-settings/png/QS2-focus-active-large-dark.png"
+  },
+  {
+   "tile": "QS2",
+   "kind": "focus",
+   "state": "active",
+   "size": "small",
+   "theme": "dark",
+   "file": "quick-settings/png/QS2-focus-active-small-dark.png"
+  },
+  {
+   "tile": "panel",
+   "state": "focus inactive",
+   "theme": "dark",
+   "file": "quick-settings/panel/qs-panel-focus-inactive-dark.png"
+  },
+  {
+   "tile": "panel",
+   "state": "focus active",
+   "theme": "dark",
+   "file": "quick-settings/panel/qs-panel-focus-active-dark.png"
+  }
+ ],
+ "shortcuts": [
+  {
+   "key": "capture",
+   "label": "Quick capture",
+   "theme": "light",
+   "file": "shortcuts/png/ic_shortcut_capture-192.png"
+  },
+  {
+   "key": "capture",
+   "label": "Quick capture",
+   "theme": "dark",
+   "file": "shortcuts/png/ic_shortcut_capture_dark-192.png"
+  },
+  {
+   "key": "braindump",
+   "label": "Brain dump",
+   "theme": "light",
+   "file": "shortcuts/png/ic_shortcut_braindump-192.png"
+  },
+  {
+   "key": "braindump",
+   "label": "Brain dump",
+   "theme": "dark",
+   "file": "shortcuts/png/ic_shortcut_braindump_dark-192.png"
+  },
+  {
+   "key": "focus",
+   "label": "Start focus",
+   "theme": "light",
+   "file": "shortcuts/png/ic_shortcut_focus-192.png"
+  },
+  {
+   "key": "focus",
+   "label": "Start focus",
+   "theme": "dark",
+   "file": "shortcuts/png/ic_shortcut_focus_dark-192.png"
+  },
+  {
+   "key": "shift",
+   "label": "Shift my day (+15)",
+   "theme": "light",
+   "file": "shortcuts/png/ic_shortcut_shift-192.png"
+  },
+  {
+   "key": "shift",
+   "label": "Shift my day (+15)",
+   "theme": "dark",
+   "file": "shortcuts/png/ic_shortcut_shift_dark-192.png"
+  },
+  {
+   "key": "menu",
+   "label": "Long-press menu",
+   "theme": "light",
+   "file": "shortcuts/longpress-menu-light.png"
+  },
+  {
+   "key": "menu",
+   "label": "Long-press menu",
+   "theme": "dark",
+   "file": "shortcuts/longpress-menu-dark.png"
+  }
+ ]
+}

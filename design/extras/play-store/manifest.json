@@ -1,0 +1,65 @@
+{
+ "screenshots": [
+  {
+   "n": "01",
+   "caption": "Dump it",
+   "sub": "Empty your head in seconds. Sort it later.",
+   "source": "play-store/source-screens/T11-brain-dump-light.png",
+   "file": "play-store/screenshots/ebb-screenshot-01.png"
+  },
+  {
+   "n": "02",
+   "caption": "Drop it on your day",
+   "sub": "A visual timeline that shows time passing.",
+   "source": "../screens/10-m1-today-populated-light.png",
+   "file": "play-store/screenshots/ebb-screenshot-02.png"
+  },
+  {
+   "n": "03",
+   "caption": "Running late? Shift in one tap",
+   "sub": "Everything after now moves together. Pins stay put.",
+   "source": "play-store/source-screens/D1-shift-sheet-light.png",
+   "file": "play-store/screenshots/ebb-screenshot-03.png"
+  },
+  {
+   "n": "04",
+   "caption": "Reminders that actually arrive",
+   "sub": "Gentle, on time — and never “overdue”.",
+   "source": "play-store/source-screens/N1-over-today-light.png",
+   "file": "play-store/screenshots/ebb-screenshot-04.png"
+  },
+  {
+   "n": "05",
+   "caption": "Widgets that stay fresh",
+   "sub": "Now & Next, timeline, focus and capture on your home screen.",
+   "source": "widgets/home/home-A-light.png",
+   "file": "play-store/screenshots/ebb-screenshot-05.png"
+  },
+  {
+   "n": "06",
+   "caption": "No guilt — welcome back anytime",
+   "sub": "No streaks. No red. Just a fresh start.",
+   "source": "play-store/source-screens/D6-welcome-back-light.png",
+   "file": "play-store/screenshots/ebb-screenshot-06.png"
+  },
+  {
+   "n": "07",
+   "caption": "Free forever · Private · Open source",
+   "sub": "No account. No ads. Your plans stay on your phone.",
+   "source": "../screens/02-o2-our-promise-default-light.png",
+   "file": "play-store/screenshots/ebb-screenshot-07.png"
+  }
+ ],
+ "fallbackScreens": [
+  "play-store/source-screens/T11-brain-dump-light.png",
+  "play-store/source-screens/D6-welcome-back-light.png",
+  "play-store/source-screens/D1-shift-sheet-light.png",
+  "play-store/source-screens/N1-over-today-light.png"
+ ],
+ "other": [
+  "play-store/ebb-feature-graphic-1024x500.png",
+  "play-store/ebb-play-icon-512.png",
+  "play-store/screenshots/ebb-tablet-10in.png",
+  "play-store/screenshots/ebb-tablet-7in.png"
+ ]
+}
