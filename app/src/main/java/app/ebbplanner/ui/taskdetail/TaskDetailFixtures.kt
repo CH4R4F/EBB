@@ -24,6 +24,7 @@ fun taskDetailNew(): TaskDetailPresentationState =
         estimate = "15 min",
         energySelected = 2,
         colorLabel = "Slate",
+        colorKey = "slate",
         subtaskProgress = "0/0",
         subtasks = emptyList(),
         mode = TaskDetailMode.New,
@@ -59,11 +60,24 @@ fun estimatePickerPresets(): EstimatePickerState = EstimatePickerState(mode = Es
 fun estimatePickerCustom(): EstimatePickerState =
     EstimatePickerState(
         mode = EstimatePickerMode.Custom,
-        customText = "1 h 20",
+        sheetSubtitle = null,
+        customHours = 1,
+        customMinutes = 20,
+        hourAbove = "0",
+        hourBelow = "2",
+        minuteAbove = "15",
+        minuteBelow = "25",
     )
 
 fun estimatePickerBigPrompt(): EstimatePickerState =
     EstimatePickerState(
         mode = EstimatePickerMode.BigPrompt,
-        promptTitle = "How long will “Write project brief” take?",
+        sheetSubtitle = null,
+        customHours = 5,
+        customMinutes = 0,
+        hourAbove = "4",
+        hourBelow = "6",
+        minuteAbove = "",
+        minuteBelow = "5",
+        doneLabel = "Keep 5 h",
     )

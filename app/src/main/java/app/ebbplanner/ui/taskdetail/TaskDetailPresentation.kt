@@ -43,8 +43,15 @@ enum class EstimatePickerMode {
 
 data class EstimatePickerState(
     val mode: EstimatePickerMode = EstimatePickerMode.Presets,
-    val selectedMinutes: Int = 75,
-    val options: List<Int> = listOf(15, 30, 45, 60, 75, 90, 120),
-    val customText: String = "",
-    val promptTitle: String = "How long will this take?",
+    val sheetTitle: String = "How long might it take?",
+    val sheetSubtitle: String? = "A guess is fine. You can change it later.",
+    val presetOptionsMinutes: List<Int> = listOf(5, 10, 15, 30, 45, 60, 90, 120),
+    val selectedPresetMinutes: Int = 30,
+    val customHours: Int = 1,
+    val customMinutes: Int = 20,
+    val hourAbove: String = "0",
+    val hourBelow: String = "2",
+    val minuteAbove: String = "15",
+    val minuteBelow: String = "25",
+    val doneLabel: String = "Done",
 )

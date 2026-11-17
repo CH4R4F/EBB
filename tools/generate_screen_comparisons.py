@@ -65,7 +65,10 @@ PAIRS: dict[str, str] = {
 
 def find_snapshot(suffix: str) -> Path | None:
     matches = list(SNAPSHOT_DIR.glob(f"*{suffix}"))
-    return matches[0] if matches else None
+    if not matches:
+        return None
+    matches.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    return matches[0]
 
 
 def composite(ours: Image.Image, design: Image.Image, label: str) -> Image.Image:
