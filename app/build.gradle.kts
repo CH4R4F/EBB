@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.paparazzi)
 }
 
 val ebbApplicationId = providers.gradleProperty("ebb.applicationId").get()
@@ -131,4 +132,15 @@ dependencies {
 
 kapt {
     correctErrorTypes = true
+}
+
+val onboardingComparisonsDir = layout.buildDirectory.dir("onboarding-comparisons")
+
+tasks.register<Copy>("collectOnboardingComparisons") {
+    group = "verification"
+    description = "Collect Paparazzi deltas/failures for CI onboarding-comparisons artifact"
+    dependsOn("verifyPaparazziDebug")
+    from(layout.buildDirectory.dir("paparazzi"))
+    into(onboardingComparisonsDir)
+    include("**/failures/**", "**/delta/**")
 }

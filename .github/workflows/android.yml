@@ -42,7 +42,16 @@ jobs:
             detekt \
             lintDebug \
             testDebugUnitTest \
+            verifyPaparazziDebug \
             assembleDebug
+
+      - name: Upload onboarding Paparazzi comparisons
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: onboarding-comparisons
+          path: app/build/paparazzi/
+          retention-days: 14
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
