@@ -3,6 +3,7 @@
 package app.ebbplanner.ui.sheets
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,10 +30,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.ebbplanner.ui.components.EbbJoinedSegmentedControl
 import app.ebbplanner.ui.components.EbbRadioDot
 import app.ebbplanner.ui.components.EbbSegmentedChips
 import app.ebbplanner.ui.theme.EbbShapes
@@ -49,7 +53,7 @@ fun ReminderPickerDesign(modifier: Modifier = Modifier) {
             SheetChips(listOf("5 min", "10 min", "15 min", "30 min", "60 min"), selected = 0)
             SheetToggleRow("At end", "Time to wrap up", on = false)
             Text("Style", style = EbbTypography.labelL, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            EbbSegmentedChips(listOf("Gentle", "Alarm-style"), icons = listOf(null, "alarm"), selectedIndex = 0)
+            EbbJoinedSegmentedControl(listOf("Gentle", "Alarm-style"), icons = listOf(null, "alarm"), selectedIndex = 0)
             Text(
                 "Alarm-style rings over the lock screen until you respond. Good for meds and appointments.",
                 style = EbbTypography.bodyM,
@@ -155,6 +159,20 @@ fun BreakItDownDesign(modifier: Modifier = Modifier) {
                 }
             }
         }
+        Surface(
+            modifier = Modifier.fillMaxWidth().padding(top = EbbSpacing.s4),
+            shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                listOf("Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P").forEach { key ->
+                    Text(key, style = EbbTypography.labelL, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
     }
 }
 
@@ -164,7 +182,7 @@ fun SchedulePickerDesign(modifier: Modifier = Modifier) {
         title = "Schedule",
         subtitle = "Fix the squeaky door hinge · 10 min",
         doneLabel = "Schedule",
-        sheetMinHeight = 680.dp,
+        sheetTopInset = 96.dp,
         modifier = modifier,
     ) {
         val dayChips = listOf("Today", "Tomorrow", "This weekend", "Next week", "Pick date", "Inbox", "Someday")
@@ -183,50 +201,61 @@ fun SchedulePickerDesign(modifier: Modifier = Modifier) {
 
 @Composable
 private fun ScheduleMiniPreview(modifier: Modifier = Modifier) {
-    Surface(modifier = modifier.fillMaxWidth().height(118.dp), shape = EbbShapes.md, color = MaterialTheme.colorScheme.surface) {
-        Box(Modifier.fillMaxSize().padding(horizontal = 8.dp)) {
-            Text(
-                "14:00",
-                style = EbbTypography.labelM,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 42.dp),
-            )
-            Text(
-                "15:00",
-                style = EbbTypography.labelM,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 98.dp),
-            )
-            Surface(
-                modifier = Modifier.fillMaxWidth().padding(top = 14.dp).height(26.dp),
-                shape = EbbShapes.sm,
-                color = EbbTaskColors.tint("lemon", dark = true),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.width(4.dp).fillMaxHeight().background(EbbTaskColors.strong("lemon")))
-                    EbbSymbol("local_post_office", fontSize = 16.sp, modifier = Modifier.padding(horizontal = 8.dp))
-                    Text("Buy stamps", style = EbbTypography.labelL, modifier = Modifier.weight(1f))
-                    Text("13:30 · 15 min", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+    val railWidth = 40.dp
+    Surface(
+        modifier = modifier.fillMaxWidth().height(118.dp),
+        shape = EbbShapes.md,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    ) {
+        Row(Modifier.fillMaxSize()) {
+            Column(Modifier.width(railWidth).padding(top = 10.dp)) {
+                Text("14:00", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(42.dp))
+                Text("15:00", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 78.dp)
-                        .height(26.dp)
-                        .drawBehind {
-                            drawRoundRect(
-                                color = androidx.compose.ui.graphics.Color.Gray.copy(alpha = 0.5f),
-                                style = Stroke(width = 2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f))),
-                                cornerRadius = CornerRadius(8.dp.toPx()),
-                            )
-                        },
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 8.dp)) {
-                    EbbSymbol("radio_button_unchecked", fontSize = 16.sp)
-                    Text("Fix squeaky hinge", style = EbbTypography.labelL, modifier = Modifier.weight(1f))
-                    Text("14:30 · 10 min", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Box(Modifier.weight(1f).fillMaxHeight().padding(end = 8.dp, top = 8.dp, bottom = 8.dp)) {
+                val hourLine = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+                Canvas(Modifier.matchParentSize()) {
+                    val y1 = size.height * 0.35f
+                    val y2 = size.height * 0.72f
+                    drawLine(hourLine, Offset(0f, y1), Offset(size.width, y1), strokeWidth = 1.dp.toPx())
+                    drawLine(hourLine, Offset(0f, y2), Offset(size.width, y2), strokeWidth = 1.dp.toPx())
+                }
+                Surface(
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp).height(26.dp),
+                    shape = EbbShapes.sm,
+                    color = EbbTaskColors.tint("lemon", dark = true),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.width(4.dp).fillMaxHeight().background(EbbTaskColors.strong("lemon")))
+                        EbbSymbol("local_post_office", fontSize = 16.sp, modifier = Modifier.padding(horizontal = 8.dp))
+                        Text("Buy stamps", style = EbbTypography.labelL, modifier = Modifier.weight(1f))
+                        Text("13:30 · 15 min", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(top = 56.dp)
+                            .height(26.dp)
+                            .drawBehind {
+                                drawRoundRect(
+                                    color = androidx.compose.ui.graphics.Color.Gray.copy(alpha = 0.5f),
+                                    style =
+                                        Stroke(
+                                            width = 2.dp.toPx(),
+                                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f)),
+                                        ),
+                                    cornerRadius = CornerRadius(8.dp.toPx()),
+                                )
+                            },
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 8.dp)) {
+                        EbbSymbol("radio_button_unchecked", fontSize = 16.sp)
+                        Text("Fix squeaky hinge", style = EbbTypography.labelL, modifier = Modifier.weight(1f))
+                        Text("14:30 · 10 min", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
         }

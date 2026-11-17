@@ -4,14 +4,20 @@ package app.ebbplanner.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -45,6 +51,53 @@ fun EbbRadioDot(
         if (selected) {
             Box(contentAlignment = Alignment.Center) {
                 Surface(Modifier.size(8.dp), shape = CircleShape, color = MaterialTheme.colorScheme.onPrimary) {}
+            }
+        }
+    }
+}
+
+@Composable
+fun EbbJoinedSegmentedControl(
+    labels: List<String>,
+    icons: List<String?> = labels.map { null },
+    selectedIndex: Int,
+    selectedUsesTertiary: Boolean = false,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(8.dp)
+    Surface(
+        modifier = modifier.fillMaxWidth().height(40.dp),
+        shape = shape,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+            labels.forEachIndexed { index, label ->
+                val selected = index == selectedIndex
+                val bg =
+                    if (selected) {
+                        if (selectedUsesTertiary) {
+                            MaterialTheme.colorScheme.tertiaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.primaryContainer
+                        }
+                    } else {
+                        MaterialTheme.colorScheme.surface
+                    }
+                Row(
+                    modifier = Modifier.weight(1f).fillMaxHeight().background(bg),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    icons[index]?.let { EbbSymbol(it, fontSize = 16.sp) }
+                    if (selected) {
+                        EbbSymbol("check", fontSize = 14.sp, modifier = Modifier.padding(end = 4.dp))
+                    }
+                    Text(label, style = EbbTypography.labelL)
+                }
+                if (index < labels.lastIndex) {
+                    Box(Modifier.width(1.dp).fillMaxHeight().background(MaterialTheme.colorScheme.outline))
+                }
             }
         }
     }
@@ -98,7 +151,7 @@ fun FocusProgressRing(
         val track = MaterialTheme.colorScheme.surfaceVariant
         val primary = MaterialTheme.colorScheme.primary
         Canvas(Modifier.matchParentSize()) {
-            val stroke = 12.dp.toPx()
+            val stroke = 16.dp.toPx()
             val diameter = size.minDimension - stroke
             val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
             drawArc(

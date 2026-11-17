@@ -86,12 +86,7 @@ class FocusPaparazziTest {
         paparazzi.snapshot("f3_hyperfocus_gentle_dark") {
             FocusAppPreview(
                 darkTheme = true,
-                state =
-                    FocusPresentationState(
-                        mode = FocusVisualMode.Hyperfocus,
-                        topBarLabel = "Countdown · until 11:15",
-                        timerLabel = "48:12",
-                    ),
+                state = FocusPresentationState(mode = FocusVisualMode.Hyperfocus),
             )
         }
     }

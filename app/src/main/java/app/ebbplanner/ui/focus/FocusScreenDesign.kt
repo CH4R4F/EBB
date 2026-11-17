@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -28,12 +29,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.ebbplanner.ui.components.EbbJoinedSegmentedControl
 import app.ebbplanner.ui.components.EbbRadioDot
-import app.ebbplanner.ui.components.EbbSegmentedChips
 import app.ebbplanner.ui.components.EbbSwitchRow
 import app.ebbplanner.ui.components.FocusProgressRing
 import app.ebbplanner.ui.theme.EbbShapes
@@ -87,11 +89,11 @@ fun FocusScreenDesign(
                 }
                 when (state.mode) {
                     FocusVisualMode.Setup -> FocusSetupBody()
-                    FocusVisualMode.RunningRing -> FocusRunningBody(state, ring = true)
-                    FocusVisualMode.RunningBar -> FocusRunningBody(state, ring = false)
-                    FocusVisualMode.TimesUp -> FocusTimesUpInApp(state)
-                    FocusVisualMode.Hyperfocus -> FocusHyperfocusBody(state)
-                    FocusVisualMode.BreakEnded -> FocusBreakEndedBody()
+                    FocusVisualMode.RunningRing -> FocusRunningBody(state, ring = true, modifier = Modifier.weight(1f))
+                    FocusVisualMode.RunningBar -> FocusRunningBody(state, ring = false, modifier = Modifier.weight(1f))
+                    FocusVisualMode.TimesUp -> FocusTimesUpInApp(state, modifier = Modifier.weight(1f).fillMaxWidth())
+                    FocusVisualMode.Hyperfocus -> FocusHyperfocusBody(state, modifier = Modifier.weight(1f).fillMaxWidth())
+                    FocusVisualMode.BreakEnded -> FocusBreakEndedBody(Modifier.weight(1f))
                     FocusVisualMode.TimesUpLockscreen -> Unit
                 }
             }
@@ -134,7 +136,7 @@ private fun FocusSetupBody() {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = EbbSpacing.s4),
             )
-            EbbSegmentedChips(
+            EbbJoinedSegmentedControl(
                 labels = listOf("Ring", "Bar"),
                 icons = listOf(null, "linear_scale"),
                 selectedIndex = 0,
@@ -163,7 +165,7 @@ private fun FocusSetupBody() {
             }
             Surface(
                 shape = EbbShapes.full,
-                color = MaterialTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0f),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -172,8 +174,13 @@ private fun FocusSetupBody() {
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    EbbSymbol("timer", fontSize = 20.sp)
-                    Text("Just 5 minutes", style = EbbTypography.labelL, modifier = Modifier.padding(start = 8.dp))
+                    EbbSymbol("timer", fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
+                    Text(
+                        "Just 5 minutes",
+                        style = EbbTypography.labelL,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
                 }
             }
         }
@@ -193,7 +200,7 @@ private fun TimerOption(
         border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             EbbSymbol(icon, fontSize = 22.sp)
             Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
                 Text(title, style = EbbTypography.bodyL)
@@ -208,8 +215,10 @@ private fun TimerOption(
 private fun FocusRunningBody(
     state: FocusPresentationState,
     ring: Boolean,
+    timerSubtitle: String = "left of 1 h 15 min",
+    modifier: Modifier = Modifier,
 ) {
-    Column(Modifier.fillMaxSize()) {
+    Column(modifier.fillMaxSize()) {
         Text(
             state.title,
             style = EbbTypography.headlineM,
@@ -218,7 +227,7 @@ private fun FocusRunningBody(
         )
         if (ring) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                FocusProgressRing(progress = 0.45f, label = state.timerLabel, subtitle = "left of 1 h 15 min")
+                FocusProgressRing(progress = 0.45f, label = state.timerLabel, subtitle = timerSubtitle)
             }
         } else {
             Column(
@@ -265,7 +274,7 @@ private fun FocusStepsCard() {
 @Composable
 private fun StepRow(label: String) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-        Surface(Modifier.size(20.dp), shape = CircleShape, border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline)) {}
+        Surface(Modifier.size(20.dp), shape = EbbShapes.sm, border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline)) {}
         Text(label, style = EbbTypography.bodyL, modifier = Modifier.padding(start = 12.dp))
     }
 }
@@ -326,23 +335,28 @@ private fun FocusControl(
 }
 
 @Composable
-private fun FocusTimesUpInApp(state: FocusPresentationState) {
-    Box(Modifier.fillMaxSize()) {
+private fun FocusTimesUpInApp(
+    state: FocusPresentationState,
+    modifier: Modifier = Modifier,
+) {
+    val runningState =
+        state.copy(
+            title = state.runningTitle,
+            timerLabel = "0:00",
+            topBarLabel = "Fixed · 25 min",
+        )
+    Box(modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            Text(
-                state.runningTitle,
-                style = EbbTypography.headlineM,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            )
-            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                FocusProgressRing(progress = 1f, label = "0:00", subtitle = "Time's up")
-            }
-            Spacer(Modifier.height(80.dp))
+            FocusRunningBody(runningState, ring = true, timerSubtitle = "Time's up", modifier = Modifier.weight(1f))
         }
-        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f)), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f)),
+            contentAlignment = Alignment.TopCenter,
+        ) {
             Surface(
-                modifier = Modifier.padding(horizontal = 24.dp),
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 72.dp),
                 shape = EbbShapes.lg,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
             ) {
@@ -380,7 +394,11 @@ private fun FocusTimesUpInApp(state: FocusPresentationState) {
                         }
                     }
                     Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Surface(Modifier.weight(1f), shape = EbbShapes.full, color = MaterialTheme.colorScheme.surfaceContainerHighest) {
+                        Surface(
+                            Modifier.weight(1f),
+                            shape = EbbShapes.full,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                        ) {
                             Text(
                                 "5 more min",
                                 textAlign = TextAlign.Center,
@@ -388,12 +406,44 @@ private fun FocusTimesUpInApp(state: FocusPresentationState) {
                                 style = EbbTypography.labelL,
                             )
                         }
-                        Surface(Modifier.weight(1f), shape = EbbShapes.full, color = MaterialTheme.colorScheme.surfaceContainerHighest) {
+                        Surface(
+                            Modifier.weight(1f),
+                            shape = EbbShapes.full,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                        ) {
                             Text(
                                 "15 more min",
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.padding(vertical = 10.dp),
                                 style = EbbTypography.labelL,
+                            )
+                        }
+                    }
+                    Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            EbbSymbol("more_time", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
+                            Text(
+                                "Shift my day",
+                                color = MaterialTheme.colorScheme.primary,
+                                style = EbbTypography.labelL,
+                                modifier = Modifier.padding(start = 4.dp),
+                            )
+                        }
+                        Row(
+                            Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            EbbSymbol("coffee", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
+                            Text(
+                                "Take a break",
+                                color = MaterialTheme.colorScheme.primary,
+                                style = EbbTypography.labelL,
+                                modifier = Modifier.padding(start = 4.dp),
                             )
                         }
                     }
@@ -405,70 +455,170 @@ private fun FocusTimesUpInApp(state: FocusPresentationState) {
 
 @Composable
 private fun FocusTimesUpLockscreen(taskTitle: String) {
-    Box(
+    Column(
         modifier =
             Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background),
-        contentAlignment = Alignment.Center,
+        verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(24.dp),
-        ) {
-            Text("10:42", style = EbbTypography.headlineL)
-            Spacer(Modifier.height(48.dp))
-            EbbSymbol("hourglass_empty", fontSize = 48.sp, color = MaterialTheme.colorScheme.secondary)
+        Column(Modifier.fillMaxWidth().padding(top = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("10:15", style = EbbTypography.headlineL, fontWeight = FontWeight.Light)
             Text(
-                "Time's up",
-                style = EbbTypography.headlineL,
-                modifier = Modifier.padding(top = 16.dp),
+                "Mon 16 Nov",
+                style = EbbTypography.bodyL,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp),
             )
-            Text(taskTitle, style = EbbTypography.titleL, color = MaterialTheme.colorScheme.primary)
-            Surface(
-                shape = EbbShapes.full,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
-            ) {
+        }
+        Surface(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.95f),
+        ) {
+            Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                EbbSymbol("hourglass_empty", fontSize = 32.sp, color = MaterialTheme.colorScheme.primaryContainer)
                 Text(
-                    "Done",
-                    color = MaterialTheme.colorScheme.onPrimary,
+                    buildAnnotatedString {
+                        append("Time's up for ")
+                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append(taskTitle) }
+                        append(".")
+                    },
+                    style = EbbTypography.headlineM,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(vertical = 14.dp),
-                    style = EbbTypography.labelL,
+                    modifier = Modifier.padding(top = 12.dp),
                 )
+                Text(
+                    "How's it going?",
+                    style = EbbTypography.bodyL,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+                Surface(
+                    shape = EbbShapes.full,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+                ) {
+                    Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.Center) {
+                        EbbSymbol("check", fontSize = 20.sp, color = MaterialTheme.colorScheme.onPrimary)
+                        Text(
+                            "Done",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            style = EbbTypography.labelL,
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
+                }
+                Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Surface(
+                        Modifier.weight(1f),
+                        shape = EbbShapes.full,
+                        color = androidx.compose.ui.graphics.Color.Transparent,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    ) {
+                        Text(
+                            "5 more min",
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(vertical = 10.dp),
+                            style = EbbTypography.labelL,
+                        )
+                    }
+                    Surface(
+                        Modifier.weight(1f),
+                        shape = EbbShapes.full,
+                        color = androidx.compose.ui.graphics.Color.Transparent,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    ) {
+                        Text(
+                            "15 more min",
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(vertical = 10.dp),
+                            style = EbbTypography.labelL,
+                        )
+                    }
+                }
+                Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.weight(1f), horizontalArrangement = Arrangement.Center) {
+                        EbbSymbol("more_time", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
+                        Text(
+                            "Shift my day",
+                            color = MaterialTheme.colorScheme.primary,
+                            style = EbbTypography.labelL,
+                            modifier = Modifier.padding(start = 4.dp),
+                        )
+                    }
+                    Row(Modifier.weight(1f), horizontalArrangement = Arrangement.Center) {
+                        EbbSymbol("coffee", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
+                        Text(
+                            "Take a break",
+                            color = MaterialTheme.colorScheme.primary,
+                            style = EbbTypography.labelL,
+                            modifier = Modifier.padding(start = 4.dp),
+                        )
+                    }
+                }
             }
+        }
+        Column(Modifier.padding(bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            EbbSymbol("lock", fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                "Unlock to open Ebb",
+                style = EbbTypography.labelM,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp),
+            )
         }
     }
 }
 
 @Composable
-private fun FocusHyperfocusBody(state: FocusPresentationState) {
-    Box(Modifier.fillMaxSize()) {
-        FocusRunningBody(state.copy(timerLabel = "48:12"), ring = true)
-        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f)), contentAlignment = Alignment.Center) {
-            Surface(shape = EbbShapes.lg, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.padding(24.dp)) {
-                Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Still going?", style = EbbTypography.headlineM)
+private fun FocusHyperfocusBody(
+    state: FocusPresentationState,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier.fillMaxSize()) {
+        FocusRunningBody(
+            state.copy(title = "Design poster", timerLabel = "1:30:04", topBarLabel = "Count up"),
+            ring = true,
+            timerSubtitle = "focused so far",
+        )
+        Surface(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            shape = EbbShapes.lg,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.Top) {
+                    EbbSymbol("water_drop", fontSize = 24.sp, color = MaterialTheme.colorScheme.primary)
+                    Column(Modifier.padding(start = 12.dp)) {
+                        Text("You've been at this for 90 minutes.", style = EbbTypography.titleM)
+                        Text("Water? Stretch?", style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(
-                        "You've been at this a while. Stretch or keep going?",
-                        style = EbbTypography.bodyL,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(vertical = 12.dp),
+                        "Wrap up",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = EbbTypography.labelL,
+                        modifier = Modifier.padding(end = 16.dp),
                     )
-                    Surface(shape = EbbShapes.full, color = MaterialTheme.colorScheme.primary) {
+                    Text(
+                        "Break",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = EbbTypography.labelL,
+                        modifier = Modifier.padding(end = 16.dp),
+                    )
+                    Surface(shape = EbbShapes.full, color = MaterialTheme.colorScheme.surfaceContainerHighest) {
                         Text(
-                            "Keep going",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp),
+                            "Keep going 15",
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            style = EbbTypography.labelL,
                         )
                     }
-                    Text(
-                        "Take a breather",
-                        style = EbbTypography.labelL,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 12.dp),
-                    )
                 }
             }
         }
@@ -476,8 +626,8 @@ private fun FocusHyperfocusBody(state: FocusPresentationState) {
 }
 
 @Composable
-private fun FocusBreakEndedBody() {
-    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+private fun FocusBreakEndedBody(modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.weight(1f))
         Surface(Modifier.size(180.dp), shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer) {
             Box(contentAlignment = Alignment.Center) {

@@ -85,6 +85,14 @@ PAIRS: dict[str, str] = {
     "f2_times_up_lockscreen_dark.png": "36-f2-times-up-lockscreen-dark.png",
     "f3_hyperfocus_gentle_dark.png": "37-f3-hyperfocus-gentle-dark.png",
     "f4_break_ended_dark.png": "38-f4-break-ended-dark.png",
+    "d1_shift_the_rest_default_dark.png": "27-d1-shift-the-rest-default-dark.png",
+    "d2_overlap_helper_default_dark.png": "28-d2-overlap-helper-default-dark.png",
+    "d3_make_it_fit_default_dark.png": "29-d3-make-it-fit-default-dark.png",
+    "d4_plan_my_day_step1_dark.png": "30-d4-plan-my-day-step1-dark.png",
+    "d5_end_of_day_review_step1_dark.png": "31-d5-end-of-day-review-step1-dark.png",
+    "d6_welcome_back_default_dark.png": "32-d6-welcome-back-default-dark.png",
+    "d7_event_detail_default_dark.png": "33-d7-event-detail-default-dark.png",
+    "d8_jump_to_date_default_dark.png": "34-d8-jump-to-date-default-dark.png",
 }
 
 

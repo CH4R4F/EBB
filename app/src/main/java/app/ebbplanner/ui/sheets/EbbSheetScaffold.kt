@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,17 +37,27 @@ fun EbbSheetScaffold(
     subtitle: String? = null,
     doneLabel: String = "Done",
     sheetMinHeight: androidx.compose.ui.unit.Dp = 560.dp,
+    sheetTopInset: androidx.compose.ui.unit.Dp = 0.dp,
     content: @Composable () -> Unit,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         TodayScreenDesign(state = todayPopulatedDark(), showBottomNav = true, modifier = Modifier.fillMaxSize())
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f)))
-        Surface(
-            modifier =
+        val sheetModifier =
+            if (sheetTopInset > 0.dp) {
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .padding(top = sheetTopInset)
+            } else {
                 Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .height(sheetMinHeight),
+                    .height(sheetMinHeight)
+            }
+        Surface(
+            modifier = sheetModifier,
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             color = MaterialTheme.colorScheme.surfaceContainerLow,
         ) {

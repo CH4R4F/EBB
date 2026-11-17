@@ -2,7 +2,6 @@
 
 package app.ebbplanner.ui.coloricon
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -171,22 +169,7 @@ private fun ColorSwatches(state: ColorIconPresentationState) {
         items(state.colorOptions) { key ->
             val sel = key == state.selectedColor
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Surface(
-                    modifier = Modifier.size(48.dp),
-                    shape = CircleShape,
-                    color = EbbTaskColors.strong(key),
-                    border = if (sel) BorderStroke(3.dp, MaterialTheme.colorScheme.onSurface) else null,
-                ) {
-                    if (sel) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Surface(Modifier.size(26.dp), shape = CircleShape, color = MaterialTheme.colorScheme.surface) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    EbbSymbol("check", fontSize = 18.sp)
-                                }
-                            }
-                        }
-                    }
-                }
+                EbbColorSwatch(colorKey = key, selected = sel)
                 Text(
                     colorLabels[key] ?: key,
                     style = EbbTypography.labelM,
