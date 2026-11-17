@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import app.ebbplanner.data.local.EbbDatabase
 import app.ebbplanner.data.local.dao.DayPlanDao
+import app.ebbplanner.data.local.dao.ReminderDao
 import app.ebbplanner.data.local.dao.TaskDao
 import dagger.Module
 import dagger.Provides
@@ -24,11 +25,16 @@ object DatabaseModule {
             context,
             EbbDatabase::class.java,
             "ebb.db",
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
 
     @Provides
     fun provideTaskDao(database: EbbDatabase): TaskDao = database.taskDao()
 
     @Provides
     fun provideDayPlanDao(database: EbbDatabase): DayPlanDao = database.dayPlanDao()
+
+    @Provides
+    fun provideReminderDao(database: EbbDatabase): ReminderDao = database.reminderDao()
 }

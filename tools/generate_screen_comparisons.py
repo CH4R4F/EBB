@@ -43,6 +43,9 @@ PAIRS: dict[str, str] = {
     "t1_quick_capture_draft_restored_dark.png": "16-t1-quick-capture-draft-restored-dark.png",
     "t1_quick_capture_paste_prompt_dark.png": "16-t1-quick-capture-paste-prompt-dark.png",
     "t1_quick_capture_nl_highlight_dark.png": "16-t1-quick-capture-nl-highlight-v1x-dark.png",
+    "m2_inbox_populated_dark.png": "11-m2-inbox-populated-dark.png",
+    "t2_task_detail_existing_dark.png": "17-t2-task-detail-existing-dark.png",
+    "t3_estimate_picker_dark.png": "18-t3-estimate-picker-presets-dark.png",
 }
 
 

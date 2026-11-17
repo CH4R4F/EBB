@@ -3,6 +3,8 @@ package app.ebbplanner.reminders
 import android.app.AlarmManager
 import android.content.Context
 import android.os.Build
+import app.ebbplanner.data.local.dao.ReminderDao
+import app.ebbplanner.data.local.entity.ReminderEntity
 import app.ebbplanner.data.repository.TaskRepository
 import app.ebbplanner.domain.reminders.ReminderKind
 import app.ebbplanner.domain.reminders.ReminderRequest
@@ -11,6 +13,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -21,6 +24,7 @@ class ReminderRescheduleUseCase
         @ApplicationContext private val context: Context,
         private val scheduler: ReminderScheduler,
         private val taskRepository: TaskRepository,
+        private val reminderDao: ReminderDao,
     ) {
         fun rescheduleNow() {
             runBlocking {
@@ -47,6 +51,22 @@ class ReminderRescheduleUseCase
                             exact = true,
                         )
                     }
+                val now = System.currentTimeMillis()
+                reminderDao.deleteAll()
+                reminderDao.upsertAll(
+                    requests.map { req ->
+                        ReminderEntity(
+                            id = UUID.randomUUID().toString(),
+                            taskId = req.taskId,
+                            fireAtEpochMillis = req.fireAtEpochMillis,
+                            kind = req.kind.name,
+                            title = req.title,
+                            exact = req.exact,
+                            createdAt = now,
+                            updatedAt = now,
+                        )
+                    },
+                )
                 scheduler.rescheduleAll(requests, exactAlarmsGranted())
             }
         }

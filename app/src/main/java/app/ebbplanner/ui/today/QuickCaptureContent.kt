@@ -3,6 +3,7 @@
 package app.ebbplanner.ui.today
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -35,13 +38,6 @@ fun QuickCaptureOverlay(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.35f)),
-        )
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = EbbShapes.lg,
@@ -102,7 +98,7 @@ fun QuickCaptureSheetContent(
             Surface(
                 modifier = Modifier.fillMaxWidth().padding(EbbSpacing.s3),
                 shape = EbbShapes.md,
-                color = MaterialTheme.colorScheme.secondaryContainer,
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 onClick = {},
             ) {
                 Text(
@@ -120,54 +116,70 @@ fun QuickCaptureSheetContent(
             horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
             verticalAlignment = Alignment.Top,
         ) {
-            Surface(
-                modifier = Modifier.weight(1f),
-                shape = EbbShapes.sm,
-                color = MaterialTheme.colorScheme.surfaceVariant,
-            ) {
-                Box(modifier = Modifier.padding(EbbSpacing.s3)) {
-                    val display =
-                        if (state.text.isEmpty()) {
-                            stringResource(R.string.quick_capture_hint)
-                        } else {
-                            state.text
+            val fieldFocused = state.text.isNotEmpty() || state.mode == QuickCaptureMode.Typing
+            Box(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .background(MaterialTheme.colorScheme.surface, EbbShapes.sm)
+                        .drawBehind {
+                            val y = size.height - 2.dp.toPx()
+                            drawLine(
+                                color =
+                                    if (fieldFocused) {
+                                        androidx.compose.ui.graphics.Color(0xFF8FD1C9)
+                                    } else {
+                                        androidx.compose.ui.graphics.Color(0xFF3A423F)
+                                    },
+                                start = Offset(0f, y),
+                                end = Offset(size.width, y),
+                                strokeWidth = if (fieldFocused) 2.dp.toPx() else 1.dp.toPx(),
+                            )
                         }
-                    if (state.highlights.isEmpty() || state.text.isEmpty()) {
-                        Text(
-                            display,
-                            style = EbbTypography.bodyL,
-                            color =
-                                if (state.text.isEmpty()) {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
-                                },
-                        )
+                        .padding(EbbSpacing.s3),
+            ) {
+                val display =
+                    if (state.text.isEmpty()) {
+                        stringResource(R.string.quick_capture_hint)
                     } else {
-                        Text(
-                            buildAnnotatedString {
-                                append(state.text)
-                                state.highlights.forEach { span ->
-                                    addStyle(
-                                        SpanStyle(color = MaterialTheme.colorScheme.primary),
-                                        span.start,
-                                        span.end.coerceAtMost(state.text.length),
-                                    )
-                                }
-                            },
-                            style = EbbTypography.bodyL,
-                        )
+                        state.text
                     }
+                if (state.highlights.isEmpty() || state.text.isEmpty()) {
+                    Text(
+                        display,
+                        style = EbbTypography.bodyL,
+                        color =
+                            if (state.text.isEmpty()) {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                    )
+                } else {
+                    Text(
+                        buildAnnotatedString {
+                            append(state.text)
+                            state.highlights.forEach { span ->
+                                addStyle(
+                                    SpanStyle(color = MaterialTheme.colorScheme.primary),
+                                    span.start,
+                                    span.end.coerceAtMost(state.text.length),
+                                )
+                            }
+                        },
+                        style = EbbTypography.bodyL,
+                    )
                 }
             }
             IconButton(
                 onClick = {},
                 modifier = Modifier.size(48.dp),
             ) {
-                Surface(shape = EbbShapes.md, color = MaterialTheme.colorScheme.secondaryContainer) {
+                Surface(shape = EbbShapes.md, color = MaterialTheme.colorScheme.surfaceVariant) {
                     EbbSymbol(
                         "mic",
                         fontSize = 22.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(12.dp),
                     )
                 }
@@ -204,7 +216,7 @@ fun QuickCaptureSheetContent(
                 color = MaterialTheme.colorScheme.primary,
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s1),
                 ) {
@@ -225,14 +237,26 @@ private fun CaptureAssistChip(
     icon: String,
     label: String,
 ) {
-    Surface(shape = EbbShapes.full, color = MaterialTheme.colorScheme.surfaceVariant) {
+    Surface(
+        shape = EbbShapes.full,
+        color = MaterialTheme.colorScheme.surface,
+        border =
+            androidx.compose.foundation.BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outline,
+            ),
+    ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            EbbSymbol(icon, fontSize = 16.sp)
-            Text(label, style = EbbTypography.labelM)
+            EbbSymbol(icon, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                label,
+                style = EbbTypography.labelM,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -243,16 +267,24 @@ private fun QuickCaptureKeyboardStub() {
         modifier =
             Modifier
                 .fillMaxWidth()
+                .height(220.dp)
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                .padding(EbbSpacing.s2),
+                .padding(horizontal = EbbSpacing.s2, vertical = EbbSpacing.s2),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        repeat(3) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(32.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant, EbbShapes.sm),
+        )
+        repeat(4) {
             Box(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .height(28.dp)
+                        .weight(1f)
                         .background(MaterialTheme.colorScheme.surfaceVariant, EbbShapes.sm),
             )
         }

@@ -2,7 +2,9 @@
 
 package app.ebbplanner.ui.today
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,29 +17,27 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.ebbplanner.R
+import app.ebbplanner.ui.components.EbbBottomNavigation
+import app.ebbplanner.ui.navigation.MainTab
 import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
@@ -105,37 +105,54 @@ fun TodayDayHead(
     state: TodayPresentationState,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    Surface(
         modifier =
             modifier
                 .fillMaxWidth()
                 .padding(horizontal = EbbSpacing.s3, vertical = EbbSpacing.s2),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s3),
+        shape = EbbShapes.lg,
+        color = MaterialTheme.colorScheme.surfaceContainer,
     ) {
-        DayProgressRing(percent = state.progressPercent)
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = state.timeLeftLabel, style = EbbTypography.titleL)
-            if (!state.titleOnlyBlocks) {
-                Text(
-                    text = state.dayMeta,
-                    style = EbbTypography.bodyM,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        Surface(
-            onClick = {},
-            shape = EbbShapes.full,
-            color = MaterialTheme.colorScheme.secondaryContainer,
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = EbbSpacing.s3, vertical = EbbSpacing.s3),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s3),
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = EbbSpacing.s3, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s1),
+            DayProgressRing(percent = state.progressPercent)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = state.timeLeftLabel, style = EbbTypography.titleL)
+                if (!state.titleOnlyBlocks) {
+                    Text(
+                        text = state.dayMeta,
+                        style = EbbTypography.bodyM,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            Surface(
+                onClick = {},
+                shape = EbbShapes.full,
+                color = MaterialTheme.colorScheme.surfaceVariant,
             ) {
-                EbbSymbol("more_time", fontSize = 18.sp)
-                Text(stringResource(R.string.today_shift), style = EbbTypography.labelL)
+                Row(
+                    modifier = Modifier.padding(horizontal = EbbSpacing.s3, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s1),
+                ) {
+                    EbbSymbol(
+                        "more_time",
+                        fontSize = 18.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        stringResource(R.string.today_shift),
+                        style = EbbTypography.labelL,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
             }
         }
     }
@@ -143,16 +160,32 @@ fun TodayDayHead(
 
 @Composable
 private fun DayProgressRing(percent: Int) {
-    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(48.dp)) {
-        LinearProgressIndicator(
-            progress = { percent / 100f },
-            modifier =
-                Modifier
-                    .size(44.dp)
-                    .clip(CircleShape),
-            strokeCap = StrokeCap.Round,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant,
-        )
+    val track = MaterialTheme.colorScheme.surfaceVariant
+    val arc = MaterialTheme.colorScheme.primary
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(44.dp)) {
+        Canvas(modifier = Modifier.size(44.dp)) {
+            val stroke = 4.dp.toPx()
+            val inset = stroke / 2f
+            val arcSize = Size(size.width - stroke, size.height - stroke)
+            drawArc(
+                color = track,
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter = false,
+                topLeft = Offset(inset, inset),
+                size = arcSize,
+                style = Stroke(width = stroke, cap = StrokeCap.Round),
+            )
+            drawArc(
+                color = arc,
+                startAngle = -90f,
+                sweepAngle = 360f * (percent / 100f),
+                useCenter = false,
+                topLeft = Offset(inset, inset),
+                size = arcSize,
+                style = Stroke(width = stroke, cap = StrokeCap.Round),
+            )
+        }
         Text("$percent%", style = EbbTypography.labelM)
     }
 }
@@ -180,20 +213,35 @@ fun TodayAnytimeTray(
             horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
         ) {
             chips.forEach { title ->
-                AssistChip(
-                    onClick = {},
-                    label = { Text(title) },
-                    colors =
-                        AssistChipDefaults.assistChipColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        ),
-                )
+                Surface(
+                    shape = EbbShapes.full,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                ) {
+                    Text(
+                        text = title,
+                        style = EbbTypography.labelL,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    )
+                }
             }
-            AssistChip(
-                onClick = {},
-                label = { Text(stringResource(R.string.today_anytime_add)) },
-                leadingIcon = { EbbSymbol("add", fontSize = 16.sp) },
-            )
+            Surface(
+                shape = EbbShapes.full,
+                color = MaterialTheme.colorScheme.surfaceVariant,
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    EbbSymbol("add", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text(
+                        stringResource(R.string.today_anytime_add),
+                        style = EbbTypography.labelL,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
         }
     }
 }
@@ -223,12 +271,25 @@ fun TodayOverlapHint(
     hint: String,
     modifier: Modifier = Modifier,
 ) {
-    AssistChip(
-        onClick = {},
+    Surface(
         modifier = modifier.padding(horizontal = EbbSpacing.s3),
-        label = { Text(hint) },
-        leadingIcon = { EbbSymbol("warning", fontSize = 16.sp) },
-    )
+        shape = EbbShapes.full,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border =
+            androidx.compose.foundation.BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outline,
+            ),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s1),
+        ) {
+            EbbSymbol("warning", fontSize = 16.sp)
+            Text(hint, style = EbbTypography.labelM)
+        }
+    }
 }
 
 @Composable
@@ -280,30 +341,8 @@ fun TodayBottomNavPreview(
     selectedToday: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
-    NavigationBar(modifier = modifier) {
-        NavigationBarItem(
-            selected = selectedToday,
-            onClick = {},
-            icon = { EbbSymbol("today", fontSize = 22.sp) },
-            label = { Text(stringResource(R.string.tab_today)) },
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = {},
-            icon = { EbbSymbol("inbox", fontSize = 22.sp) },
-            label = { Text(stringResource(R.string.tab_inbox)) },
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = {},
-            icon = { EbbSymbol("view_week", fontSize = 22.sp) },
-            label = { Text(stringResource(R.string.tab_week)) },
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = {},
-            icon = { EbbSymbol("event_repeat", fontSize = 22.sp) },
-            label = { Text(stringResource(R.string.tab_routines)) },
-        )
-    }
+    EbbBottomNavigation(
+        selected = if (selectedToday) MainTab.Today else MainTab.Inbox,
+        modifier = modifier,
+    )
 }

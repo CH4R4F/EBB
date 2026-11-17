@@ -2,6 +2,7 @@
 
 package app.ebbplanner.ui.today
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -11,6 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -36,9 +39,14 @@ fun TodayScreenDesign(
             }
         },
         floatingActionButton = {
-            if (state.showFab) {
-                FloatingActionButton(onClick = {}) {
-                    EbbSymbol("add", fontSize = 24.sp)
+            if (state.showFab && state.quickCapture == null) {
+                FloatingActionButton(
+                    onClick = {},
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+                ) {
+                    EbbSymbol("add", fontSize = 24.sp, color = MaterialTheme.colorScheme.onPrimary)
                 }
             }
         },
@@ -83,6 +91,12 @@ fun TodayScreenDesign(
                 }
             }
             state.quickCapture?.let { capture ->
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f)),
+                )
                 QuickCaptureOverlay(
                     capture = capture,
                     modifier = Modifier.align(Alignment.BottomCenter),

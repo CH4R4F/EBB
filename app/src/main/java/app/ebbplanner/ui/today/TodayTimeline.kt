@@ -7,9 +7,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -52,7 +52,7 @@ internal fun minutesToTimelineY(
     startHour: Int,
 ): Dp {
     val origin = startHour * 60
-    val offsetMin = (minutes - origin).coerceAtLeast(0)
+    val offsetMin = minutes - origin
     return timelineOriginY + timelineDpPerMinute * offsetMin
 }
 
@@ -66,9 +66,21 @@ fun TodayTimeline(
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val hours = (state.timelineStartHour until state.timelineEndHour).toList()
     val totalMinutes = (state.timelineEndHour - state.timelineStartHour) * 60
-    val trackHeight = timelineOriginY + durationToHeight(totalMinutes) + 8.dp
+    val baselineHeight = timelineOriginY + durationToHeight(totalMinutes)
+    val contentBottom =
+        state.blocks.maxOfOrNull { block ->
+            minutesToTimelineY(block.startMinutes, state.timelineStartHour) +
+                durationToHeight(block.durationMin)
+        } ?: baselineHeight
+    val trackHeight = maxOf(baselineHeight, contentBottom) + 12.dp
 
-    Box(modifier = modifier.fillMaxWidth().height(trackHeight).testTag(TODAY_TIMELINE_TAG)) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(trackHeight)
+                .testTag(TODAY_TIMELINE_TAG),
+    ) {
         if (state.showNowLine && state.nowMinutes != null) {
             val pastHeight = minutesToTimelineY(state.nowMinutes, state.timelineStartHour)
             PastZone(
@@ -121,7 +133,10 @@ fun TodayTimeline(
 
         state.blocks.filter { !it.isLifted }.forEach { block ->
             val y = minutesToTimelineY(block.startMinutes, state.timelineStartHour)
-            val h = durationToHeight(block.durationMin).coerceAtLeast(if (block.short) 26.dp else 44.dp)
+            val h =
+                durationToHeight(block.durationMin).coerceAtLeast(
+                    if (block.short) 24.dp else 40.dp,
+                )
             ScheduledTaskBlock(
                 block = block,
                 dark = dark,
@@ -252,7 +267,6 @@ private fun NowLine(
             modifier =
                 Modifier
                     .align(Alignment.TopStart)
-                    .padding(start = timelineHourRail, end = 8.dp)
                     .fillMaxWidth()
                     .height(1.dp)
                     .background(primary),
@@ -292,120 +306,233 @@ private fun ScheduledTaskBlock(
 ) {
     val accent = EbbTaskColors.strong(block.colorKey)
     val fill = EbbTaskColors.tint(block.colorKey, dark)
-    val bg =
-        if (block.isCurrent) {
-            Brush.verticalGradient(
-                0f to MaterialTheme.colorScheme.surface,
-                0.56f to MaterialTheme.colorScheme.surface,
-                0.56f to fill,
-                1f to fill,
-            )
-        } else {
-            null
-        }
-    val container = if (block.isCurrent) Color.Transparent else fill
     val shape = if (block.short) EbbShapes.sm else EbbShapes.md
-    Surface(
-        modifier = modifier,
-        shape = shape,
-        color = container,
-        shadowElevation = if (elevated) 8.dp else 0.dp,
-    ) {
-        Row(
-            modifier =
-                Modifier
-                    .then(
-                        if (bg != null) {
-                            Modifier.drawBehind {
-                                drawRect(brush = bg)
-                            }
-                        } else {
-                            Modifier
-                        },
-                    )
-                    .height(IntrinsicSize.Min),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .width(4.dp)
-                        .fillMaxHeight()
-                        .background(accent),
-            )
-            EbbSymbol(
-                block.iconKey,
-                fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(start = 8.dp),
-            )
-            Column(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .padding(horizontal = 6.dp, vertical = if (block.short) 2.dp else 6.dp),
-            ) {
-                Text(
-                    text = block.title,
-                    style = EbbTypography.titleM,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (!titleOnly && (block.metaTimeRange != null || block.metaDuration != null)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2)) {
-                        block.metaTimeRange?.let {
-                            Text(it, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        block.metaDuration?.let {
-                            Text(it, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        block.energyLevel?.let { EnergyDots(level = it) }
-                        block.checklist?.let {
-                            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                                EbbSymbol("checklist", fontSize = 14.sp)
-                                Text(it, style = EbbTypography.labelM)
-                            }
-                        }
-                        if (block.hasReminder) {
-                            EbbSymbol(
-                                "notifications",
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        if (block.pinned) {
-                            EbbSymbol("keep", fontSize = 14.sp, filled = true)
-                        }
-                    }
-                }
-            }
-            block.minutesLeftLabel?.let {
-                Text(
-                    it,
-                    style = EbbTypography.labelM,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(end = 4.dp),
-                )
-            }
-            if (block.selected) {
-                EbbSymbol("check_circle", fontSize = 22.sp, filled = true, color = MaterialTheme.colorScheme.primary)
+    val blockModifier =
+        modifier.then(
+            if (block.isCurrent) {
+                Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, shape)
             } else {
-                TaskRing(done = block.done, modifier = Modifier.padding(end = 8.dp))
+                Modifier
+            },
+        )
+    Box(modifier = blockModifier.clip(shape)) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            shape = shape,
+            color = if (block.isCurrent) fill.copy(alpha = 0.45f) else fill,
+            shadowElevation = if (elevated) 8.dp else 0.dp,
+        ) {
+            if (block.short) {
+                ShortTaskRow(block = block, accent = accent, titleOnly = titleOnly)
+            } else {
+                StandardTaskRow(block = block, accent = accent, titleOnly = titleOnly)
             }
+        }
+        if (block.isCurrent && block.minutesLeftLabel != null) {
+            TimeLeftPill(
+                label = block.minutesLeftLabel,
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 6.dp, bottom = 4.dp),
+            )
         }
     }
 }
 
 @Composable
-private fun EnergyDots(level: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-        repeat(3) { index ->
+private fun ShortTaskRow(
+    block: TodayScheduledBlock,
+    accent: Color,
+    titleOnly: Boolean,
+) {
+    Row(
+        modifier = Modifier.fillMaxSize(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .width(4.dp)
+                    .fillMaxHeight()
+                    .background(accent),
+        )
+        EbbSymbol(
+            block.iconKey,
+            fontSize = 18.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(start = 8.dp),
+        )
+        Text(
+            text = block.title,
+            style = EbbTypography.titleM,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .padding(horizontal = 6.dp),
+        )
+        if (!titleOnly) {
+            val trailing = block.metaDuration ?: block.metaTimeRange
+            trailing?.let {
+                Text(
+                    it,
+                    style = EbbTypography.labelM,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    modifier = Modifier.padding(end = 4.dp),
+                )
+            }
+        }
+        if (block.selected) {
+            EbbSymbol(
+                "check_circle",
+                fontSize = 22.sp,
+                filled = true,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(end = 8.dp),
+            )
+        } else {
+            TaskRing(done = block.done, modifier = Modifier.padding(end = 8.dp))
+        }
+    }
+}
+
+@Composable
+private fun StandardTaskRow(
+    block: TodayScheduledBlock,
+    accent: Color,
+    titleOnly: Boolean,
+) {
+    Row(
+        modifier = Modifier.fillMaxSize(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .width(4.dp)
+                    .fillMaxHeight()
+                    .background(accent),
+        )
+        EbbSymbol(
+            block.iconKey,
+            fontSize = 18.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(start = 8.dp),
+        )
+        Column(
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .padding(horizontal = 6.dp, vertical = 6.dp),
+        ) {
+            Text(
+                text = block.title,
+                style = EbbTypography.titleM,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            val showMeta = !titleOnly && block.hasMetaRow()
+            if (showMeta) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    block.metaTimeRange?.let {
+                        Text(
+                            it,
+                            style = EbbTypography.bodyM,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                        )
+                    }
+                    block.metaDuration?.let {
+                        Text(
+                            it,
+                            style = EbbTypography.bodyM,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                        )
+                    }
+                    block.energyLevel?.let { EnergyBars(level = it) }
+                    block.checklist?.let {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            EbbSymbol("checklist", fontSize = 14.sp)
+                            Text(it, style = EbbTypography.labelM, maxLines = 1)
+                        }
+                    }
+                    if (block.hasReminder) {
+                        EbbSymbol(
+                            "notifications",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (block.pinned) {
+                        EbbSymbol("keep", fontSize = 14.sp, filled = true)
+                    }
+                }
+            }
+        }
+        if (block.selected) {
+            EbbSymbol(
+                "check_circle",
+                fontSize = 22.sp,
+                filled = true,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(end = 8.dp),
+            )
+        } else {
+            TaskRing(done = block.done, modifier = Modifier.padding(end = 8.dp))
+        }
+    }
+}
+
+@Composable
+private fun TimeLeftPill(
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    val primary = MaterialTheme.colorScheme.primary
+    Surface(
+        modifier = modifier,
+        shape = EbbShapes.full,
+        color = primary,
+    ) {
+        Text(
+            label,
+            style = EbbTypography.labelM,
+            color = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+        )
+    }
+}
+
+@Composable
+private fun EnergyBars(level: Int) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(1.dp),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        val heights = listOf(4.dp, 6.dp, 8.dp)
+        heights.forEachIndexed { index, h ->
             Box(
                 modifier =
                     Modifier
-                        .size(width = 4.dp, height = 8.dp)
+                        .width(3.dp)
+                        .height(h)
                         .background(
-                            if (index < level) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                            if (index < level) {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                            },
                             EbbShapes.xs,
                         ),
             )
@@ -443,7 +570,14 @@ private fun GapChip(
     modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier,
+        modifier =
+            modifier
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.outline,
+                    EbbShapes.full,
+                )
+                .padding(horizontal = 12.dp),
         contentAlignment = Alignment.CenterStart,
     ) {
         Text(
@@ -511,6 +645,10 @@ private fun CalendarEventBlock(
         }
     }
 }
+
+private fun TodayScheduledBlock.hasMetaRow(): Boolean =
+    metaTimeRange != null || metaDuration != null || energyLevel != null || checklist != null ||
+        hasReminder || pinned
 
 private fun formatClock(minutes: Int): String {
     val h = minutes / 60
