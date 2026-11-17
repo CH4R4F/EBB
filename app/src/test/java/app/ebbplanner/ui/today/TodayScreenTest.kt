@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.ui.theme.EbbTheme
 import org.junit.Rule
 import org.junit.Test
@@ -22,11 +23,24 @@ class TodayScreenTest {
 
     @Test
     fun todayScreen_showsHeaderAndTimeline() {
+        val task =
+            TaskEntity(
+                id = "t1",
+                title = "Focus block",
+                placement = TaskEntity.PLACEMENT_SCHEDULED,
+                date = "2025-11-17",
+                startLocalTime = "10:00",
+                durationMin = 30,
+                createdAt = 0L,
+                updatedAt = 0L,
+            )
         val state =
             TodayUiState(
                 date = LocalDate.of(2025, 11, 17),
                 dateLabel = "Mon 17 Nov",
                 minutesPlanned = 45,
+                scheduledTasks = listOf(task),
+                isLoading = false,
             )
         composeRule.setContent {
             EbbTheme {

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.data.repository.TaskRepository
+import app.ebbplanner.domain.capture.QuickCaptureParser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -77,13 +78,26 @@ class TodayViewModel
             selectedDate.value = date
         }
 
-        fun captureTask(title: String) {
-            if (title.isBlank()) return
+        fun captureTask(raw: String) {
+            if (raw.isBlank()) return
             viewModelScope.launch {
+                val parsed = QuickCaptureParser.parse(raw, selectedDate.value)
+                val date = parsed.targetDate ?: selectedDate.value
+                val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+                val start =
+                    parsed.startTime?.format(timeFormatter)
+                val placement =
+                    if (start != null) {
+                        TaskEntity.PLACEMENT_SCHEDULED
+                    } else {
+                        TaskEntity.PLACEMENT_ANYTIME
+                    }
                 taskRepository.addQuickCapture(
-                    title = title,
-                    date = selectedDate.value,
-                    placement = TaskEntity.PLACEMENT_ANYTIME,
+                    title = parsed.title,
+                    date = date,
+                    placement = placement,
+                    startLocalTime = start,
+                    durationMin = parsed.durationMin ?: TaskEntity.DEFAULT_DURATION_MIN,
                 )
             }
         }

@@ -94,6 +94,7 @@
 
     <string name="action_continue">Continue</string>
     <string name="action_save">Save</string>
+    <string name="action_done">Done</string>
 
     <string name="tab_today">Today</string>
     <string name="tab_inbox">Inbox</string>
@@ -108,7 +109,27 @@
     <string name="today_anytime_title">Anytime</string>
     <string name="today_anytime_empty">Drop tasks here when there\'s no set time.</string>
     <string name="today_timeline_title">Timeline</string>
+    <string name="today_shift">Shift</string>
+    <string name="today_multiselect_title">%1$d selected</string>
+    <string name="today_anytime_add">add</string>
+    <string name="today_empty_title">Your day is open</string>
+    <string name="today_empty_body">Drop something in, or plan the day when you\'re ready.</string>
+    <string name="today_plan_day">Plan my day</string>
+    <string name="today_add_task">Add a task</string>
 
     <string name="quick_capture_title">Quick capture</string>
     <string name="quick_capture_hint">What\'s on your mind?</string>
+    <string name="quick_capture_add">Add</string>
+    <string name="quick_capture_estimate">Estimate</string>
+    <string name="quick_capture_inbox">Inbox</string>
+    <string name="quick_capture_energy">Energy</string>
+    <string name="quick_capture_color">Color</string>
+    <string name="quick_capture_draft_restored">Draft restored</string>
+    <string name="quick_capture_paste_prompt">Paste from clipboard?</string>
+
+    <string name="reminder_channel_tasks">Task reminders</string>
+    <string name="reminder_channel_breather">Breather nudges</string>
+    <string name="reminder_action_done">Done</string>
+    <string name="reminder_action_snooze">Snooze 10</string>
+    <string name="reminder_action_shift">Shift day</string>
 </resources>
