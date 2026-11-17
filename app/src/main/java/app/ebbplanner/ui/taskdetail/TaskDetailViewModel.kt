@@ -7,7 +7,10 @@ import androidx.lifecycle.viewModelScope
 import app.ebbplanner.data.local.entity.SubtaskEntity
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.preferences.UserPreferencesRepository
+import app.ebbplanner.data.local.entity.RoutineEntity
+import app.ebbplanner.data.repository.RoutineRepository
 import app.ebbplanner.data.repository.TaskRepository
+import app.ebbplanner.domain.routines.RoutineInstanceGenerator
 import app.ebbplanner.domain.day.DayGapScheduler
 import app.ebbplanner.domain.day.DayPlanningUseCase
 import app.ebbplanner.domain.time.EbbClock
@@ -30,6 +33,8 @@ class TaskDetailViewModel
         private val userPreferencesRepository: UserPreferencesRepository,
         private val dayPlanningUseCase: DayPlanningUseCase,
         private val clock: EbbClock,
+        private val routineRepository: RoutineRepository,
+        private val routineInstanceGenerator: RoutineInstanceGenerator,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(TaskDetailPresentationState(mode = TaskDetailMode.Loading))
         val uiState: StateFlow<TaskDetailPresentationState> = _uiState.asStateFlow()
@@ -107,6 +112,41 @@ class TaskDetailViewModel
             if (id.isBlank()) return
             viewModelScope.launch {
                 taskRepository.deleteTask(id)
+            }
+        }
+
+        fun applyBreatherAfter() {
+            viewModelScope.launch {
+                taskRepository.updateTaskFields(loadedTaskId) {
+                    it.copy(durationMin = it.durationMin + defaultBreatherMinutes)
+                }
+                reloadTask(loadedTaskId)
+            }
+        }
+
+        fun routineIdForRepeat(onResult: (String) -> Unit) {
+            viewModelScope.launch {
+                val task = taskRepository.getTask(loadedTaskId) ?: return@launch
+                val routineId =
+                    task.sourceRoutineId?.takeIf { it.isNotBlank() }
+                        ?: run {
+                            val routine =
+                                routineRepository.createDefault(
+                                    title = task.title,
+                                    repeatRule = RoutineEntity.REPEAT_WEEKDAYS,
+                                    startLocalTime = task.startLocalTime ?: "09:00",
+                                    durationMin = task.durationMin,
+                                )
+                            taskRepository.updateTaskFields(loadedTaskId) {
+                                it.copy(
+                                    sourceRoutineId = routine.id,
+                                    routineOccurrenceDate = it.date,
+                                )
+                            }
+                            routineInstanceGenerator.syncFutureInstances(routine)
+                            routine.id
+                        }
+                onResult(routineId)
             }
         }
 

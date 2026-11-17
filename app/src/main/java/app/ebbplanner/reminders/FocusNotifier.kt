@@ -37,6 +37,7 @@ class FocusNotifier
                     NOTIFICATION_ID,
                     Intent(context, MainActivity::class.java).apply {
                         putExtra(EXTRA_OPEN_FOCUS, taskId)
+                        flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
                     },
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                 )
@@ -54,8 +55,61 @@ class FocusNotifier
             notificationManager.notify(NOTIFICATION_ID, notification)
         }
 
+        fun showBreakEnded(
+            taskId: String,
+            title: String,
+        ) {
+            ensureChannel()
+            val open =
+                PendingIntent.getActivity(
+                    context,
+                    NOTIFICATION_ID_BREAK,
+                    Intent(context, MainActivity::class.java).apply {
+                        putExtra(EXTRA_OPEN_FOCUS, taskId)
+                        flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    },
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                )
+            val notification =
+                NotificationCompat
+                    .Builder(context, CHANNEL_FOCUS)
+                    .setSmallIcon(android.R.drawable.ic_dialog_info)
+                    .setContentTitle(context.getString(R.string.focus_break_ended_title))
+                    .setContentText(context.getString(R.string.focus_break_ended_body, title))
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                    .setAutoCancel(true)
+                    .setContentIntent(open)
+                    .build()
+            notificationManager.notify(NOTIFICATION_ID_BREAK, notification)
+        }
+
+        fun showIntervalSwitch(
+            taskId: String,
+            title: String,
+            onBreak: Boolean,
+        ) {
+            if (onBreak) {
+                showBreakEnded(taskId, title)
+            } else {
+                ensureChannel()
+                val notification =
+                    NotificationCompat
+                        .Builder(context, CHANNEL_FOCUS)
+                        .setSmallIcon(android.R.drawable.ic_dialog_info)
+                        .setContentTitle(context.getString(R.string.focus_work_resumed_title))
+                        .setContentText(context.getString(R.string.focus_work_resumed_body, title))
+                        .setPriority(NotificationCompat.PRIORITY_LOW)
+                        .setAutoCancel(true)
+                        .build()
+                notificationManager.notify(NOTIFICATION_ID_INTERVAL, notification)
+            }
+        }
+
         fun cancel() {
             notificationManager.cancel(NOTIFICATION_ID)
+            notificationManager.cancel(NOTIFICATION_ID_BREAK)
+            notificationManager.cancel(NOTIFICATION_ID_INTERVAL)
         }
 
         private fun ensureChannel() {
@@ -72,6 +126,8 @@ class FocusNotifier
         companion object {
             const val CHANNEL_FOCUS = "ebb_focus_timer"
             const val NOTIFICATION_ID = 42_001
+            const val NOTIFICATION_ID_BREAK = 42_003
+            const val NOTIFICATION_ID_INTERVAL = 42_004
             const val EXTRA_OPEN_FOCUS = "open_focus_task_id"
 
             fun focusRouteFor(taskId: String): String = "flow/focus/$taskId"

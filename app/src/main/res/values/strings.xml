@@ -151,6 +151,10 @@
     <string name="focus_channel_name">Focus timer</string>
     <string name="focus_times_up_title">Time\'s up for %1$s</string>
     <string name="focus_times_up_body">How did it go? Open Ebb to wrap up.</string>
+    <string name="focus_break_ended_title">Break over</string>
+    <string name="focus_break_ended_body">Back to %1$s — tap to return to focus.</string>
+    <string name="focus_work_resumed_title">Focus interval</string>
+    <string name="focus_work_resumed_body">25 min on %1$s</string>
     <string name="reminder_task_body">Starting now</string>
     <string name="reminder_action_done">Done</string>
     <string name="reminder_action_snooze">Snooze 10</string>

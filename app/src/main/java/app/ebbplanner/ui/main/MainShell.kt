@@ -34,17 +34,17 @@ import app.ebbplanner.ui.week.WeekScreen
 
 @Suppress("LongMethod")
 @Composable
-fun MainShell() {
+fun MainShell(
+    pendingFocusTaskId: String? = null,
+    onFocusDeepLinkConsumed: () -> Unit = {},
+) {
     val navController = rememberNavController()
-    val activity = LocalContext.current as ComponentActivity
-    LaunchedEffect(activity.intent) {
-        val taskId = activity.intent?.getStringExtra(FocusNotifier.EXTRA_OPEN_FOCUS).orEmpty()
-        if (taskId.isNotBlank()) {
-            navController.navigate(AppRoutes.focusRun(taskId)) {
-                launchSingleTop = true
-            }
-            activity.intent?.removeExtra(FocusNotifier.EXTRA_OPEN_FOCUS)
+    LaunchedEffect(pendingFocusTaskId) {
+        val taskId = pendingFocusTaskId?.takeIf { it.isNotBlank() } ?: return@LaunchedEffect
+        navController.navigate(AppRoutes.focusRun(taskId)) {
+            launchSingleTop = true
         }
+        onFocusDeepLinkConsumed()
     }
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route ?: MainTab.Today.route

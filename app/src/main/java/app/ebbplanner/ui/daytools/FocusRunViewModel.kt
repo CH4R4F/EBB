@@ -8,6 +8,7 @@ import app.ebbplanner.data.preferences.FocusSessionStore
 import app.ebbplanner.data.preferences.PersistedFocusSession
 import app.ebbplanner.data.repository.TaskRepository
 import app.ebbplanner.domain.focus.FocusPhase
+import app.ebbplanner.domain.focus.FocusTickResult
 import app.ebbplanner.domain.focus.FocusTickDelayer
 import app.ebbplanner.domain.focus.FocusTimerController
 import app.ebbplanner.domain.time.EbbClock
@@ -74,7 +75,11 @@ class FocusRunViewModel
                     saved.pausedRemainingMs,
                     clock.millis(),
                 )
-                if (timer.phase() == FocusPhase.Running || timer.phase() == FocusPhase.Break) {
+                if (timer.phase() == FocusPhase.TimesUp) {
+                    focusSessionStore.clear()
+                    focusNotifier.cancel()
+                    timer.resetToSetup()
+                } else if (timer.phase() == FocusPhase.Running || timer.phase() == FocusPhase.Break) {
                     startTicking()
                 }
             }
@@ -129,7 +134,12 @@ class FocusRunViewModel
                 }
             cachedBlockDuration = task.durationMin
             cachedStartLocalTime = task.startLocalTime
-            refreshSetupCopy(blockDuration = task.durationMin, startLocalTime = task.startLocalTime)
+            val taskDate = task.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+            refreshSetupCopy(
+                blockDuration = task.durationMin,
+                startLocalTime = task.startLocalTime,
+                taskDate = taskDate,
+            )
             _state.value =
                 _state.value.copy(
                     title = task.title,
@@ -145,24 +155,46 @@ class FocusRunViewModel
         private fun refreshSetupCopy(
             blockDuration: Int,
             startLocalTime: String? = null,
+            taskDate: LocalDate? = null,
         ) {
+            val blockEnabled = blockEndsAvailable(startLocalTime, blockDuration, taskDate)
             val blockSubtitle =
-                if (startLocalTime != null) {
-                    val startMin = ClockFormat.parseMinutes(startLocalTime) ?: clock.nowMinutes()
-                    val endMin = startMin + blockDuration
-                    "${blockDuration} min · ends ${ClockFormat.minutesToClock(endMin)}"
-                } else {
-                    "${blockDuration} min"
+                when {
+                    !blockEnabled -> "Not available — use fixed length"
+                    startLocalTime != null -> {
+                        val startMin = ClockFormat.parseMinutes(startLocalTime) ?: clock.nowMinutes()
+                        val endMin = startMin + blockDuration
+                        "${blockDuration} min · ends ${ClockFormat.minutesToClock(endMin)}"
+                    }
+                    else -> "${blockDuration} min"
                 }
+            var modeIndex = timerModeIndex
+            if (!blockEnabled && modeIndex == 0) {
+                modeIndex = 1
+                timerModeIndex = 1
+            }
             _state.value =
                 _state.value.copy(
-                    timerModeIndex = timerModeIndex,
+                    timerModeIndex = modeIndex,
                     showRing = showRing,
                     hideNumbers = hideNumbers,
                     fixedMinutes = fixedMinutes,
                     blockOptionSubtitle = blockSubtitle,
+                    blockOptionEnabled = blockEnabled,
                     fixedOptionSubtitle = "$fixedMinutes min selected · tap start",
                 )
+        }
+
+        private fun blockEndsAvailable(
+            startLocalTime: String?,
+            blockDuration: Int,
+            taskDate: LocalDate?,
+        ): Boolean {
+            val date = taskDate ?: return false
+            if (date != clock.today()) return false
+            val start = startLocalTime?.let { ClockFormat.parseMinutes(it) } ?: return false
+            val endMin = start + blockDuration
+            return clock.nowMinutes() < endMin
         }
 
         fun startFocus() {
@@ -171,14 +203,20 @@ class FocusRunViewModel
                 val nowMs = clock.millis()
                 when (timerModeIndex) {
                     1 -> timer.startFixedMinutes(nowMs, fixedMinutes)
-                    2 -> timer.startFixedMinutes(nowMs, 12 * 60)
-                    3 -> timer.startFixedMinutes(nowMs, 25)
+                    2 -> timer.startCountUp(nowMs)
+                    3 -> timer.startIntervals(nowMs)
                     else -> {
-                        val start = task.startLocalTime?.let { ClockFormat.parseMinutes(it) }
-                        val endMinutes = (start ?: clock.nowMinutes()) + task.durationMin
-                        val blockEndMs =
-                            nowMs + (endMinutes - clock.nowMinutes()).coerceAtLeast(1) * 60_000L
-                        timer.startUntilBlockEnd(nowMs, blockEndMs)
+                        val taskDate = task.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                        if (!blockEndsAvailable(task.startLocalTime, task.durationMin, taskDate)) {
+                            timer.startFixedMinutes(nowMs, task.durationMin)
+                        } else {
+                            val start =
+                                task.startLocalTime?.let { ClockFormat.parseMinutes(it) }
+                                    ?: clock.nowMinutes()
+                            val endMinutes = start + task.durationMin
+                            val blockEndMs = nowMs + (endMinutes - clock.nowMinutes()) * 60_000L
+                            timer.startUntilBlockEnd(nowMs, blockEndMs)
+                        }
                     }
                 }
                 scheduleAlarm()
@@ -284,10 +322,20 @@ class FocusRunViewModel
         }
 
         private fun scheduleAlarm() {
+            if (timer.isCountUp()) {
+                focusAlarmScheduler.cancel()
+                return
+            }
             val snap = timer.snapshot(clock.millis())
             if (snap.phase == FocusPhase.Running || snap.phase == FocusPhase.Break) {
                 val endAt = clock.millis() + snap.remainingMs
-                focusAlarmScheduler.scheduleTimesUp(taskId, _state.value.runningTitle, endAt)
+                val isBreak = snap.phase == FocusPhase.Break
+                focusAlarmScheduler.scheduleTimesUp(
+                    taskId,
+                    _state.value.runningTitle,
+                    endAt,
+                    isBreak = isBreak,
+                )
             }
         }
 
@@ -297,21 +345,45 @@ class FocusRunViewModel
                 viewModelScope.launch {
                     var done = false
                     while (!done && isActive &&
-                        (timer.phase() == FocusPhase.Running || timer.phase() == FocusPhase.Break)
+                        (timer.phase() == FocusPhase.Running ||
+                            timer.phase() == FocusPhase.Break ||
+                            timer.isCountUp())
                     ) {
                         tickDelayer.delayMs(TICK_INTERVAL_MS)
-                        if (timer.phase() == FocusPhase.Running || timer.phase() == FocusPhase.Break) {
-                            val wasBreak = timer.phase() == FocusPhase.Break
-                            val ended = timer.tick(clock.millis())
+                        if (timer.isCountUp()) {
                             mergeTimerIntoState()
                             persistSession()
-                            if (ended) {
-                                if (wasBreak) {
-                                    onBreakEnded()
-                                } else {
-                                    onTimesUp()
+                            continue
+                        }
+                        if (timer.phase() == FocusPhase.Running || timer.phase() == FocusPhase.Break) {
+                            when (val result = timer.tick(clock.millis())) {
+                                FocusTickResult.None -> {
+                                    mergeTimerIntoState()
+                                    persistSession()
                                 }
-                                done = true
+                                FocusTickResult.IntervalBreak -> {
+                                    val title = _state.value.runningTitle.ifBlank { _state.value.title }
+                                    focusNotifier.showIntervalSwitch(taskId, title, onBreak = true)
+                                    scheduleAlarm()
+                                    mergeTimerIntoState()
+                                    persistSession()
+                                }
+                                FocusTickResult.IntervalWork -> {
+                                    val title = _state.value.runningTitle.ifBlank { _state.value.title }
+                                    focusNotifier.showIntervalSwitch(taskId, title, onBreak = false)
+                                    scheduleAlarm()
+                                    mergeTimerIntoState()
+                                    persistSession()
+                                }
+                                FocusTickResult.SessionEnded -> {
+                                    mergeTimerIntoState()
+                                    persistSession()
+                                    when (timer.phase()) {
+                                        FocusPhase.TimesUp -> onTimesUp()
+                                        else -> onBreakEnded()
+                                    }
+                                    done = true
+                                }
                             }
                         }
                     }
@@ -320,6 +392,7 @@ class FocusRunViewModel
 
         private fun onBreakEnded() {
             focusAlarmScheduler.cancel()
+            focusNotifier.cancel()
             _state.value = _state.value.copy(mode = FocusVisualMode.BreakEnded)
             viewModelScope.launch { focusSessionStore.clear() }
         }
@@ -328,7 +401,7 @@ class FocusRunViewModel
             val title = _state.value.runningTitle.ifBlank { _state.value.title }
             focusNotifier.showTimesUp(taskId, title)
             focusAlarmScheduler.cancel()
-            viewModelScope.launch { persistSession() }
+            viewModelScope.launch { focusSessionStore.clear() }
         }
 
         private suspend fun persistSession() {
@@ -391,10 +464,10 @@ class FocusRunViewModel
                         }
                 }
             val remainingSubtitle =
-                if (snap.totalMs > 0) {
-                    "left of ${formatDurationLabel(snap.totalMs)}"
-                } else {
-                    ""
+                when {
+                    timer.isCountUp() -> "elapsed"
+                    snap.totalMs > 0 -> "left of ${formatDurationLabel(snap.totalMs)}"
+                    else -> ""
                 }
             _state.value =
                 _state.value.copy(

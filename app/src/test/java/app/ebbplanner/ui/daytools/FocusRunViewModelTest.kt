@@ -5,6 +5,8 @@ import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.repository.TaskRepository
 import app.ebbplanner.domain.focus.FocusTickDelayer
 import app.ebbplanner.domain.time.MutableEbbClock
+import app.ebbplanner.data.preferences.FocusSessionStore
+import app.ebbplanner.reminders.FocusAlarmScheduler
 import app.ebbplanner.reminders.FocusNotifier
 import app.ebbplanner.ui.focus.FocusVisualMode
 import io.mockk.coEvery
@@ -33,6 +35,8 @@ class FocusRunViewModelTest {
     private val taskRepo = mockk<TaskRepository>(relaxed = true)
     private val notifier = mockk<FocusNotifier>(relaxed = true)
     private val tickDelayer = FocusTickDelayer { ms -> dispatcher.scheduler.advanceTimeBy(ms) }
+    private val focusSessionStore = mockk<FocusSessionStore>(relaxed = true)
+    private val focusAlarmScheduler = mockk<FocusAlarmScheduler>(relaxed = true)
 
     @Before
     fun setUp() {
@@ -76,6 +80,8 @@ class FocusRunViewModelTest {
                     clock,
                     notifier,
                     tickDelayer,
+                    focusSessionStore,
+                    focusAlarmScheduler,
                 )
             runCurrent()
             assertEquals("Opened task", vm.state.value.title)
@@ -100,6 +106,8 @@ class FocusRunViewModelTest {
                     clock,
                     notifier,
                     tickDelayer,
+                    focusSessionStore,
+                    focusAlarmScheduler,
                 )
             runCurrent()
             vm.justFiveMinutes()
@@ -123,6 +131,8 @@ class FocusRunViewModelTest {
                     clock,
                     notifier,
                     tickDelayer,
+                    focusSessionStore,
+                    focusAlarmScheduler,
                 )
             runCurrent()
             vm.markDone()

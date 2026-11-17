@@ -128,8 +128,20 @@ fun TaskDetailScreenDesign(
                     tall = true,
                     onClick = callbacks.onOpenReminders,
                 )
-                DetailListRow(icon = "repeat", line1 = state.repeatLabel, line2 = "Repeat", tall = true)
-                DetailListRow(icon = "air", line1 = "Breather after", line2 = state.breatherSubtitle, tall = true)
+                DetailListRow(
+                    icon = "repeat",
+                    line1 = state.repeatLabel,
+                    line2 = "Repeat",
+                    tall = true,
+                    onClick = callbacks.onOpenRepeat,
+                )
+                DetailListRow(
+                    icon = "air",
+                    line1 = "Breather after",
+                    line2 = state.breatherSubtitle,
+                    tall = true,
+                    onClick = callbacks.onApplyBreather,
+                )
                 HorizontalDivider(modifier = Modifier.padding(vertical = EbbSpacing.s2))
                 StepsHeader(state.subtaskProgress)
                 state.subtasks.forEach { SubtaskRow(it, onToggle = callbacks.onToggleSubtask) }

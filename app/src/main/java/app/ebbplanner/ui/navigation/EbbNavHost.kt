@@ -32,7 +32,10 @@ import app.ebbplanner.ui.onboarding.OnboardingWelcomeScreen
 
 @Suppress("LongMethod")
 @Composable
-fun EbbNavHost() {
+fun EbbNavHost(
+    pendingFocusTaskId: String? = null,
+    onFocusDeepLinkConsumed: () -> Unit = {},
+) {
     val navController = rememberNavController()
     val appViewModel: AppEntryViewModel = hiltViewModel()
     val onboardingComplete by appViewModel.onboardingComplete.collectAsStateWithLifecycle()
@@ -169,7 +172,10 @@ fun EbbNavHost() {
             }
         }
         composable(EbbDestinations.MAIN) {
-            MainShell()
+            MainShell(
+                pendingFocusTaskId = pendingFocusTaskId,
+                onFocusDeepLinkConsumed = onFocusDeepLinkConsumed,
+            )
         }
     }
 }

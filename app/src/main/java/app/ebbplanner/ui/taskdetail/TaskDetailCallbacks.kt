@@ -15,4 +15,6 @@ data class TaskDetailCallbacks(
     val onEstimateIncrease: () -> Unit = {},
     val onToggleSubtask: (String) -> Unit = {},
     val onDeleteTask: () -> Unit = {},
+    val onOpenRepeat: () -> Unit = {},
+    val onApplyBreather: () -> Unit = {},
 )

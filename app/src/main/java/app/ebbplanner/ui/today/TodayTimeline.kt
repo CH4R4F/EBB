@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -73,6 +74,7 @@ fun TodayTimeline(
     onMarkTaskDone: (String) -> Unit = {},
 ) {
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val largeText = LocalConfiguration.current.fontScale >= 1.75f
     val hours = (state.timelineStartHour until state.timelineEndHour).toList()
     val totalMinutes = (state.timelineEndHour - state.timelineStartHour) * 60
     val baselineHeight = timelineOriginY + durationToHeight(totalMinutes)
@@ -110,13 +112,14 @@ fun TodayTimeline(
             val h = durationToHeight(gap.durationMin).coerceAtLeast(24.dp)
             GapChip(
                 label = gap.label,
+                largeText = largeText,
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
                         .padding(start = timelineHourRail + 4.dp, end = 8.dp)
                         .offset(y = y)
                         .fillMaxWidth()
-                        .height(h.coerceAtLeast(32.dp)),
+                        .height(h.coerceAtLeast(if (largeText) 44.dp else 32.dp)),
             )
         }
 
@@ -150,6 +153,7 @@ fun TodayTimeline(
                 block = block,
                 dark = dark,
                 titleOnly = state.titleOnlyBlocks,
+                largeText = largeText,
                 onClick = { onTaskClick(block.id) },
                 onLongClick = { onTaskLongPress(block.id) },
                 onMarkDone = { onMarkTaskDone(block.id) },
@@ -159,7 +163,7 @@ fun TodayTimeline(
                         .padding(start = timelineHourRail + 4.dp, end = 8.dp)
                         .offset(y = y)
                         .fillMaxWidth()
-                        .height(h)
+                        .height(h.coerceAtLeast(if (largeText && block.short) 36.dp else if (block.short) 24.dp else 40.dp))
                         .alpha(if (block.isGhost) 0.45f else 1f),
             )
         }
@@ -171,6 +175,7 @@ fun TodayTimeline(
                 block = block,
                 dark = dark,
                 titleOnly = state.titleOnlyBlocks,
+                largeText = largeText,
                 onClick = { onTaskClick(block.id) },
                 onLongClick = { onTaskLongPress(block.id) },
                 onMarkDone = { onMarkTaskDone(block.id) },
@@ -321,6 +326,7 @@ private fun ScheduledTaskBlock(
     block: TodayScheduledBlock,
     dark: Boolean,
     titleOnly: Boolean,
+    largeText: Boolean = false,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = {},
     onMarkDone: () -> Unit = {},
@@ -352,9 +358,21 @@ private fun ScheduledTaskBlock(
             shadowElevation = if (elevated) 8.dp else 0.dp,
         ) {
             if (block.short) {
-                ShortTaskRow(block = block, accent = accent, titleOnly = titleOnly, onMarkDone = onMarkDone)
+                ShortTaskRow(
+                    block = block,
+                    accent = accent,
+                    titleOnly = titleOnly,
+                    largeText = largeText,
+                    onMarkDone = onMarkDone,
+                )
             } else {
-                StandardTaskRow(block = block, accent = accent, titleOnly = titleOnly, onMarkDone = onMarkDone)
+                StandardTaskRow(
+                    block = block,
+                    accent = accent,
+                    titleOnly = titleOnly,
+                    largeText = largeText,
+                    onMarkDone = onMarkDone,
+                )
             }
         }
         if (block.isCurrent && block.minutesLeftLabel != null) {
@@ -374,6 +392,7 @@ private fun ShortTaskRow(
     block: TodayScheduledBlock,
     accent: Color,
     titleOnly: Boolean,
+    largeText: Boolean = false,
     onMarkDone: () -> Unit = {},
 ) {
     Row(
@@ -389,14 +408,19 @@ private fun ShortTaskRow(
         )
         EbbSymbol(
             block.iconKey,
-            fontSize = 18.sp,
+            fontSize = if (largeText) 16.sp else 18.sp,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(start = 8.dp),
         )
         Text(
             text = block.title,
-            style = EbbTypography.titleM,
-            maxLines = 1,
+            style =
+                if (largeText) {
+                    EbbTypography.titleM.copy(fontSize = 14.sp, lineHeight = 18.sp)
+                } else {
+                    EbbTypography.titleM
+                },
+            maxLines = if (largeText) 2 else 1,
             overflow = TextOverflow.Ellipsis,
             modifier =
                 Modifier
@@ -439,6 +463,7 @@ private fun StandardTaskRow(
     block: TodayScheduledBlock,
     accent: Color,
     titleOnly: Boolean,
+    largeText: Boolean = false,
     onMarkDone: () -> Unit = {},
 ) {
     Row(
@@ -454,7 +479,7 @@ private fun StandardTaskRow(
         )
         EbbSymbol(
             block.iconKey,
-            fontSize = 18.sp,
+            fontSize = if (largeText) 16.sp else 18.sp,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(start = 8.dp),
         )
@@ -462,7 +487,7 @@ private fun StandardTaskRow(
             modifier =
                 Modifier
                     .weight(1f)
-                    .padding(horizontal = 6.dp, vertical = 6.dp),
+                    .padding(horizontal = 6.dp, vertical = if (largeText) 4.dp else 6.dp),
         ) {
             Text(
                 text = block.title,
@@ -608,6 +633,7 @@ private fun TaskRing(
 @Composable
 private fun GapChip(
     label: String,
+    largeText: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val outline = MaterialTheme.colorScheme.outline
@@ -630,11 +656,12 @@ private fun GapChip(
     ) {
         Text(
             text = label,
-            style = EbbTypography.labelM,
+            style = if (largeText) EbbTypography.labelS else EbbTypography.labelM,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
+            maxLines = if (largeText) 2 else 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 8.dp),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = if (largeText) 4.dp else 0.dp),
         )
     }
 }

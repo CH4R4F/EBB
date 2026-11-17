@@ -5,7 +5,12 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -14,18 +19,53 @@ class FocusAlarmScheduler
     @Inject
     constructor(
         @ApplicationContext private val context: Context,
+        private val alarmManager: AlarmManager,
+        private val alarmGrant: ExactAlarmGrant,
     ) {
-        private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
         fun scheduleTimesUp(
             taskId: String,
             title: String,
             triggerAtMs: Long,
+            isBreak: Boolean = false,
+        ) {
+            cancel()
+            val delay = triggerAtMs - System.currentTimeMillis()
+            if (delay <= 0L) return
+            if (alarmGrant.isGranted()) {
+                try {
+                    scheduleExact(taskId, title, triggerAtMs, isBreak)
+                    return
+                } catch (_: SecurityException) {
+                    // fall through to WorkManager
+                }
+            }
+            scheduleWork(taskId, title, delay, isBreak)
+        }
+
+        fun cancel() {
+            val intent = Intent(context, FocusTimesUpReceiver::class.java)
+            val pending =
+                PendingIntent.getBroadcast(
+                    context,
+                    REQUEST_CODE,
+                    intent,
+                    PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE,
+                )
+            pending?.let { alarmManager.cancel(it) }
+            WorkManager.getInstance(context).cancelUniqueWork(UNIQUE_WORK)
+        }
+
+        private fun scheduleExact(
+            taskId: String,
+            title: String,
+            triggerAtMs: Long,
+            isBreak: Boolean,
         ) {
             val intent =
                 Intent(context, FocusTimesUpReceiver::class.java).apply {
                     putExtra(EXTRA_TASK_ID, taskId)
                     putExtra(EXTRA_TASK_TITLE, title)
+                    putExtra(EXTRA_IS_BREAK, isBreak)
                 }
             val pending =
                 PendingIntent.getBroadcast(
@@ -41,21 +81,35 @@ class FocusAlarmScheduler
             }
         }
 
-        fun cancel() {
-            val intent = Intent(context, FocusTimesUpReceiver::class.java)
-            val pending =
-                PendingIntent.getBroadcast(
-                    context,
-                    REQUEST_CODE,
-                    intent,
-                    PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE,
-                )
-            pending?.let { alarmManager.cancel(it) }
+        private fun scheduleWork(
+            taskId: String,
+            title: String,
+            delayMs: Long,
+            isBreak: Boolean,
+        ) {
+            val work =
+                OneTimeWorkRequestBuilder<FocusAlarmWorker>()
+                    .setInitialDelay(delayMs, TimeUnit.MILLISECONDS)
+                    .setInputData(
+                        workDataOf(
+                            FocusAlarmWorker.KEY_TASK_ID to taskId,
+                            FocusAlarmWorker.KEY_TASK_TITLE to title,
+                            FocusAlarmWorker.KEY_IS_BREAK to isBreak,
+                        ),
+                    )
+                    .build()
+            WorkManager.getInstance(context).enqueueUniqueWork(
+                UNIQUE_WORK,
+                ExistingWorkPolicy.REPLACE,
+                work,
+            )
         }
 
         companion object {
             const val EXTRA_TASK_ID = "focus_task_id"
             const val EXTRA_TASK_TITLE = "focus_task_title"
+            const val EXTRA_IS_BREAK = "focus_is_break"
             private const val REQUEST_CODE = 42_002
+            private const val UNIQUE_WORK = "ebb-focus-alarm"
         }
     }

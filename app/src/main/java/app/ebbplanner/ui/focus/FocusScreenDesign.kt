@@ -76,6 +76,7 @@ data class FocusPresentationState(
     val timerModeIndex: Int = 0,
     val fixedMinutes: Int = 25,
     val blockOptionSubtitle: String = "",
+    val blockOptionEnabled: Boolean = true,
     val fixedOptionSubtitle: String = "5 · 15 · 25 · 45 · 60 min",
     val runningRemainingSubtitle: String = "",
     val timesUpDetail: String = "",
@@ -179,6 +180,7 @@ private fun FocusSetupBody(
                 "Until block ends",
                 state.blockOptionSubtitle.ifBlank { "Uses your scheduled block" },
                 selected = state.timerModeIndex == 0,
+                enabled = state.blockOptionEnabled,
                 onClick = { callbacks.onTimerModeSelected(0) },
             )
             TimerOption(
@@ -277,12 +279,22 @@ private fun TimerOption(
     title: String,
     subtitle: String,
     selected: Boolean,
+    enabled: Boolean = true,
     onClick: () -> Unit = {},
 ) {
+    val container =
+        if (!enabled) {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        } else if (selected) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.surface
+        }
     Surface(
-        onClick = onClick,
+        onClick = { if (enabled) onClick() },
+        enabled = enabled,
         shape = EbbShapes.md,
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+        color = container,
         border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         modifier = Modifier.fillMaxWidth(),
     ) {
