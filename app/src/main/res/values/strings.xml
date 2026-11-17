@@ -25,7 +25,7 @@
     <string name="onboarding_bed_label">Bedtime</string>
     <string name="onboarding_day_span_summary">Your day: %1$s–%2$s · %3$d hours</string>
     <string name="onboarding_day_span_after_midnight">Your day ends after midnight · %1$d hours</string>
-    <string name="onboarding_change_anytime">You can change these anytime in Settings.</string>
+    <string name="onboarding_change_anytime">You can change these anytime.</string>
 
     <string name="onboarding_prefs_title">A few preferences</string>
     <string name="onboarding_prefs_subtitle">Good defaults are already picked.</string>
