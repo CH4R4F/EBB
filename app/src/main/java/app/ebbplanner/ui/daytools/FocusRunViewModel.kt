@@ -83,10 +83,11 @@ class FocusRunViewModel
                         intervalCyclesCompleted = saved.intervalCyclesCompleted,
                         phaseStartedAtMs = saved.phaseStartedAtMs,
                         manualBreak = saved.manualBreak,
+                        intervalSessionStartMs = saved.intervalSessionStartMs,
                     ),
                     clock.millis(),
                 )
-                timer.catchUpExpiredPhases(clock.millis())
+                timer.reconcileToNow(clock.millis())
                 if (timer.phase() == FocusPhase.TimesUp) {
                     focusSessionStore.clear()
                     focusNotifier.cancel()
@@ -480,6 +481,7 @@ class FocusRunViewModel
                     intervalCyclesCompleted = exported.intervalCyclesCompleted,
                     phaseStartedAtMs = exported.phaseStartedAtMs,
                     manualBreak = exported.manualBreak,
+                    intervalSessionStartMs = exported.intervalSessionStartMs,
                 ),
             )
         }

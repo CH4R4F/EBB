@@ -133,6 +133,7 @@ fun TodayTimeline(
                 calendarLabel = event.calendarLabel,
                 pinned = event.pinned,
                 colorKey = event.colorKey,
+                largeText = largeText,
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
@@ -725,6 +726,7 @@ private fun CalendarEventBlock(
     calendarLabel: String,
     pinned: Boolean,
     colorKey: String,
+    largeText: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val accent = EbbTaskColors.strong(colorKey)
@@ -754,21 +756,62 @@ private fun CalendarEventBlock(
                         x += 8f
                     }
                 }
-                .padding(horizontal = 12.dp, vertical = 6.dp),
+                .padding(horizontal = 12.dp, vertical = if (largeText) 8.dp else 6.dp),
         horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
     ) {
-        EbbSymbol("event", fontSize = 18.sp, color = accent)
+        EbbSymbol("event", fontSize = if (largeText) 16.sp else 18.sp, color = accent)
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = EbbTypography.titleM, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Row(horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2)) {
-                Text(timeRange, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(durationLabel, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (pinned) {
-                    EbbSymbol("keep", fontSize = 14.sp, filled = true)
+            Text(
+                title,
+                style =
+                    if (largeText) {
+                        EbbTypography.titleM.copy(fontSize = 14.sp, lineHeight = 18.sp)
+                    } else {
+                        EbbTypography.titleM
+                    },
+                maxLines = if (largeText) 2 else 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (largeText) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        timeRange,
+                        style = EbbTypography.bodyM.copy(fontSize = 12.sp, lineHeight = 16.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s1)) {
+                        Text(
+                            durationLabel,
+                            style = EbbTypography.bodyM.copy(fontSize = 12.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                        )
+                        if (pinned) {
+                            EbbSymbol("keep", fontSize = 14.sp, filled = true)
+                        }
+                        EbbSymbol("calendar_month", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            calendarLabel,
+                            style = EbbTypography.bodyM.copy(fontSize = 12.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    EbbSymbol("calendar_month", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(calendarLabel, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2)) {
+                    Text(timeRange, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(durationLabel, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (pinned) {
+                        EbbSymbol("keep", fontSize = 14.sp, filled = true)
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        EbbSymbol("calendar_month", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(calendarLabel, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
         }

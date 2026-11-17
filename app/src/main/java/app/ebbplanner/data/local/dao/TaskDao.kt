@@ -51,18 +51,6 @@ interface TaskDao {
     @Query(
         """
         SELECT * FROM tasks
-        WHERE deletedAt IS NULL AND sourceRoutineId = :routineId AND date = :date
-        LIMIT 1
-        """,
-    )
-    suspend fun getLiveRoutineOnDate(
-        routineId: String,
-        date: String,
-    ): TaskEntity?
-
-    @Query(
-        """
-        SELECT * FROM tasks
         WHERE deletedAt IS NULL AND sourceRoutineId = :routineId
         AND date >= :fromDateInclusive AND status != 'done'
         """,
