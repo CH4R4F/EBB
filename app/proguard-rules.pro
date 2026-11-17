@@ -1,0 +1,1 @@
+# Ebb — placeholder ProGuard rules for release builds (minify disabled in milestone 1).
