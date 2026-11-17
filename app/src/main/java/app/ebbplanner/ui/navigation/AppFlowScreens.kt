@@ -1,5 +1,3 @@
-@file:Suppress("NewLineAtEndOfFile")
-
 package app.ebbplanner.ui.navigation
 
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -12,7 +10,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import app.ebbplanner.ui.daytools.FocusRunViewModel
 import app.ebbplanner.ui.daytools.MakeItFitDesign
+import app.ebbplanner.ui.daytools.MakeItFitViewModel
 import app.ebbplanner.ui.daytools.OverlapHelperDesign
+import app.ebbplanner.ui.daytools.OverlapHelperViewModel
+import app.ebbplanner.ui.daytools.PlanDayViewModel
 import app.ebbplanner.ui.daytools.PlanMyDayDesign
 import app.ebbplanner.ui.daytools.ShiftDayViewModel
 import app.ebbplanner.ui.daytools.ShiftTheRestDesign
@@ -48,36 +49,51 @@ fun ShiftDayScreen(
     }
 }
 
-@Suppress("UnusedParameter")
 @Composable
 fun PlanDayScreen(
+    navController: NavHostController,
     modifier: Modifier = Modifier,
-    onClose: () -> Unit = {},
+    viewModel: PlanDayViewModel = hiltViewModel(),
 ) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     FlowTheme {
-        PlanMyDayDesign(modifier = modifier.fillMaxSize())
+        PlanMyDayDesign(
+            modifier = modifier.fillMaxSize(),
+            tasks = state.tasks,
+            onClose = { navController.popBackStack() },
+            onToggleTask = viewModel::toggleTask,
+            onApply = { viewModel.applyPlan { navController.popBackStack() } },
+        )
     }
 }
 
-@Suppress("UnusedParameter")
 @Composable
 fun OverlapHelperScreen(
+    navController: NavHostController,
     modifier: Modifier = Modifier,
-    onClose: () -> Unit = {},
+    viewModel: OverlapHelperViewModel = hiltViewModel(),
 ) {
     FlowTheme {
-        OverlapHelperDesign(modifier = modifier.fillMaxSize())
+        OverlapHelperDesign(
+            modifier = modifier.fillMaxSize(),
+            onApply = { viewModel.applyPushLater { navController.popBackStack() } },
+            onCancel = { navController.popBackStack() },
+        )
     }
 }
 
-@Suppress("UnusedParameter")
 @Composable
 fun MakeItFitScreen(
+    navController: NavHostController,
     modifier: Modifier = Modifier,
-    onClose: () -> Unit = {},
+    viewModel: MakeItFitViewModel = hiltViewModel(),
 ) {
     FlowTheme {
-        MakeItFitDesign(modifier = modifier.fillMaxSize())
+        MakeItFitDesign(
+            modifier = modifier.fillMaxSize(),
+            onApply = { viewModel.applyMoves { navController.popBackStack() } },
+            onCancel = { navController.popBackStack() },
+        )
     }
 }
 

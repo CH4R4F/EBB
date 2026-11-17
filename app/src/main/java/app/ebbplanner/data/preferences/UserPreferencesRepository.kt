@@ -51,6 +51,11 @@ class UserPreferencesRepository
                 prefs[KEY_USE_MATERIAL_YOU] ?: false
             }
 
+        val remindersDefault: Flow<Boolean> =
+            dataStore.data.map { prefs ->
+                prefs[KEY_REMINDERS_DEFAULT] ?: true
+            }
+
         suspend fun setOnboardingComplete(complete: Boolean) {
             dataStore.edit { prefs -> prefs[KEY_ONBOARDING_COMPLETE] = complete }
         }
@@ -71,6 +76,10 @@ class UserPreferencesRepository
             dataStore.edit { prefs -> prefs[KEY_USE_MATERIAL_YOU] = enabled }
         }
 
+        suspend fun setRemindersDefault(enabled: Boolean) {
+            dataStore.edit { prefs -> prefs[KEY_REMINDERS_DEFAULT] = enabled }
+        }
+
         suspend fun setBreatherMinutes(minutes: Int) {
             dataStore.edit { prefs -> prefs[KEY_BREATHER_MINUTES] = minutes }
         }
@@ -85,6 +94,7 @@ class UserPreferencesRepository
             private val KEY_DAY_BED_MINUTES = intPreferencesKey("day_bed_minutes")
             private val KEY_SEED_SAMPLE_TASKS = booleanPreferencesKey("seed_sample_tasks")
             private val KEY_USE_MATERIAL_YOU = booleanPreferencesKey("use_material_you")
+            private val KEY_REMINDERS_DEFAULT = booleanPreferencesKey("reminders_default")
             private val KEY_BREATHER_MINUTES = intPreferencesKey("breather_minutes")
             private val KEY_CELEBRATION_STYLE = stringPreferencesKey("celebration_style")
             const val DEFAULT_WAKE_MINUTES = 7 * 60

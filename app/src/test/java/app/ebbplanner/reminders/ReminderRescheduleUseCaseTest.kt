@@ -8,7 +8,6 @@ import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.repository.TaskRepository
 import app.ebbplanner.domain.reminders.ReminderKind
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.After

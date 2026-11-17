@@ -17,12 +17,13 @@ import app.ebbplanner.ui.inbox.InboxScreen
 import app.ebbplanner.ui.navigation.AppRoutes
 import app.ebbplanner.ui.navigation.FocusRunScreen
 import app.ebbplanner.ui.navigation.MainTab
-import app.ebbplanner.ui.navigation.PlanDayScreen
 import app.ebbplanner.ui.navigation.MakeItFitScreen
 import app.ebbplanner.ui.navigation.OverlapHelperScreen
+import app.ebbplanner.ui.navigation.PlanDayScreen
 import app.ebbplanner.ui.navigation.ShiftDayScreen
 import app.ebbplanner.ui.navigation.TaskDetailRoute
 import app.ebbplanner.ui.routines.RoutinesScreen
+import app.ebbplanner.ui.settings.SettingsScreen
 import app.ebbplanner.ui.taskdetail.TaskSheetType
 import app.ebbplanner.ui.today.TodayScreen
 import app.ebbplanner.ui.week.WeekScreen
@@ -72,6 +73,7 @@ fun MainShell() {
                         val sheet = TaskSheetType.toRouteArg(TaskSheetType.Schedule)
                         navController.navigate(AppRoutes.taskDetail(id, sheet))
                     },
+                    onOpenSettings = { navController.navigate(AppRoutes.SETTINGS) },
                 )
             }
             composable(MainTab.Inbox.route) { InboxScreen() }
@@ -90,11 +92,12 @@ fun MainShell() {
                 )
             }
             composable(AppRoutes.SHIFT_DAY) { ShiftDayScreen(navController = navController) }
-            composable(AppRoutes.PLAN_DAY) { PlanDayScreen(onClose = { navController.popBackStack() }) }
-            composable(AppRoutes.OVERLAP_HELPER) {
-                OverlapHelperScreen(onClose = { navController.popBackStack() })
+            composable(AppRoutes.PLAN_DAY) { PlanDayScreen(navController = navController) }
+            composable(AppRoutes.OVERLAP_HELPER) { OverlapHelperScreen(navController = navController) }
+            composable(AppRoutes.MAKE_IT_FIT) { MakeItFitScreen(navController = navController) }
+            composable(AppRoutes.SETTINGS) {
+                SettingsScreen(onClose = { navController.popBackStack() })
             }
-            composable(AppRoutes.MAKE_IT_FIT) { MakeItFitScreen(onClose = { navController.popBackStack() }) }
             composable(AppRoutes.FOCUS_RUN) { FocusRunScreen() }
             composable(
                 route = AppRoutes.TASK_DETAIL,

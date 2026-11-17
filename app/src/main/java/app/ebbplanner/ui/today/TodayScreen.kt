@@ -25,6 +25,7 @@ fun TodayScreen(
     onOpenMakeItFit: () -> Unit = {},
     onOpenTask: (String) -> Unit = {},
     onOpenTaskSchedule: (String) -> Unit = {},
+    onOpenSettings: () -> Unit = {},
 ) {
     val presentation by viewModel.presentationState.collectAsStateWithLifecycle()
 
@@ -42,6 +43,7 @@ fun TodayScreen(
         onOpenMakeItFit = onOpenMakeItFit,
         onPrevDay = viewModel::goToPreviousDay,
         onNextDay = viewModel::goToNextDay,
+        onSettings = onOpenSettings,
         onAnytimeClick = onOpenTask,
         onAnytimeDone = viewModel::markTaskDone,
         onTaskClick = onOpenTask,

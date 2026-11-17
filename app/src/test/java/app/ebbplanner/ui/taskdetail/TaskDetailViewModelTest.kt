@@ -4,19 +4,19 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import app.ebbplanner.data.local.EbbDatabase
+import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.repository.TaskRepository
 import io.mockk.mockk
-import org.junit.After
-import app.ebbplanner.data.local.entity.TaskEntity
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
-import java.time.LocalDate
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.time.LocalDate
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])

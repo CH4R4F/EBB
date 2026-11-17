@@ -6,6 +6,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -131,14 +132,20 @@ fun ShiftTheRestDesign(
 }
 
 @Composable
-fun OverlapHelperDesign(modifier: Modifier = Modifier) {
+fun OverlapHelperDesign(
+    modifier: Modifier = Modifier,
+    onApply: () -> Unit = {},
+    onCancel: () -> Unit = {},
+) {
     EbbSheetScaffold(
         title = "These overlap",
         subtitle = "Call bank and Plan the week share 20 minutes.",
         doneLabel = "Apply",
         sheetTopInset = DAY_TOOL_SHEET_TOP_INSET,
-        sheetContainerColor = EbbPalette.darkSurfaceContainerHigh,
+        sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = modifier,
+        onDoneClick = onApply,
+        onCancelClick = onCancel,
     ) {
         OverlapTimelineCard()
         OverlapChoiceRow("Push later", "Plan the week starts 12:25", icon = "south", selected = true)
@@ -149,14 +156,20 @@ fun OverlapHelperDesign(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun MakeItFitDesign(modifier: Modifier = Modifier) {
+fun MakeItFitDesign(
+    modifier: Modifier = Modifier,
+    onApply: () -> Unit = {},
+    onCancel: () -> Unit = {},
+) {
     EbbSheetScaffold(
         title = "Let's make it fit",
         subtitle = "This day is fuller than the time left.",
-        doneLabel = "Apply 3 moves",
+        doneLabel = "Apply moves",
         sheetTopInset = DAY_TOOL_SHEET_TOP_INSET,
-        sheetContainerColor = EbbPalette.darkSurfaceContainerHigh,
+        sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = modifier,
+        onDoneClick = onApply,
+        onCancelClick = onCancel,
     ) {
         FitMeterRow("Planned", fraction = 1f, barLabel = "7 h", barColor = MaterialTheme.colorScheme.tertiary)
         FitMeterRow("Time left", fraction = 0.71f, barLabel = "5 h")
@@ -180,10 +193,16 @@ fun MakeItFitDesign(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun PlanMyDayDesign(modifier: Modifier = Modifier) {
+fun PlanMyDayDesign(
+    modifier: Modifier = Modifier,
+    tasks: List<PlanDayTaskRow> = emptyList(),
+    onClose: () -> Unit = {},
+    onToggleTask: (String) -> Unit = {},
+    onApply: () -> Unit = {},
+) {
     Column(modifier.then(Modifier.fillMaxSize())) {
         Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = {}) { EbbSymbol("close", fontSize = 22.sp) }
+            IconButton(onClick = onClose) { EbbSymbol("close", fontSize = 22.sp) }
             Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
                 Text("Plan my day · step 1 of 3", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -216,19 +235,34 @@ fun PlanMyDayDesign(modifier: Modifier = Modifier) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = EbbSpacing.s4, vertical = 8.dp),
         ) {
-            PlanTaskRow("Write project brief", "1 h 15 min", checked = true, energy = 3)
-            PlanTaskRow("Call bank", "25 min", checked = true, energy = 2)
-            PlanTaskRow("Buy stamps", "15 min", checked = true, energy = 1)
-            PlanTaskRow("Design poster", "1 h", checked = false, energy = 3)
-            PlanTaskRow("Water plants", "15 min", checked = false, energy = 1)
+            val rows =
+                tasks.ifEmpty {
+                    listOf(
+                        PlanDayTaskRow("id1", "Write project brief", "1 h 15 min", true),
+                        PlanDayTaskRow("id2", "Call bank", "25 min", true),
+                    )
+                }
+            rows.forEach { row ->
+                PlanTaskRow(
+                    row.title,
+                    row.estimate,
+                    checked = row.selected,
+                    energy = 2,
+                    onToggle = { onToggleTask(row.id) },
+                )
+            }
         }
         Surface(
             shape = EbbShapes.full,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.fillMaxWidth().padding(EbbSpacing.s4),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(EbbSpacing.s4)
+                    .clickable(onClick = onApply),
         ) {
             Text(
-                "Next",
+                "Place on my day",
                 color = MaterialTheme.colorScheme.onPrimary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(vertical = 14.dp),
@@ -771,8 +805,15 @@ private fun PlanTaskRow(
     estimate: String,
     checked: Boolean,
     energy: Int,
+    onToggle: () -> Unit = {},
 ) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onToggle)
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         EbbSymbol(if (checked) "check_box" else "check_box_outline_blank", fontSize = 22.sp)
         Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
             Text(title, style = EbbTypography.bodyL)

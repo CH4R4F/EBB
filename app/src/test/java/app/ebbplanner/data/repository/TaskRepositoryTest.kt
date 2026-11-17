@@ -104,6 +104,24 @@ class TaskRepositoryTest {
         }
 
     @Test
+    fun scheduleTask_moveToAnotherDay_resyncsReminder() =
+        runTest {
+            val today = LocalDate.of(2025, 11, 17)
+            val tomorrow = today.plusDays(1)
+            val task =
+                repository.addQuickCapture(
+                    title = "Move me",
+                    date = today,
+                    placement = TaskEntity.PLACEMENT_SCHEDULED,
+                    startLocalTime = "09:00",
+                )
+            coVerify { reminderSync.syncTask(task.id) }
+            repository.scheduleTask(task.id, TaskEntity.PLACEMENT_SCHEDULED, tomorrow, "10:00")
+            coVerify(atLeast = 2) { reminderSync.syncTask(task.id) }
+            assertEquals(tomorrow.toString(), repository.getTask(task.id)?.date)
+        }
+
+    @Test
     fun deleteTask_softDeletes() =
         runTest {
             val today = LocalDate.of(2025, 11, 17)

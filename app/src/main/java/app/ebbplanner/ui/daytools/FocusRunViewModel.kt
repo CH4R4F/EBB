@@ -1,5 +1,3 @@
-@file:Suppress("NewLineAtEndOfFile", "MaxLineLength")
-
 package app.ebbplanner.ui.daytools
 
 import androidx.lifecycle.ViewModel
@@ -35,13 +33,16 @@ class FocusRunViewModel
                         }
                     val current =
                         scheduled.firstOrNull { task ->
-                            val start = ClockFormat.parseMinutes(task.startLocalTime ?: return@firstOrNull false) ?: return@firstOrNull false
+                            val raw = task.startLocalTime ?: return@firstOrNull false
+                            val start = ClockFormat.parseMinutes(raw) ?: return@firstOrNull false
                             start <= now && start + task.durationMin > now
                         }
                     val next =
                         scheduled
                             .mapNotNull { task ->
-                                val start = task.startLocalTime?.let { ClockFormat.parseMinutes(it) } ?: return@mapNotNull null
+                                val start =
+                                    task.startLocalTime?.let { ClockFormat.parseMinutes(it) }
+                                        ?: return@mapNotNull null
                                 task to start
                             }
                             .filter { (_, start) -> start >= now }

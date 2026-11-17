@@ -38,6 +38,7 @@ fun TodayScreenDesign(
     onOpenMakeItFit: () -> Unit = {},
     onPrevDay: () -> Unit = {},
     onNextDay: () -> Unit = {},
+    onSettings: () -> Unit = {},
     onAnytimeClick: (String) -> Unit = {},
     onAnytimeDone: (String) -> Unit = {},
     onTaskClick: (String) -> Unit = {},
@@ -81,6 +82,8 @@ fun TodayScreenDesign(
                     onPrevDay = onPrevDay,
                     onNextDay = onNextDay,
                     onSearch = null,
+                    onSettings = onSettings,
+                    onMore = onSettings,
                 )
                 when {
                     state.bannerMessage != null ->
