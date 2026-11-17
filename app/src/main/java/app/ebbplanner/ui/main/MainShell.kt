@@ -98,7 +98,12 @@ fun MainShell() {
             composable(AppRoutes.SETTINGS) {
                 SettingsScreen(onClose = { navController.popBackStack() })
             }
-            composable(AppRoutes.FOCUS_RUN) { FocusRunScreen() }
+            composable(
+                route = AppRoutes.FOCUS_RUN,
+                arguments = listOf(navArgument("taskId") { type = NavType.StringType }),
+            ) {
+                FocusRunScreen(navController = navController)
+            }
             composable(
                 route = AppRoutes.TASK_DETAIL,
                 arguments =

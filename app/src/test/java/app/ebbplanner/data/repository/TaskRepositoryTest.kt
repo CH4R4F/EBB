@@ -8,6 +8,7 @@ import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.reminders.TaskReminderSync
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -39,7 +40,10 @@ class TaskRepositoryTest {
         reminderSync = mockk(relaxed = true)
         coEvery { reminderSync.syncTask(any()) } returns Unit
         coEvery { reminderSync.cancelTask(any()) } returns Unit
-        repository = TaskRepository(database.taskDao(), database.dayPlanDao(), database.subtaskDao(), reminderSync)
+        val prefs = mockk<app.ebbplanner.data.preferences.UserPreferencesRepository>(relaxed = true)
+        every { prefs.remindersDefault } returns kotlinx.coroutines.flow.flowOf(true)
+        repository =
+            TaskRepository(database.taskDao(), database.dayPlanDao(), database.subtaskDao(), reminderSync, prefs)
     }
 
     @After

@@ -31,12 +31,15 @@ class TaskDetailViewModelTest {
             Room.inMemoryDatabaseBuilder(context, EbbDatabase::class.java)
                 .allowMainThreadQueries()
                 .build()
+        val prefs = mockk<app.ebbplanner.data.preferences.UserPreferencesRepository>(relaxed = true)
+        io.mockk.every { prefs.remindersDefault } returns kotlinx.coroutines.flow.flowOf(true)
         repository =
             TaskRepository(
                 database.taskDao(),
                 database.dayPlanDao(),
                 database.subtaskDao(),
                 mockk(relaxed = true),
+                prefs,
             )
     }
 

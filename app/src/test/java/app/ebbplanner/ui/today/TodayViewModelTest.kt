@@ -42,14 +42,15 @@ class TodayViewModelTest {
             Room.inMemoryDatabaseBuilder(context, EbbDatabase::class.java)
                 .allowMainThreadQueries()
                 .build()
+        preferencesRepository = UserPreferencesRepository(context)
         taskRepository =
             TaskRepository(
                 database.taskDao(),
                 database.dayPlanDao(),
                 database.subtaskDao(),
                 mockk(relaxed = true),
+                preferencesRepository,
             )
-        preferencesRepository = UserPreferencesRepository(context)
     }
 
     @After

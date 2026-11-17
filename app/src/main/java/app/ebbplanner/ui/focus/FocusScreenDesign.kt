@@ -4,6 +4,7 @@ package app.ebbplanner.ui.focus
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,24 +57,29 @@ enum class FocusVisualMode {
 }
 
 data class FocusPresentationState(
+    val taskId: String = "",
     val title: String = "Write project brief",
     val subtitle: String = "10:00–11:15 · steps 2/5",
     val mode: FocusVisualMode = FocusVisualMode.Setup,
     val timerLabel: String = "33:00",
     val runningTitle: String = "Emails",
     val topBarLabel: String = "Focus",
+    val paused: Boolean = false,
+    val ringProgress: Float = 0.45f,
+    val showRing: Boolean = true,
 )
 
 @Composable
 fun FocusScreenDesign(
     state: FocusPresentationState,
     modifier: Modifier = Modifier,
+    callbacks: FocusCallbacks = FocusCallbacks(),
 ) {
     when (state.mode) {
         FocusVisualMode.TimesUpLockscreen -> FocusTimesUpLockscreen(state.runningTitle)
         else ->
             Column(modifier = modifier.fillMaxSize()) {
-                FocusTopBar(state.topBarLabel)
+                FocusTopBar(state.topBarLabel, onClose = callbacks.onClose, onMenu = callbacks.onMenu)
                 if (state.mode == FocusVisualMode.Setup) {
                     Text(
                         state.title,
@@ -90,10 +96,29 @@ fun FocusScreenDesign(
                     )
                 }
                 when (state.mode) {
-                    FocusVisualMode.Setup -> FocusSetupBody()
-                    FocusVisualMode.RunningRing -> FocusRunningBody(state, ring = true, modifier = Modifier.weight(1f))
-                    FocusVisualMode.RunningBar -> FocusRunningBody(state, ring = false, modifier = Modifier.weight(1f))
-                    FocusVisualMode.TimesUp -> FocusTimesUpInApp(state, modifier = Modifier.weight(1f).fillMaxWidth())
+                    FocusVisualMode.Setup -> FocusSetupBody(callbacks)
+                    FocusVisualMode.RunningRing ->
+                        FocusRunningBody(
+                            state,
+                            ring = state.showRing,
+                            modifier = Modifier.weight(1f),
+                            ringProgress = state.ringProgress,
+                            callbacks = callbacks,
+                        )
+                    FocusVisualMode.RunningBar ->
+                        FocusRunningBody(
+                            state,
+                            ring = false,
+                            modifier = Modifier.weight(1f),
+                            ringProgress = state.ringProgress,
+                            callbacks = callbacks,
+                        )
+                    FocusVisualMode.TimesUp ->
+                        FocusTimesUpInApp(
+                            state,
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            callbacks = callbacks,
+                        )
                     FocusVisualMode.Hyperfocus -> FocusHyperfocusBody(state, modifier = Modifier.weight(1f).fillMaxWidth())
                     FocusVisualMode.BreakEnded -> FocusBreakEndedBody(Modifier.weight(1f))
                     FocusVisualMode.TimesUpLockscreen -> Unit
@@ -103,16 +128,20 @@ fun FocusScreenDesign(
 }
 
 @Composable
-private fun FocusTopBar(label: String) {
+private fun FocusTopBar(
+    label: String,
+    onClose: () -> Unit,
+    onMenu: () -> Unit,
+) {
     Row(modifier = Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = {}) { EbbSymbol("close_fullscreen", fontSize = 22.sp) }
+        IconButton(onClick = onClose) { EbbSymbol("close_fullscreen", fontSize = 22.sp) }
         Text(label, modifier = Modifier.weight(1f), textAlign = TextAlign.Center, style = EbbTypography.labelL)
-        IconButton(onClick = {}) { EbbSymbol("more_vert", fontSize = 22.sp) }
+        IconButton(onClick = onMenu) { EbbSymbol("more_vert", fontSize = 22.sp) }
     }
 }
 
 @Composable
-private fun FocusSetupBody() {
+private fun FocusSetupBody(callbacks: FocusCallbacks) {
     Column(Modifier.fillMaxSize()) {
         Column(
             modifier =
@@ -150,7 +179,12 @@ private fun FocusSetupBody() {
             modifier = Modifier.fillMaxWidth().padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s4),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Surface(shape = EbbShapes.full, color = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth()) {
+            Surface(
+                onClick = callbacks.onStartFocus,
+                shape = EbbShapes.full,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 Row(
                     Modifier.fillMaxWidth().padding(vertical = 14.dp),
                     horizontalArrangement = Arrangement.Center,
@@ -166,6 +200,7 @@ private fun FocusSetupBody() {
                 }
             }
             Surface(
+                onClick = callbacks.onJustFiveMinutes,
                 shape = EbbShapes.full,
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0f),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
@@ -221,6 +256,7 @@ private fun FocusRunningBody(
     modifier: Modifier = Modifier,
     ringProgress: Float = 0.45f,
     ringDiameter: Dp = 272.dp,
+    callbacks: FocusCallbacks = FocusCallbacks(),
 ) {
     Column(modifier.fillMaxSize()) {
         Text(
@@ -253,13 +289,13 @@ private fun FocusRunningBody(
                     textAlign = TextAlign.Center,
                 )
                 LinearProgressIndicator(
-                    progress = { 0.55f },
+                    progress = { ringProgress },
                     modifier = Modifier.fillMaxWidth().padding(top = EbbSpacing.s4).height(12.dp).clip(EbbShapes.full),
                 )
             }
         }
         FocusStepsCard()
-        FocusControlRow()
+        FocusControlRow(state, callbacks)
     }
 }
 
@@ -290,16 +326,26 @@ private fun StepRow(label: String) {
 }
 
 @Composable
-private fun FocusControlRow() {
+private fun FocusControlRow(
+    state: FocusPresentationState,
+    callbacks: FocusCallbacks,
+) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s3),
         horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
-        FocusControl("pause", "Pause")
-        FocusControl("+5", "5 more min", textOnly = true)
-        FocusControl("check", "Done", filled = true)
+        FocusControl(
+            if (state.paused) "play_arrow" else "pause",
+            if (state.paused) "Resume" else "Pause",
+            onClick = if (state.paused) callbacks.onResume else callbacks.onPause,
+        )
+        FocusControl("+5", "5 more min", textOnly = true, onClick = callbacks.onAddFive)
+        FocusControl("check", "Done", filled = true, onClick = callbacks.onDone)
     }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = callbacks.onDistracted),
+        horizontalArrangement = Arrangement.Center,
+    ) {
         EbbSymbol("psychology_alt", fontSize = 18.sp)
         Text(
             "I got distracted",
@@ -316,9 +362,11 @@ private fun FocusControl(
     label: String,
     filled: Boolean = false,
     textOnly: Boolean = false,
+    onClick: () -> Unit = {},
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Surface(
+            onClick = onClick,
             modifier = Modifier.size(64.dp),
             shape = CircleShape,
             color = if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -348,6 +396,7 @@ private fun FocusControl(
 private fun FocusTimesUpInApp(
     state: FocusPresentationState,
     modifier: Modifier = Modifier,
+    callbacks: FocusCallbacks = FocusCallbacks(),
 ) {
     val runningState =
         state.copy(
@@ -390,6 +439,7 @@ private fun FocusTimesUpInApp(
                         modifier = Modifier.padding(top = 4.dp),
                     )
                     Surface(
+                        onClick = callbacks.onTimesUpDone,
                         shape = EbbShapes.full,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
@@ -406,10 +456,18 @@ private fun FocusTimesUpInApp(
                     }
                 }
                 Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Surface(shape = EbbShapes.full, color = MaterialTheme.colorScheme.primaryContainer) {
+                    Surface(
+                        onClick = callbacks.onTimesUpAddFive,
+                        shape = EbbShapes.full,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                    ) {
                         Text("5 more min", modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), style = EbbTypography.labelL)
                     }
-                    Surface(shape = EbbShapes.full, color = MaterialTheme.colorScheme.primaryContainer) {
+                    Surface(
+                        onClick = callbacks.onTimesUpAddFifteen,
+                        shape = EbbShapes.full,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                    ) {
                         Text("15 more min", modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), style = EbbTypography.labelL)
                     }
                 }
@@ -418,10 +476,14 @@ private fun FocusTimesUpInApp(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    EbbSymbol("more_time", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
-                    Text("Shift my day", color = MaterialTheme.colorScheme.primary, style = EbbTypography.labelL)
-                    EbbSymbol("coffee", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
-                    Text("Take a break", color = MaterialTheme.colorScheme.primary, style = EbbTypography.labelL)
+                    Row(Modifier.clickable(onClick = callbacks.onTimesUpShiftDay)) {
+                        EbbSymbol("more_time", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
+                        Text("Shift my day", color = MaterialTheme.colorScheme.primary, style = EbbTypography.labelL)
+                    }
+                    Row(Modifier.clickable(onClick = callbacks.onTimesUpBreak)) {
+                        EbbSymbol("coffee", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
+                        Text("Take a break", color = MaterialTheme.colorScheme.primary, style = EbbTypography.labelL)
+                    }
                 }
             }
         }

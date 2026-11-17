@@ -6,6 +6,7 @@ import app.ebbplanner.data.local.dao.TaskDao
 import app.ebbplanner.data.local.entity.DayPlanEntity
 import app.ebbplanner.data.local.entity.SubtaskEntity
 import app.ebbplanner.data.local.entity.TaskEntity
+import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.reminders.TaskReminderSync
 import app.ebbplanner.ui.time.ClockFormat
 import kotlinx.coroutines.flow.Flow
@@ -25,6 +26,7 @@ class TaskRepository
         private val dayPlanDao: DayPlanDao,
         private val subtaskDao: SubtaskDao,
         private val reminderSync: TaskReminderSync,
+        private val userPreferencesRepository: UserPreferencesRepository,
     ) {
         private val zoneId: ZoneId = ZoneId.systemDefault()
 
@@ -228,14 +230,21 @@ class TaskRepository
             date: LocalDate?,
             startLocalTime: String?,
         ) {
+            val defaultReminders = userPreferencesRepository.remindersDefault.first()
             updateTaskFields(id) { task ->
+                val wasScheduled = task.placement == TaskEntity.PLACEMENT_SCHEDULED && task.startLocalTime != null
+                val userDisabled = wasScheduled && !task.reminderEnabled
+                val enableReminders =
+                    when {
+                        placement != TaskEntity.PLACEMENT_SCHEDULED || startLocalTime == null -> false
+                        userDisabled -> false
+                        else -> defaultReminders
+                    }
                 task.copy(
                     placement = placement,
                     date = date?.toString(),
                     startLocalTime = startLocalTime,
-                    reminderEnabled =
-                        placement == TaskEntity.PLACEMENT_SCHEDULED &&
-                            startLocalTime != null,
+                    reminderEnabled = enableReminders,
                 )
             }
         }

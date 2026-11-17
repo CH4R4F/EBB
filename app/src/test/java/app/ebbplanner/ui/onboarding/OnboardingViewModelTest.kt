@@ -44,6 +44,7 @@ class OnboardingViewModelTest {
                 database.dayPlanDao(),
                 database.subtaskDao(),
                 mockk(relaxed = true),
+                preferencesRepository,
             )
     }
 

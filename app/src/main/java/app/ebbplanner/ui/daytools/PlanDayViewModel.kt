@@ -6,6 +6,7 @@ import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.data.repository.TaskRepository
 import app.ebbplanner.domain.day.DayPlanningUseCase
+import app.ebbplanner.domain.time.EbbClock
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -13,18 +14,18 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 import javax.inject.Inject
 
 data class PlanDayTaskRow(
     val id: String,
     val title: String,
     val estimate: String,
-    val selected: Boolean = true,
+    val selected: Boolean = false,
 )
 
 data class PlanDayUiState(
     val tasks: List<PlanDayTaskRow> = emptyList(),
+    val hasCandidates: Boolean = false,
 )
 
 @HiltViewModel
@@ -34,38 +35,43 @@ class PlanDayViewModel
         private val taskRepository: TaskRepository,
         private val dayPlanning: DayPlanningUseCase,
         private val userPreferencesRepository: UserPreferencesRepository,
+        private val clock: EbbClock,
     ) : ViewModel() {
-        private val selected = kotlinx.coroutines.flow.MutableStateFlow<Set<String>>(emptySet())
+        private val selectedIds = kotlinx.coroutines.flow.MutableStateFlow<Set<String>>(emptySet())
+        private val selectionTouched = kotlinx.coroutines.flow.MutableStateFlow(false)
 
         val uiState: StateFlow<PlanDayUiState> =
             combine(
                 taskRepository.observeInboxTasks(),
-                taskRepository.observeTasksForDate(LocalDate.now()),
-                selected,
-            ) { inbox, today, picked ->
+                taskRepository.observeTasksForDate(clock.today()),
+                selectedIds,
+                selectionTouched,
+            ) { inbox, today, picked, touched ->
                 val anytime =
                     today.filter {
                         it.placement == TaskEntity.PLACEMENT_ANYTIME &&
                             it.status != TaskEntity.STATUS_DONE
                     }
                 val distinct = (inbox + anytime).distinctBy { it.id }
-                val allIds = distinct.map { it.id }.toSet()
-                val effectivePick = if (picked.isEmpty()) allIds else picked
                 val rows =
                     distinct.map { task ->
                         PlanDayTaskRow(
                             id = task.id,
                             title = task.title,
                             estimate = "${task.durationMin} min",
-                            selected = effectivePick.contains(task.id),
+                            selected = touched && picked.contains(task.id),
                         )
                     }
-                PlanDayUiState(tasks = rows)
+                PlanDayUiState(
+                    tasks = rows,
+                    hasCandidates = rows.isNotEmpty(),
+                )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlanDayUiState())
 
         fun toggleTask(id: String) {
-            selected.value =
-                selected.value.toMutableSet().apply {
+            selectionTouched.value = true
+            selectedIds.value =
+                selectedIds.value.toMutableSet().apply {
                     if (contains(id)) remove(id) else add(id)
                 }
         }
@@ -73,11 +79,15 @@ class PlanDayViewModel
         fun applyPlan(onComplete: () -> Unit) {
             viewModelScope.launch {
                 val wake = userPreferencesRepository.dayWakeMinutes.first()
+                val bed = userPreferencesRepository.dayBedMinutes.first()
+                val now = clock.nowMinutes()
                 val ids =
-                    uiState.value.tasks
-                        .filter { it.selected }
-                        .map { it.id }
-                dayPlanning.scheduleTasksOnDay(LocalDate.now(), ids, wake)
+                    if (selectionTouched.value) {
+                        uiState.value.tasks.filter { it.selected }.map { it.id }
+                    } else {
+                        emptyList()
+                    }
+                dayPlanning.scheduleTasksOnDay(clock.today(), ids, wake, bed, now)
                 onComplete()
             }
         }

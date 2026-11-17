@@ -17,6 +17,7 @@ import app.ebbplanner.ui.daytools.PlanDayViewModel
 import app.ebbplanner.ui.daytools.PlanMyDayDesign
 import app.ebbplanner.ui.daytools.ShiftDayViewModel
 import app.ebbplanner.ui.daytools.ShiftTheRestDesign
+import app.ebbplanner.ui.focus.FocusCallbacks
 import app.ebbplanner.ui.focus.FocusScreenDesign
 import app.ebbplanner.ui.onboarding.OnboardingAppPreview
 import app.ebbplanner.ui.taskdetail.TaskDetailCallbacks
@@ -37,12 +38,16 @@ fun ShiftDayScreen(
     modifier: Modifier = Modifier,
     viewModel: ShiftDayViewModel = hiltViewModel(),
 ) {
-    val background by viewModel.backgroundState.collectAsStateWithLifecycle()
+    val ui by viewModel.uiState.collectAsStateWithLifecycle()
     FlowTheme {
         ShiftTheRestDesign(
             modifier = modifier.fillMaxSize(),
-            shiftMinutes = viewModel.shiftMinutes,
-            backgroundState = background,
+            shiftMinutes = ui.shiftMinutes,
+            chipIndex = ui.chipIndex,
+            previewBefore = ui.previewBefore,
+            previewAfter = ui.previewAfter,
+            backgroundState = ui.background,
+            onChipSelected = viewModel::selectChip,
             onApplyShift = { viewModel.applyShift { navController.popBackStack() } },
             onCancel = { navController.popBackStack() },
         )
@@ -60,6 +65,7 @@ fun PlanDayScreen(
         PlanMyDayDesign(
             modifier = modifier.fillMaxSize(),
             tasks = state.tasks,
+            emptyCandidates = !state.hasCandidates,
             onClose = { navController.popBackStack() },
             onToggleTask = viewModel::toggleTask,
             onApply = { viewModel.applyPlan { navController.popBackStack() } },
@@ -73,10 +79,14 @@ fun OverlapHelperScreen(
     modifier: Modifier = Modifier,
     viewModel: OverlapHelperViewModel = hiltViewModel(),
 ) {
+    val ui by viewModel.uiState.collectAsStateWithLifecycle()
     FlowTheme {
         OverlapHelperDesign(
             modifier = modifier.fillMaxSize(),
-            onApply = { viewModel.applyPushLater { navController.popBackStack() } },
+            situation = ui.situation,
+            selected = ui.selected,
+            onSelectOption = viewModel::selectOption,
+            onApply = { viewModel.apply { navController.popBackStack() } },
             onCancel = { navController.popBackStack() },
         )
     }
@@ -88,9 +98,13 @@ fun MakeItFitScreen(
     modifier: Modifier = Modifier,
     viewModel: MakeItFitViewModel = hiltViewModel(),
 ) {
+    val ui by viewModel.uiState.collectAsStateWithLifecycle()
     FlowTheme {
         MakeItFitDesign(
             modifier = modifier.fillMaxSize(),
+            plan = ui.plan,
+            selectedMoveIds = ui.selectedMoveIds,
+            onToggleMove = viewModel::toggleMove,
             onApply = { viewModel.applyMoves { navController.popBackStack() } },
             onCancel = { navController.popBackStack() },
         )
@@ -99,6 +113,7 @@ fun MakeItFitScreen(
 
 @Composable
 fun FocusRunScreen(
+    navController: NavHostController,
     modifier: Modifier = Modifier,
     viewModel: FocusRunViewModel = hiltViewModel(),
 ) {
@@ -107,6 +122,29 @@ fun FocusRunScreen(
         FocusScreenDesign(
             state = state,
             modifier = modifier.fillMaxSize(),
+            callbacks =
+                FocusCallbacks(
+                    onClose = {
+                        viewModel.close()
+                        navController.popBackStack()
+                    },
+                    onStartFocus = viewModel::startFocus,
+                    onJustFiveMinutes = viewModel::justFiveMinutes,
+                    onPause = viewModel::pause,
+                    onResume = viewModel::resume,
+                    onAddFive = viewModel::addFive,
+                    onDone = viewModel::markDone,
+                    onDistracted = viewModel::distracted,
+                    onTimesUpDone = viewModel::markDone,
+                    onTimesUpAddFive = viewModel::timesUpAddFive,
+                    onTimesUpAddFifteen = viewModel::timesUpAddFifteen,
+                    onTimesUpShiftDay = {
+                        viewModel.timesUpShiftDay()
+                        navController.popBackStack()
+                    },
+                    onTimesUpBreak = viewModel::takeBreak,
+                    onMenu = {},
+                ),
         )
     }
 }
@@ -135,12 +173,7 @@ fun TaskDetailRoute(
                 TaskDetailCallbacks(
                     onClose = { navController.popBackStack() },
                     onMarkDone = viewModel::markDone,
-                    onStartFocus =
-                        {
-                            if (state.mode != TaskDetailMode.NotFound) {
-                                navController.navigate(AppRoutes.FOCUS_RUN)
-                            }
-                        },
+                    onStartFocus = { navController.navigate(AppRoutes.focusRun(taskId)) },
                     onOpenReminders = { viewModel.openSheet(TaskSheetType.Reminder) },
                     onOpenDuration = { viewModel.openSheet(TaskSheetType.Duration) },
                     onOpenBreakDown = { viewModel.openSheet(TaskSheetType.BreakDown) },

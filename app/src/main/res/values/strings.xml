@@ -148,6 +148,9 @@
 
     <string name="reminder_channel_tasks">Task reminders</string>
     <string name="reminder_channel_breather">Breather nudges</string>
+    <string name="focus_channel_name">Focus timer</string>
+    <string name="focus_times_up_title">Time\'s up for %1$s</string>
+    <string name="focus_times_up_body">How did it go? Open Ebb to wrap up.</string>
     <string name="reminder_task_body">Starting now</string>
     <string name="reminder_action_done">Done</string>
     <string name="reminder_action_snooze">Snooze 10</string>

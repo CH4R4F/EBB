@@ -39,7 +39,10 @@ class ReminderRescheduleUseCaseTest {
         val scheduler = mockk<ReminderScheduler>(relaxed = true)
         val alarmGrant = mockk<ExactAlarmGrant> { coEvery { isGranted() } returns true }
         reminderSync = TaskReminderSync(database.taskDao(), database.reminderDao(), scheduler, alarmGrant)
-        taskRepository = TaskRepository(database.taskDao(), database.dayPlanDao(), database.subtaskDao(), reminderSync)
+        val prefs = mockk<app.ebbplanner.data.preferences.UserPreferencesRepository>(relaxed = true)
+        io.mockk.every { prefs.remindersDefault } returns kotlinx.coroutines.flow.flowOf(true)
+        taskRepository =
+            TaskRepository(database.taskDao(), database.dayPlanDao(), database.subtaskDao(), reminderSync, prefs)
         useCase = ReminderRescheduleUseCase(context, reminderSync, taskRepository)
     }
 

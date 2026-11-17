@@ -41,6 +41,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.ebbplanner.domain.day.DayGapScheduler
+import app.ebbplanner.domain.day.MakeItFitPlan
+import app.ebbplanner.domain.day.OverlapResolutionType
+import app.ebbplanner.domain.day.OverlapSituation
+import app.ebbplanner.domain.day.ShiftPreviewBlock
 import app.ebbplanner.ui.components.EbbHeroIllustration
 import app.ebbplanner.ui.components.EbbRadioDot
 import app.ebbplanner.ui.onboarding.OnboardingAppPreview
@@ -55,28 +60,8 @@ import app.ebbplanner.ui.today.TodayScreenDesign
 import app.ebbplanner.ui.today.todayPopulatedDark
 
 private val DAY_TOOL_SHEET_TOP_INSET = 66.dp
-private const val SHIFT_TIMELINE_DESIGN_PX = 230.0
 private val SHIFT_TIMELINE_HEIGHT = 250.dp
 private const val SHIFT_TIMELINE_MINUTES = 360.0
-private const val SHIFT_PREVIEW_MINUTES = 15.0
-
-private data class ShiftTimelineBlock(
-    val title: String,
-    val color: String,
-    val topPx: Double,
-    val heightPx: Double,
-    val pinned: Boolean,
-    val isEvent: Boolean,
-)
-
-private val shiftPreviewBlocks =
-    listOf(
-        ShiftTimelineBlock("Call bank", "green", 13.777777777777777, 16.0, pinned = false, isEvent = false),
-        ShiftTimelineBlock("Lunch with Ines", "blue", 39.33333333333333, 36.33333333333333, pinned = true, isEvent = true),
-        ShiftTimelineBlock("Buy stamps", "lemon", 96.83333333333334, 16.0, pinned = false, isEvent = false),
-        ShiftTimelineBlock("Design poster", "blue", 116.0, 36.333333333333314, pinned = false, isEvent = false),
-        ShiftTimelineBlock("Dentist", "vermillion", 173.5, 26.75, pinned = true, isEvent = false),
-    )
 
 @Composable
 fun DayToolsAppPreview(
@@ -86,10 +71,15 @@ fun DayToolsAppPreview(
     OnboardingAppPreview(darkTheme = darkTheme, content = content)
 }
 
+@Suppress("LongParameterList")
 @Composable
 fun ShiftTheRestDesign(
     modifier: Modifier = Modifier,
     shiftMinutes: Int = 15,
+    chipIndex: Int = 1,
+    previewBefore: List<ShiftPreviewBlock> = emptyList(),
+    previewAfter: List<ShiftPreviewBlock> = emptyList(),
+    onChipSelected: (Int) -> Unit = {},
     onApplyShift: () -> Unit = {},
     onCancel: () -> Unit = {},
     backgroundState: app.ebbplanner.ui.today.TodayPresentationState? = null,
@@ -107,13 +97,13 @@ fun ShiftTheRestDesign(
         onCancelClick = onCancel,
         backgroundState = backgroundState,
     ) {
-        ShiftAmountChips(selected = 1)
+        ShiftAmountChips(selected = chipIndex, onSelected = onChipSelected)
         Row(
             Modifier.fillMaxWidth().padding(top = EbbSpacing.s3),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            ShiftPreviewColumn("Now", afterShift = false)
-            ShiftPreviewColumn("After +15 min", afterShift = true)
+            ShiftPreviewColumn("Now", afterShift = false, blocks = previewBefore)
+            ShiftPreviewColumn("After +$shiftMinutes min", afterShift = true, blocks = previewAfter)
         }
         Row(
             Modifier.padding(top = 12.dp, bottom = 16.dp),
@@ -134,12 +124,17 @@ fun ShiftTheRestDesign(
 @Composable
 fun OverlapHelperDesign(
     modifier: Modifier = Modifier,
+    situation: OverlapSituation? = null,
+    selected: OverlapResolutionType = OverlapResolutionType.PUSH_LATER,
+    onSelectOption: (OverlapResolutionType) -> Unit = {},
     onApply: () -> Unit = {},
     onCancel: () -> Unit = {},
 ) {
+    val headline = situation?.headline ?: "These overlap"
+    val subtitle = situation?.detail ?: "No overlapping tasks right now."
     EbbSheetScaffold(
-        title = "These overlap",
-        subtitle = "Call bank and Plan the week share 20 minutes.",
+        title = headline,
+        subtitle = subtitle,
         doneLabel = "Apply",
         sheetTopInset = DAY_TOOL_SHEET_TOP_INSET,
         sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -147,23 +142,49 @@ fun OverlapHelperDesign(
         onDoneClick = onApply,
         onCancelClick = onCancel,
     ) {
-        OverlapTimelineCard()
-        OverlapChoiceRow("Push later", "Plan the week starts 12:25", icon = "south", selected = true)
-        OverlapChoiceRow("Shorten earlier", "Call bank becomes 20 min", icon = "compress", selected = false)
-        OverlapChoiceRow("Next free slot", "Move Plan the week to 13:05", icon = "bolt", selected = false)
-        OverlapChoiceRow("Keep both", "Fine — I'll juggle", icon = "done_all", selected = false)
+        if (situation != null) {
+            OverlapTimelineCard(
+                firstTitle = situation.firstTitle,
+                secondTitle = situation.secondTitle,
+                firstRange = DayGapScheduler.formatRange(situation.firstStartMinutes, situation.firstDurationMin),
+                secondRange = DayGapScheduler.formatRange(situation.secondStartMinutes, situation.secondDurationMin),
+            )
+            situation.options.forEach { option ->
+                val icon =
+                    when (option.type) {
+                        OverlapResolutionType.PUSH_LATER -> "south"
+                        OverlapResolutionType.SHORTEN_EARLIER -> "compress"
+                        OverlapResolutionType.NEXT_FREE_SLOT -> "bolt"
+                        OverlapResolutionType.KEEP_BOTH -> "done_all"
+                    }
+                OverlapChoiceRow(
+                    option.title,
+                    option.subtitle,
+                    icon = icon,
+                    selected = option.type == selected,
+                    onClick = { onSelectOption(option.type) },
+                )
+            }
+        }
     }
 }
 
 @Composable
 fun MakeItFitDesign(
     modifier: Modifier = Modifier,
+    plan: MakeItFitPlan? = null,
+    selectedMoveIds: Set<String> = emptySet(),
+    onToggleMove: (String) -> Unit = {},
     onApply: () -> Unit = {},
     onCancel: () -> Unit = {},
 ) {
+    val planned = plan?.plannedMinutes ?: 0
+    val available = plan?.availableMinutes ?: 1
+    val plannedFraction = if (available > 0) (planned.toFloat() / available).coerceAtMost(1f) else 1f
+    val leftFraction = if (available > 0) 1f else 0f
     EbbSheetScaffold(
         title = "Let's make it fit",
-        subtitle = "This day is fuller than the time left.",
+        subtitle = if (plan != null && planned > available) "This day is fuller than the time left." else "You're within today's time.",
         doneLabel = "Apply moves",
         sheetTopInset = DAY_TOOL_SHEET_TOP_INSET,
         sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -171,31 +192,50 @@ fun MakeItFitDesign(
         onDoneClick = onApply,
         onCancelClick = onCancel,
     ) {
-        FitMeterRow("Planned", fraction = 1f, barLabel = "7 h", barColor = MaterialTheme.colorScheme.tertiary)
-        FitMeterRow("Time left", fraction = 0.71f, barLabel = "5 h")
-        Text(
-            "Suggested moves",
-            style = EbbTypography.labelL,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = EbbSpacing.s4, bottom = 8.dp),
+        FitMeterRow(
+            "Planned",
+            fraction = plannedFraction,
+            barLabel = formatMinutesShort(planned),
+            barColor = MaterialTheme.colorScheme.tertiary,
         )
-        FitMoveRow("Design poster", "1 h", "Move to tomorrow — tomorrow is light", checked = true)
-        FitMoveRow("Read 10 pages", "20 min", "Move to Inbox — no time set", checked = true)
-        FitMoveRow("Clean out the fridge", "30 min", "Low energy task, fits Wednesday", checked = true)
-        FitMoveRow("Expense report", "45 min", "Has a reminder — keep today?", checked = false)
-        Text(
-            "After: about 4 h 50 min planned",
-            style = EbbTypography.bodyM,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(top = 8.dp),
-        )
+        FitMeterRow("Time left", fraction = leftFraction, barLabel = formatMinutesShort(available))
+        if (plan != null && plan.moves.isNotEmpty()) {
+            Text(
+                "Suggested moves",
+                style = EbbTypography.labelL,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = EbbSpacing.s4, bottom = 8.dp),
+            )
+            plan.moves.forEach { move ->
+                FitMoveRow(
+                    move.title,
+                    "${move.durationMin} min",
+                    move.reason,
+                    checked = selectedMoveIds.contains(move.taskId),
+                    onToggle = { onToggleMove(move.taskId) },
+                )
+            }
+            Text(
+                "After: about ${formatMinutesShort(plan.afterPlannedMinutes)} planned",
+                style = EbbTypography.bodyM,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
     }
+}
+
+private fun formatMinutesShort(minutes: Int): String {
+    val h = minutes / 60
+    val m = minutes % 60
+    return if (h > 0) "$h h" + if (m > 0) " $m m" else "" else "$m m"
 }
 
 @Composable
 fun PlanMyDayDesign(
     modifier: Modifier = Modifier,
     tasks: List<PlanDayTaskRow> = emptyList(),
+    emptyCandidates: Boolean = false,
     onClose: () -> Unit = {},
     onToggleTask: (String) -> Unit = {},
     onApply: () -> Unit = {},
@@ -235,21 +275,23 @@ fun PlanMyDayDesign(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = EbbSpacing.s4, vertical = 8.dp),
         ) {
-            val rows =
-                tasks.ifEmpty {
-                    listOf(
-                        PlanDayTaskRow("id1", "Write project brief", "1 h 15 min", true),
-                        PlanDayTaskRow("id2", "Call bank", "25 min", true),
+            if (emptyCandidates || tasks.isEmpty()) {
+                Text(
+                    "Nothing to place — inbox and Anytime are clear.",
+                    style = EbbTypography.bodyM,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 24.dp),
+                )
+            } else {
+                tasks.forEach { row ->
+                    PlanTaskRow(
+                        row.title,
+                        row.estimate,
+                        checked = row.selected,
+                        energy = 2,
+                        onToggle = { onToggleTask(row.id) },
                     )
                 }
-            rows.forEach { row ->
-                PlanTaskRow(
-                    row.title,
-                    row.estimate,
-                    checked = row.selected,
-                    energy = 2,
-                    onToggle = { onToggleTask(row.id) },
-                )
             }
         }
         Surface(
@@ -499,12 +541,16 @@ fun JumpToDateDesign(modifier: Modifier = Modifier) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ShiftAmountChips(selected: Int) {
+private fun ShiftAmountChips(
+    selected: Int,
+    onSelected: (Int) -> Unit,
+) {
     val labels = listOf("+5 min", "+15 min", "+30 min", "+60 min", "Start from now", "Custom")
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         labels.forEachIndexed { index, label ->
             val sel = index == selected
             Surface(
+                onClick = { onSelected(index) },
                 shape = RoundedCornerShape(12.dp),
                 color = if (sel) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
                 border = if (sel) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
@@ -530,6 +576,7 @@ private fun ShiftAmountChips(selected: Int) {
 private fun RowScope.ShiftPreviewColumn(
     label: String,
     afterShift: Boolean,
+    blocks: List<ShiftPreviewBlock>,
 ) {
     Column(Modifier.weight(1f)) {
         Text(
@@ -567,13 +614,15 @@ private fun RowScope.ShiftPreviewColumn(
                             drawLine(lineColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
                         }
                     }
-                    shiftPreviewBlocks.forEach { block ->
+                    val timelineStart = blocks.minOfOrNull { it.startMinutes } ?: (11 * 60)
+                    blocks.forEach { block ->
                         val movable = !block.pinned
-                        val top = shiftBlockTop(block.topPx, afterShift = afterShift, movable = movable)
-                        val height = (block.heightPx * SHIFT_TIMELINE_HEIGHT.value / SHIFT_TIMELINE_DESIGN_PX).dp
+                        val top = shiftBlockTopMinutes(block.startMinutes, timelineStart)
+                        val height =
+                            (block.durationMin.toDouble() / SHIFT_TIMELINE_MINUTES * SHIFT_TIMELINE_HEIGHT.value).dp
                         ShiftBlock(
                             title = block.title,
-                            color = block.color,
+                            color = block.colorKey,
                             top = top,
                             height = height,
                             moved = afterShift && movable,
@@ -587,18 +636,12 @@ private fun RowScope.ShiftPreviewColumn(
     }
 }
 
-private fun shiftBlockTop(
-    topPx: Double,
-    afterShift: Boolean,
-    movable: Boolean,
+private fun shiftBlockTopMinutes(
+    startMinutes: Int,
+    timelineStartMin: Int,
 ): Dp {
-    val shiftPx =
-        if (afterShift && movable) {
-            SHIFT_PREVIEW_MINUTES / SHIFT_TIMELINE_MINUTES * SHIFT_TIMELINE_DESIGN_PX
-        } else {
-            0.0
-        }
-    return ((topPx + shiftPx) * SHIFT_TIMELINE_HEIGHT.value / SHIFT_TIMELINE_DESIGN_PX).dp
+    val offset = (startMinutes - timelineStartMin).coerceAtLeast(0)
+    return (offset.toDouble() / SHIFT_TIMELINE_MINUTES * SHIFT_TIMELINE_HEIGHT.value).dp
 }
 
 @Composable
@@ -640,7 +683,12 @@ private fun ShiftBlock(
 }
 
 @Composable
-private fun OverlapTimelineCard() {
+private fun OverlapTimelineCard(
+    firstTitle: String,
+    secondTitle: String,
+    firstRange: String,
+    secondRange: String,
+) {
     Surface(Modifier.fillMaxWidth().height(150.dp), shape = EbbShapes.md, color = MaterialTheme.colorScheme.surface) {
         Row(Modifier.padding(12.dp)) {
             Column(Modifier.width(44.dp), verticalArrangement = Arrangement.SpaceBetween) {
@@ -661,8 +709,8 @@ private fun OverlapTimelineCard() {
                     Row(Modifier.fillMaxSize()) {
                         Box(Modifier.width(3.dp).fillMaxHeight().background(EbbTaskColors.strong("green")))
                         Column(Modifier.padding(8.dp)) {
-                            Text("Call bank", style = EbbTypography.labelL)
-                            Text("11:40–12:20", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(firstTitle, style = EbbTypography.labelL)
+                            Text(firstRange, style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -678,8 +726,8 @@ private fun OverlapTimelineCard() {
                     Row(Modifier.fillMaxSize()) {
                         Box(Modifier.width(3.dp).fillMaxHeight().background(EbbTaskColors.strong("sky")))
                         Column(Modifier.padding(8.dp)) {
-                            Text("Plan the week", style = EbbTypography.labelL)
-                            Text("12:00–13:00", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(secondTitle, style = EbbTypography.labelL)
+                            Text(secondRange, style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -718,8 +766,10 @@ private fun OverlapChoiceRow(
     subtitle: String,
     icon: String,
     selected: Boolean,
+    onClick: () -> Unit = {},
 ) {
     Surface(
+        onClick = onClick,
         Modifier.fillMaxWidth().padding(vertical = 4.dp),
         shape = RoundedCornerShape(12.dp),
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
@@ -760,8 +810,15 @@ private fun FitMoveRow(
     duration: String,
     subtitle: String,
     checked: Boolean,
+    onToggle: () -> Unit = {},
 ) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.Top) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onToggle)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
         EbbSymbol(if (checked) "check_box" else "check_box_outline_blank", fontSize = 22.sp, modifier = Modifier.padding(top = 8.dp))
         Column(Modifier.padding(start = 8.dp)) {
             Row {

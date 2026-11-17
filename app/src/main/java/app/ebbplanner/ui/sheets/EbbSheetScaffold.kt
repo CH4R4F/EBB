@@ -32,8 +32,9 @@ import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTypography
+import app.ebbplanner.ui.today.TodayPresentationState
 import app.ebbplanner.ui.today.TodayScreenDesign
-import app.ebbplanner.ui.today.todayPopulatedDark
+import app.ebbplanner.ui.today.TodayVisualMode
 
 @Suppress("LongParameterList", "LongMethod")
 @Composable
@@ -56,7 +57,12 @@ fun EbbSheetScaffold(
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         TodayScreenDesign(
-            state = backgroundState ?: todayPopulatedDark(),
+            state =
+                backgroundState ?: TodayPresentationState(
+                    visualMode = TodayVisualMode.Empty,
+                    showNowLine = false,
+                    blocks = emptyList(),
+                ),
             showBottomNav = true,
             modifier = Modifier.fillMaxSize(),
         )
