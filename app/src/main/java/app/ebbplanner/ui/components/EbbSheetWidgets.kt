@@ -1,4 +1,4 @@
-@file:Suppress("NewLineAtEndOfFile", "MaxLineLength")
+@file:Suppress("NewLineAtEndOfFile", "MaxLineLength", "MatchingDeclarationName")
 
 package app.ebbplanner.ui.components
 
@@ -30,12 +30,20 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.ebbplanner.ui.theme.EbbChromeColors
 import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTypography
+
+enum class EbbSegmentSelectionStyle {
+    PrimaryContainer,
+    SecondaryContainer,
+}
 
 @Composable
 fun EbbRadioDot(
@@ -61,39 +69,51 @@ fun EbbJoinedSegmentedControl(
     labels: List<String>,
     icons: List<String?> = labels.map { null },
     selectedIndex: Int,
-    selectedUsesTertiary: Boolean = false,
+    selectionStyle: EbbSegmentSelectionStyle = EbbSegmentSelectionStyle.PrimaryContainer,
     modifier: Modifier = Modifier,
+    @Suppress("UNUSED_PARAMETER") selectedUsesTertiary: Boolean = false,
 ) {
-    val shape = RoundedCornerShape(8.dp)
+    val pill = RoundedCornerShape(20.dp)
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val selectedBg =
+        when (selectionStyle) {
+            EbbSegmentSelectionStyle.SecondaryContainer ->
+                if (dark) EbbChromeColors.segmentSelectedContainerDark else EbbChromeColors.segmentSelectedContainerLight
+            EbbSegmentSelectionStyle.PrimaryContainer -> MaterialTheme.colorScheme.primaryContainer
+        }
+    val selectedFg =
+        when (selectionStyle) {
+            EbbSegmentSelectionStyle.SecondaryContainer ->
+                if (dark) EbbChromeColors.onSegmentSelectedContainerDark else EbbChromeColors.onSegmentSelectedContainerLight
+            EbbSegmentSelectionStyle.PrimaryContainer -> MaterialTheme.colorScheme.onPrimaryContainer
+        }
     Surface(
         modifier = modifier.fillMaxWidth().height(40.dp),
-        shape = shape,
+        shape = pill,
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
             labels.forEachIndexed { index, label ->
                 val selected = index == selectedIndex
-                val bg =
-                    if (selected) {
-                        if (selectedUsesTertiary) {
-                            MaterialTheme.colorScheme.tertiaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.primaryContainer
-                        }
-                    } else {
-                        MaterialTheme.colorScheme.surface
-                    }
+                val bg = if (selected) selectedBg else MaterialTheme.colorScheme.surface
+                val fg = if (selected) selectedFg else MaterialTheme.colorScheme.onSurface
                 Row(
                     modifier = Modifier.weight(1f).fillMaxHeight().background(bg),
-                    horizontalArrangement = Arrangement.Center,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    icons[index]?.let { EbbSymbol(it, fontSize = 16.sp) }
-                    if (selected) {
-                        EbbSymbol("check", fontSize = 14.sp, modifier = Modifier.padding(end = 4.dp))
+                    when {
+                        selected -> {
+                            EbbSymbol("check", fontSize = 18.sp, color = fg)
+                            Text(label, style = EbbTypography.labelL, color = fg)
+                        }
+                        icons[index] != null -> {
+                            EbbSymbol(icons[index]!!, fontSize = 18.sp, color = fg)
+                            Text(label, style = EbbTypography.labelL, color = fg)
+                        }
+                        else -> Text(label, style = EbbTypography.labelL, color = fg)
                     }
-                    Text(label, style = EbbTypography.labelL)
                 }
                 if (index < labels.lastIndex) {
                     Box(Modifier.width(1.dp).fillMaxHeight().background(MaterialTheme.colorScheme.outline))
@@ -146,12 +166,14 @@ fun FocusProgressRing(
     label: String,
     subtitle: String,
     modifier: Modifier = Modifier,
+    diameter: Dp = 220.dp,
+    strokeWidth: Dp = 16.dp,
 ) {
-    Box(modifier = modifier.size(220.dp), contentAlignment = Alignment.Center) {
+    Box(modifier = modifier.size(diameter), contentAlignment = Alignment.Center) {
         val track = MaterialTheme.colorScheme.surfaceVariant
         val primary = MaterialTheme.colorScheme.primary
         Canvas(Modifier.matchParentSize()) {
-            val stroke = 16.dp.toPx()
+            val stroke = strokeWidth.toPx()
             val diameter = size.minDimension - stroke
             val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
             drawArc(

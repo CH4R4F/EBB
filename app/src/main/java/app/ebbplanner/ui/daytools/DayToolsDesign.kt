@@ -1,8 +1,9 @@
-@file:Suppress("LongMethod", "MaxLineLength", "MagicNumber", "NewLineAtEndOfFile")
+@file:Suppress("LongMethod", "MaxLineLength", "MagicNumber", "NewLineAtEndOfFile", "TooManyFunctions")
 
 package app.ebbplanner.ui.daytools
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,19 +16,27 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.ebbplanner.ui.components.EbbRadioDot
 import app.ebbplanner.ui.sheets.EbbSheetScaffold
 import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
@@ -53,14 +62,25 @@ fun ShiftTheRestDesign(modifier: Modifier = Modifier) {
         modifier = modifier,
     ) {
         ShiftAmountChips(selected = 1)
-        Row(Modifier.fillMaxWidth().padding(top = EbbSpacing.s3), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            MiniShiftColumn("Now", highlighted = false)
-            MiniShiftColumn("After +15 min", highlighted = true)
+        Row(
+            Modifier.fillMaxWidth().padding(top = EbbSpacing.s3),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            ShiftPreviewColumn("Now", afterShift = false)
+            ShiftPreviewColumn("After +15 min", afterShift = true)
         }
-        Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             EbbSymbol("keep", fontSize = 16.sp)
-            Text("Pinned stays put", style = EbbTypography.labelM, modifier = Modifier.padding(start = 4.dp, end = 16.dp))
-            Box(Modifier.size(12.dp).background(MaterialTheme.colorScheme.surface, RoundedCornerShape(3.dp)).then(Modifier))
+            Text("Pinned stays put", style = EbbTypography.labelM, modifier = Modifier.padding(start = 4.dp, end = 20.dp))
+            Box(
+                Modifier
+                    .size(12.dp)
+                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(3.dp))
+                    .then(Modifier.padding(0.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(Modifier.size(8.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp)))
+            }
             Text("Moves", style = EbbTypography.labelM, modifier = Modifier.padding(start = 8.dp))
         }
     }
@@ -69,57 +89,106 @@ fun ShiftTheRestDesign(modifier: Modifier = Modifier) {
 @Composable
 fun OverlapHelperDesign(modifier: Modifier = Modifier) {
     EbbSheetScaffold(
-        title = "Overlap helper",
-        subtitle = "Design poster overlaps Lunch with Ines",
+        title = "These overlap",
+        subtitle = "Call bank and Plan the week share 20 minutes.",
+        doneLabel = "Apply",
         sheetTopInset = 96.dp,
         modifier = modifier,
     ) {
-        OverlapPreviewRow("Move Design poster", selected = true)
-        OverlapPreviewRow("Shorten both", selected = false)
-        OverlapPreviewRow("Keep overlap (it's fine)", selected = false)
-        Text(
-            "Pinned events stay put unless you choose otherwise.",
-            style = EbbTypography.bodyM,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = EbbSpacing.s2),
-        )
+        OverlapTimelineCard()
+        OverlapChoiceRow("Push later", "Plan the week starts 12:25", icon = "south", selected = true)
+        OverlapChoiceRow("Shorten earlier", "Call bank becomes 20 min", icon = "compress", selected = false)
+        OverlapChoiceRow("Next free slot", "Move Plan the week to 13:05", icon = "bolt", selected = false)
+        OverlapChoiceRow("Keep both", "Fine — I'll juggle", icon = "done_all", selected = false)
     }
 }
 
 @Composable
 fun MakeItFitDesign(modifier: Modifier = Modifier) {
     EbbSheetScaffold(
-        title = "Make it fit",
-        subtitle = "3 tasks won't fit before bedtime",
+        title = "Let's make it fit",
+        subtitle = "This day is fuller than the time left.",
+        doneLabel = "Apply 3 moves",
         sheetTopInset = 96.dp,
         modifier = modifier,
     ) {
-        SheetChipRow(listOf("Shorten", "Move to tomorrow", "Inbox", "Drop lowest energy"), selected = 0)
-        TaskFitRow("Design poster", "1 h → 45 min")
-        TaskFitRow("Expense report", "30 min → tomorrow")
-        TaskFitRow("Call gran", "20 min → Anytime")
+        FitMeterRow("Planned", fraction = 1f, barLabel = "7 h", barColor = MaterialTheme.colorScheme.tertiary)
+        FitMeterRow("Time left", fraction = 0.71f, barLabel = "5 h")
+        Text(
+            "Suggested moves",
+            style = EbbTypography.labelL,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = EbbSpacing.s4, bottom = 8.dp),
+        )
+        FitMoveRow("Design poster", "1 h", "Move to tomorrow — tomorrow is light", checked = true)
+        FitMoveRow("Read 10 pages", "20 min", "Move to Inbox — no time set", checked = true)
+        FitMoveRow("Clean out the fridge", "30 min", "Low energy task, fits Wednesday", checked = true)
+        FitMoveRow("Expense report", "45 min", "Has a reminder — keep today?", checked = false)
+        Text(
+            "After: about 4 h 50 min planned",
+            style = EbbTypography.bodyM,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(top = 8.dp),
+        )
     }
 }
 
 @Composable
 fun PlanMyDayDesign(modifier: Modifier = Modifier) {
-    EbbSheetScaffold(
-        title = "Plan my day",
-        subtitle = "Pick a few tasks for the empty slots",
-        sheetTopInset = 96.dp,
-        modifier = modifier,
-    ) {
-        Text("Suggested", style = EbbTypography.labelL, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        PlanPickRow("Water plants", "15 min", picked = true)
-        PlanPickRow("Reply to Sam", "10 min", picked = true)
-        PlanPickRow("Tidy desk", "20 min", picked = false)
+    Column(modifier.then(Modifier.fillMaxSize())) {
+        Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = {}) { EbbSymbol("close", fontSize = 22.sp) }
+            Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
+                Text("Plan my day · step 1 of 3", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    repeat(3) { i ->
+                        Box(
+                            Modifier
+                                .height(4.dp)
+                                .width(if (i == 0) 36.dp else 36.dp)
+                                .background(
+                                    if (i == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                    EbbShapes.full,
+                                ),
+                        )
+                    }
+                }
+            }
+            Text("Skip", color = MaterialTheme.colorScheme.primary, style = EbbTypography.labelL, modifier = Modifier.padding(end = 12.dp))
+        }
+        Text("What matters today?", style = EbbTypography.headlineM, modifier = Modifier.padding(horizontal = EbbSpacing.s4))
         Text(
-            "Free slots",
-            style = EbbTypography.labelL,
+            "Pick a few. Fewer is kinder.",
+            style = EbbTypography.bodyM,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp),
+            modifier = Modifier.padding(horizontal = EbbSpacing.s4, vertical = 4.dp),
         )
-        Text("11:45 · 25 min · 14:15 · 30 min", style = EbbTypography.bodyM)
+        PlanFilterChips()
+        Column(
+            Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = EbbSpacing.s4, vertical = 8.dp),
+        ) {
+            PlanTaskRow("Write project brief", "1 h 15 min", checked = true, energy = 3)
+            PlanTaskRow("Call bank", "25 min", checked = true, energy = 2)
+            PlanTaskRow("Buy stamps", "15 min", checked = true, energy = 1)
+            PlanTaskRow("Design poster", "1 h", checked = false, energy = 3)
+            PlanTaskRow("Water plants", "15 min", checked = false, energy = 1)
+        }
+        Surface(
+            shape = EbbShapes.full,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.fillMaxWidth().padding(EbbSpacing.s4),
+        ) {
+            Text(
+                "Next",
+                color = MaterialTheme.colorScheme.onPrimary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(vertical = 14.dp),
+                style = EbbTypography.labelL,
+            )
+        }
     }
 }
 
@@ -229,6 +298,12 @@ private fun ShiftAmountChips(selected: Int) {
                     if (sel) {
                         EbbSymbol("check", fontSize = 16.sp, modifier = Modifier.padding(end = 4.dp))
                     }
+                    if (index == 4) {
+                        EbbSymbol("play_arrow", fontSize = 16.sp, modifier = Modifier.padding(end = 4.dp))
+                    }
+                    if (index == 5) {
+                        EbbSymbol("tune", fontSize = 16.sp, modifier = Modifier.padding(end = 4.dp))
+                    }
                     Text(label, style = EbbTypography.labelL)
                 }
             }
@@ -237,53 +312,137 @@ private fun ShiftAmountChips(selected: Int) {
 }
 
 @Composable
-private fun RowScope.MiniShiftColumn(
+private fun RowScope.ShiftPreviewColumn(
     label: String,
-    highlighted: Boolean,
+    afterShift: Boolean,
 ) {
     Column(Modifier.weight(1f)) {
-        Text(
-            label,
-            style = EbbTypography.labelL,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-        )
-        Surface(
-            Modifier.fillMaxWidth().padding(top = 8.dp).height(120.dp),
-            shape = EbbShapes.md,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            border = if (highlighted) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
-        ) {
-            Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                MiniTaskBlock("Call bank", "green")
-                MiniTaskBlock("Buy stamps", "lemon", moved = highlighted)
+        Text(label, style = EbbTypography.labelL, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+        Row(Modifier.padding(top = 8.dp)) {
+            Column(Modifier.width(34.dp), horizontalAlignment = Alignment.End) {
+                listOf("11:00", "12:00", "13:00", "14:00", "15:00", "16:00").forEach {
+                    Text(
+                        it,
+                        style = EbbTypography.labelM,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 10.dp),
+                    )
+                }
+            }
+            Surface(
+                Modifier
+                    .weight(1f)
+                    .height(230.dp),
+                shape = EbbShapes.md,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = if (afterShift) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+            ) {
+                Box(Modifier.fillMaxSize().padding(horizontal = 4.dp)) {
+                    val lineColor = MaterialTheme.colorScheme.outline
+                    Canvas(Modifier.fillMaxSize()) {
+                        repeat(7) { i ->
+                            val y = i * (size.height / 7f)
+                            drawLine(lineColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
+                        }
+                    }
+                    ShiftBlock("Call bank", "green", top = 18.dp, moved = afterShift)
+                    if (!afterShift) {
+                        ShiftBlock("Lunch with Ines", "blue", top = 42.dp, isEvent = true)
+                    } else {
+                        ShiftBlock("Lunch with Ines", "blue", top = 42.dp, isEvent = true)
+                    }
+                    ShiftBlock("Buy stamps", "lemon", top = if (afterShift) 98.dp else 82.dp, moved = afterShift)
+                    ShiftBlock("Design poster", "blue", top = if (afterShift) 118.dp else 102.dp, moved = afterShift)
+                    ShiftBlock("Dentist", "vermillion", top = 168.dp, isPinned = true)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun MiniTaskBlock(
+private fun ShiftBlock(
     title: String,
     color: String,
+    top: androidx.compose.ui.unit.Dp,
     moved: Boolean = false,
+    isEvent: Boolean = false,
+    isPinned: Boolean = false,
 ) {
     Surface(
-        Modifier.fillMaxWidth().height(22.dp),
+        modifier =
+            Modifier
+                .offset(y = top)
+                .fillMaxWidth()
+                .height(if (isEvent) 38.dp else 18.dp),
         shape = EbbShapes.sm,
-        color = EbbTaskColors.tint(color, dark = true),
-        border = if (moved) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+        color = if (isEvent) MaterialTheme.colorScheme.surface else EbbTaskColors.tint(color, dark = true),
+        border =
+            when {
+                moved -> BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                isEvent -> BorderStroke(1.5.dp, EbbTaskColors.strong("blue"))
+                else -> null
+            },
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.width(3.dp).fillMaxHeight().background(EbbTaskColors.strong(color)))
-            Text(title, style = EbbTypography.labelM, modifier = Modifier.padding(start = 6.dp))
+            if (!isEvent) {
+                Box(Modifier.width(3.dp).fillMaxHeight().background(EbbTaskColors.strong(color)))
+            }
+            Text(title, style = EbbTypography.labelM, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
+            if (isPinned) {
+                EbbSymbol("keep", fontSize = 14.sp, modifier = Modifier.padding(end = 6.dp))
+            }
         }
     }
 }
 
 @Composable
-private fun OverlapPreviewRow(
-    label: String,
+private fun OverlapTimelineCard() {
+    Surface(Modifier.fillMaxWidth().height(150.dp), shape = EbbShapes.md, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+        Row(Modifier.padding(12.dp)) {
+            Column(Modifier.width(44.dp), verticalArrangement = Arrangement.SpaceBetween) {
+                Text("11:30", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("12:00", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("12:30", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Box(Modifier.weight(1f)) {
+                Surface(
+                    Modifier
+                        .fillMaxWidth(0.48f)
+                        .height(70.dp)
+                        .offset(y = 10.dp),
+                    shape = EbbShapes.sm,
+                    color = EbbTaskColors.tint("green", dark = true),
+                ) {
+                    Column(Modifier.padding(8.dp)) {
+                        Text("Call bank", style = EbbTypography.labelL)
+                        Text("11:40–12:20", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                Surface(
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .fillMaxWidth(0.48f)
+                        .height(95.dp)
+                        .offset(y = 45.dp),
+                    shape = EbbShapes.sm,
+                    color = EbbTaskColors.tint("sky", dark = true),
+                ) {
+                    Column(Modifier.padding(8.dp)) {
+                        Text("Plan the week", style = EbbTypography.labelL)
+                        Text("12:00–13:00", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OverlapChoiceRow(
+    title: String,
+    subtitle: String,
+    icon: String,
     selected: Boolean,
 ) {
     Surface(
@@ -291,7 +450,95 @@ private fun OverlapPreviewRow(
         shape = RoundedCornerShape(12.dp),
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
     ) {
-        Text(label, modifier = Modifier.padding(12.dp), style = EbbTypography.bodyL)
+        Row(Modifier.padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            EbbRadioDot(selected = selected)
+            Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
+                Text(title, style = EbbTypography.bodyL)
+                Text(subtitle, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            EbbSymbol(icon, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun FitMeterRow(
+    label: String,
+    fraction: Float,
+    barLabel: String,
+    barColor: Color = MaterialTheme.colorScheme.primary,
+) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(80.dp))
+        LinearProgressIndicator(
+            progress = { fraction },
+            modifier = Modifier.weight(1f).height(16.dp),
+            color = barColor,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+        )
+        Text(barLabel, style = EbbTypography.labelL, modifier = Modifier.width(40.dp), textAlign = TextAlign.End)
+    }
+}
+
+@Composable
+private fun FitMoveRow(
+    title: String,
+    duration: String,
+    subtitle: String,
+    checked: Boolean,
+) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.Top) {
+        EbbSymbol(if (checked) "check_box" else "check_box_outline_blank", fontSize = 22.sp, modifier = Modifier.padding(top = 8.dp))
+        Column(Modifier.padding(start = 8.dp)) {
+            Row {
+                Text(title, style = EbbTypography.bodyL)
+                Text(" $duration", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text(subtitle, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun PlanFilterChips() {
+    val labels = listOf("All", "From yesterday", "Inbox", "Recurring")
+    FlowRow(
+        modifier = Modifier.padding(horizontal = EbbSpacing.s4, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        labels.forEachIndexed { index, label ->
+            val sel = index == 0
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = if (sel) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                border = if (sel) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            ) {
+                Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (sel) {
+                        EbbSymbol("check", fontSize = 16.sp, modifier = Modifier.padding(end = 4.dp))
+                    }
+                    Text(label, style = EbbTypography.labelL)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlanTaskRow(
+    title: String,
+    estimate: String,
+    checked: Boolean,
+    energy: Int,
+) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+        EbbSymbol(if (checked) "check_box" else "check_box_outline_blank", fontSize = 22.sp)
+        Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
+            Text(title, style = EbbTypography.bodyL)
+            Text(estimate, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Text("●".repeat(energy), style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -311,32 +558,6 @@ private fun SheetChipRow(
             ) {
                 Text(label, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp), style = EbbTypography.labelL)
             }
-        }
-    }
-}
-
-@Composable
-private fun TaskFitRow(
-    title: String,
-    change: String,
-) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(title, style = EbbTypography.bodyL, modifier = Modifier.weight(1f))
-        Text(change, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-private fun PlanPickRow(
-    title: String,
-    estimate: String,
-    picked: Boolean,
-) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        EbbSymbol(if (picked) "check_box" else "check_box_outline_blank", fontSize = 22.sp)
-        Column(Modifier.padding(start = 8.dp)) {
-            Text(title, style = EbbTypography.bodyL)
-            Text(estimate, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

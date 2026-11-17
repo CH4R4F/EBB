@@ -32,10 +32,12 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.ebbplanner.ui.components.EbbJoinedSegmentedControl
 import app.ebbplanner.ui.components.EbbRadioDot
+import app.ebbplanner.ui.components.EbbSegmentSelectionStyle
 import app.ebbplanner.ui.components.EbbSwitchRow
 import app.ebbplanner.ui.components.FocusProgressRing
 import app.ebbplanner.ui.theme.EbbShapes
@@ -140,7 +142,7 @@ private fun FocusSetupBody() {
                 labels = listOf("Ring", "Bar"),
                 icons = listOf(null, "linear_scale"),
                 selectedIndex = 0,
-                selectedUsesTertiary = true,
+                selectionStyle = EbbSegmentSelectionStyle.SecondaryContainer,
             )
             EbbSwitchRow("Hide numbers", "Just the shape, less clock-watching", checked = false)
         }
@@ -217,6 +219,8 @@ private fun FocusRunningBody(
     ring: Boolean,
     timerSubtitle: String = "left of 1 h 15 min",
     modifier: Modifier = Modifier,
+    ringProgress: Float = 0.45f,
+    ringDiameter: Dp = 272.dp,
 ) {
     Column(modifier.fillMaxSize()) {
         Text(
@@ -227,7 +231,13 @@ private fun FocusRunningBody(
         )
         if (ring) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                FocusProgressRing(progress = 0.45f, label = state.timerLabel, subtitle = timerSubtitle)
+                FocusProgressRing(
+                    progress = ringProgress,
+                    label = state.timerLabel,
+                    subtitle = timerSubtitle,
+                    diameter = ringDiameter,
+                    strokeWidth = 12.dp,
+                )
             }
         } else {
             Column(
@@ -346,21 +356,22 @@ private fun FocusTimesUpInApp(
             topBarLabel = "Fixed · 25 min",
         )
     Box(modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize()) {
-            FocusRunningBody(runningState, ring = true, timerSubtitle = "Time's up", modifier = Modifier.weight(1f))
-        }
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f)),
-            contentAlignment = Alignment.TopCenter,
+        FocusRunningBody(
+            runningState,
+            ring = true,
+            timerSubtitle = "Time's up",
+            modifier = Modifier.fillMaxSize(),
+            ringProgress = 1f,
+            ringDiameter = 272.dp,
+        )
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f)))
+        Surface(
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 182.dp, start = 24.dp, end = 24.dp),
+            shape = EbbShapes.lg,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
-            Surface(
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 72.dp),
-                shape = EbbShapes.lg,
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            ) {
-                Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.padding(24.dp).fillMaxWidth()) {
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     EbbSymbol("hourglass_empty", fontSize = 32.sp, color = MaterialTheme.colorScheme.secondary)
                     Text(
                         buildAnnotatedString {
@@ -393,60 +404,24 @@ private fun FocusTimesUpInApp(
                             )
                         }
                     }
-                    Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Surface(
-                            Modifier.weight(1f),
-                            shape = EbbShapes.full,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                        ) {
-                            Text(
-                                "5 more min",
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(vertical = 10.dp),
-                                style = EbbTypography.labelL,
-                            )
-                        }
-                        Surface(
-                            Modifier.weight(1f),
-                            shape = EbbShapes.full,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                        ) {
-                            Text(
-                                "15 more min",
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(vertical = 10.dp),
-                                style = EbbTypography.labelL,
-                            )
-                        }
+                }
+                Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Surface(shape = EbbShapes.full, color = MaterialTheme.colorScheme.primaryContainer) {
+                        Text("5 more min", modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), style = EbbTypography.labelL)
                     }
-                    Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(
-                            Modifier.weight(1f),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            EbbSymbol("more_time", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
-                            Text(
-                                "Shift my day",
-                                color = MaterialTheme.colorScheme.primary,
-                                style = EbbTypography.labelL,
-                                modifier = Modifier.padding(start = 4.dp),
-                            )
-                        }
-                        Row(
-                            Modifier.weight(1f),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            EbbSymbol("coffee", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
-                            Text(
-                                "Take a break",
-                                color = MaterialTheme.colorScheme.primary,
-                                style = EbbTypography.labelL,
-                                modifier = Modifier.padding(start = 4.dp),
-                            )
-                        }
+                    Surface(shape = EbbShapes.full, color = MaterialTheme.colorScheme.primaryContainer) {
+                        Text("15 more min", modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), style = EbbTypography.labelL)
                     }
+                }
+                Row(
+                    Modifier.padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    EbbSymbol("more_time", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
+                    Text("Shift my day", color = MaterialTheme.colorScheme.primary, style = EbbTypography.labelL)
+                    EbbSymbol("coffee", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
+                    Text("Take a break", color = MaterialTheme.colorScheme.primary, style = EbbTypography.labelL)
                 }
             }
         }

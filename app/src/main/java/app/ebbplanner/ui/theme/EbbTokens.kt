@@ -76,6 +76,15 @@ object EbbPalette {
     val darkScrim = Color(0x8C000000)
 }
 
+/** Design system `secondary-container` for joined segments (.seg .s.on) — not Material tertiary. */
+@Immutable
+object EbbChromeColors {
+    val segmentSelectedContainerDark = EbbPalette.darkSecondaryContainer
+    val onSegmentSelectedContainerDark = EbbPalette.darkOnSecondaryContainer
+    val segmentSelectedContainerLight = EbbPalette.lightSecondaryContainer
+    val onSegmentSelectedContainerLight = EbbPalette.lightOnSecondaryContainer
+}
+
 @Immutable
 object EbbTaskColors {
     val amberStrong = Color(0xFFE69F00)
