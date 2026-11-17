@@ -366,7 +366,7 @@ private fun FocusTimesUpInApp(
         )
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f)))
         Surface(
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = 182.dp, start = 24.dp, end = 24.dp),
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 212.dp, start = 24.dp, end = 24.dp),
             shape = EbbShapes.lg,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {

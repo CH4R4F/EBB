@@ -23,21 +23,28 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
+import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTypography
 import app.ebbplanner.ui.today.TodayScreenDesign
 import app.ebbplanner.ui.today.todayPopulatedDark
 
+@Suppress("LongParameterList")
 @Composable
 fun EbbSheetScaffold(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     doneLabel: String = "Done",
+    doneLeadingIcon: String? = null,
     sheetMinHeight: androidx.compose.ui.unit.Dp = 560.dp,
     sheetTopInset: androidx.compose.ui.unit.Dp = 0.dp,
+    sheetContainerColor: Color = Color.Unspecified,
+    showBottomActions: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -56,10 +63,16 @@ fun EbbSheetScaffold(
                     .fillMaxWidth()
                     .height(sheetMinHeight)
             }
+        val containerColor =
+            when {
+                sheetContainerColor != Color.Unspecified -> sheetContainerColor
+                sheetTopInset > 0.dp -> MaterialTheme.colorScheme.surfaceContainerHigh
+                else -> MaterialTheme.colorScheme.surfaceContainerLow
+            }
         Surface(
             modifier = sheetModifier,
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            color = containerColor,
         ) {
             Column(Modifier.fillMaxSize()) {
                 SheetGrabber()
@@ -81,7 +94,9 @@ fun EbbSheetScaffold(
                 ) {
                     content()
                 }
-                SheetActions(doneLabel = doneLabel)
+                if (showBottomActions) {
+                    SheetActions(doneLabel = doneLabel, doneLeadingIcon = doneLeadingIcon)
+                }
             }
         }
     }
@@ -95,7 +110,10 @@ private fun SheetGrabber() {
 }
 
 @Composable
-fun SheetActions(doneLabel: String = "Done") {
+fun SheetActions(
+    doneLabel: String = "Done",
+    doneLeadingIcon: String? = null,
+) {
     HorizontalDivider()
     Row(
         Modifier.fillMaxWidth().padding(horizontal = EbbSpacing.s2, vertical = EbbSpacing.s2),
@@ -109,12 +127,19 @@ fun SheetActions(doneLabel: String = "Done") {
             modifier = Modifier.padding(horizontal = EbbSpacing.s3, vertical = 10.dp),
         )
         Surface(shape = EbbShapes.full, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp)) {
-            Text(
-                doneLabel,
-                color = MaterialTheme.colorScheme.onPrimary,
-                style = EbbTypography.labelL,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
-            )
+            Row(
+                Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                doneLeadingIcon?.let {
+                    EbbSymbol(it, fontSize = 20.sp, color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(end = 8.dp))
+                }
+                Text(
+                    doneLabel,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    style = EbbTypography.labelL,
+                )
+            }
         }
     }
 }
