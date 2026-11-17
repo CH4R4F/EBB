@@ -55,3 +55,19 @@ val MIGRATION_4_5 =
             db.execSQL("ALTER TABLE tasks ADD COLUMN sourceRoutineId TEXT")
         }
     }
+
+val MIGRATION_5_6 =
+    object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE tasks ADD COLUMN routineOccurrenceDate TEXT")
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS routine_skips (
+                    routineId TEXT NOT NULL,
+                    occurrenceDate TEXT NOT NULL,
+                    PRIMARY KEY(routineId, occurrenceDate)
+                )
+                """.trimIndent(),
+            )
+        }
+    }

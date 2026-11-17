@@ -50,6 +50,7 @@ class TodayViewModelTest {
                 database.subtaskDao(),
                 mockk(relaxed = true),
                 preferencesRepository,
+                mockk(relaxed = true),
             )
     }
 

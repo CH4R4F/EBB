@@ -39,14 +39,26 @@ interface TaskDao {
     @Query(
         """
         SELECT * FROM tasks
-        WHERE deletedAt IS NULL AND sourceRoutineId = :routineId AND date = :date
+        WHERE deletedAt IS NULL AND sourceRoutineId = :routineId AND routineOccurrenceDate = :occurrenceDate
         LIMIT 1
         """,
     )
-    suspend fun getByRoutineAndDate(
+    suspend fun getRoutineOccurrence(
         routineId: String,
-        date: String,
+        occurrenceDate: String,
     ): TaskEntity?
+
+    @Query(
+        """
+        SELECT * FROM tasks
+        WHERE deletedAt IS NULL AND sourceRoutineId = :routineId
+        AND date >= :fromDateInclusive AND status != 'done'
+        """,
+    )
+    suspend fun listOpenRoutineInstancesFrom(
+        routineId: String,
+        fromDateInclusive: String,
+    ): List<TaskEntity>
 
     @Query(
         """

@@ -10,6 +10,7 @@ import app.ebbplanner.data.calendar.CalendarEventsReader
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.repository.TaskRepository
 import app.ebbplanner.domain.capture.QuickCaptureParser
+import app.ebbplanner.domain.routines.RoutineInstanceGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAdjusters
 import java.time.temporal.WeekFields
 import java.util.Locale
 import javax.inject.Inject
@@ -34,7 +36,13 @@ class WeekViewModel
         @ApplicationContext private val context: Context,
         private val taskRepository: TaskRepository,
         private val calendarEventsReader: CalendarEventsReader,
+        private val routineInstanceGenerator: RoutineInstanceGenerator,
     ) : ViewModel() {
+        init {
+            viewModelScope.launch {
+                routineInstanceGenerator.ensureRollingWindow()
+            }
+        }
         private val weekStart = MutableStateFlow(startOfWeek(LocalDate.now()))
         private val loading = MutableStateFlow(true)
         private val captureDate = MutableStateFlow(LocalDate.now())
@@ -180,12 +188,9 @@ class WeekViewModel
             }
         }
 
-        private fun startOfWeek(
-            date: LocalDate,
-            firstDay: Int = WeekFields.of(Locale.getDefault()).firstDayOfWeek.value,
-        ): LocalDate {
-            val fields = WeekFields.of(Locale.getDefault())
-            return date.with(fields.dayOfWeek(), firstDay.toLong())
+        private fun startOfWeek(date: LocalDate): LocalDate {
+            val first = WeekFields.of(Locale.getDefault()).firstDayOfWeek
+            return date.with(TemporalAdjusters.previousOrSame(first))
         }
 
         private fun formatWeekRange(

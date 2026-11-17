@@ -1,13 +1,14 @@
 package app.ebbplanner.domain.routines
 
 import app.ebbplanner.data.local.dao.RoutineDao
+import app.ebbplanner.data.local.dao.RoutineSkipDao
 import app.ebbplanner.data.local.dao.TaskDao
 import app.ebbplanner.data.local.entity.RoutineEntity
+import app.ebbplanner.data.local.entity.RoutineSkipEntity
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.reminders.TaskReminderSync
 import kotlinx.coroutines.flow.first
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
@@ -18,30 +19,43 @@ class RoutineInstanceGenerator
     @Inject
     constructor(
         private val routineDao: RoutineDao,
+        private val routineSkipDao: RoutineSkipDao,
         private val taskDao: TaskDao,
         private val reminderSync: TaskReminderSync,
         private val userPreferencesRepository: UserPreferencesRepository,
     ) {
+        suspend fun ensureRollingWindow(daysAhead: Int = DEFAULT_WINDOW_DAYS) {
+            val start = LocalDate.now()
+            val end = start.plusDays(daysAhead.toLong() - 1)
+            var day = start
+            while (!day.isAfter(end)) {
+                ensureForDate(day)
+                day = day.plusDays(1)
+            }
+        }
+
         suspend fun ensureForDate(date: LocalDate) {
             val remindersOn = userPreferencesRepository.remindersDefault.first()
-            val routines = routineDao.listEnabled()
+            val occurrences = date.toString()
             val now = System.currentTimeMillis()
-            val dateString = date.toString()
-            routines.forEach { routine ->
+            routineDao.listEnabled().forEach { routine ->
                 if (!routine.enabled || !appliesOn(routine, date)) return@forEach
-                if (taskDao.getByRoutineAndDate(routine.id, dateString) != null) return@forEach
+                if (routineSkipDao.isSkipped(routine.id, occurrences) != null) return@forEach
+                val existing = taskDao.getRoutineOccurrence(routine.id, occurrences)
+                if (existing != null) return@forEach
                 val task =
                     TaskEntity(
                         id = UUID.randomUUID().toString(),
                         title = routine.title,
                         placement = TaskEntity.PLACEMENT_SCHEDULED,
-                        date = dateString,
+                        date = occurrences,
                         startLocalTime = routine.startLocalTime,
                         durationMin = routine.durationMin,
                         colorKey = routine.colorKey,
                         iconKey = routine.iconKey,
                         reminderEnabled = remindersOn,
                         sourceRoutineId = routine.id,
+                        routineOccurrenceDate = occurrences,
                         createdAt = now,
                         updatedAt = now,
                     )
@@ -50,25 +64,72 @@ class RoutineInstanceGenerator
             }
         }
 
+        suspend fun recordSkip(
+            routineId: String,
+            occurrenceDate: String,
+        ) {
+            routineSkipDao.insert(RoutineSkipEntity(routineId, occurrenceDate))
+        }
+
+        suspend fun onRoutineDeleted(routineId: String) {
+            val today = LocalDate.now().toString()
+            val open = taskDao.listOpenRoutineInstancesFrom(routineId, today)
+            open.forEach { task ->
+                taskDao.softDelete(task.id, System.currentTimeMillis(), System.currentTimeMillis())
+                reminderSync.cancelTask(task.id)
+            }
+            routineSkipDao.deleteForRoutine(routineId)
+        }
+
+        suspend fun syncFutureInstances(routine: RoutineEntity) {
+            val today = LocalDate.now()
+            val end = today.plusDays(DEFAULT_WINDOW_DAYS.toLong() - 1)
+            var day = today
+            while (!day.isAfter(end)) {
+                val occurrence = day.toString()
+                if (appliesOn(routine, day)) {
+                    val existing = taskDao.getRoutineOccurrence(routine.id, occurrence)
+                    if (existing != null && existing.status != TaskEntity.STATUS_DONE) {
+                        val updated =
+                            existing.copy(
+                                title = routine.title,
+                                startLocalTime = routine.startLocalTime,
+                                durationMin = routine.durationMin,
+                                colorKey = routine.colorKey,
+                                iconKey = routine.iconKey,
+                                date = occurrence,
+                                updatedAt = System.currentTimeMillis(),
+                            )
+                        taskDao.update(updated)
+                        reminderSync.syncTask(updated.id)
+                    }
+                }
+                day = day.plusDays(1)
+            }
+            ensureRollingWindow()
+        }
+
         private fun appliesOn(
             routine: RoutineEntity,
             date: LocalDate,
         ): Boolean =
             when (routine.repeatRule) {
                 RoutineEntity.REPEAT_DAILY -> true
-                RoutineEntity.REPEAT_WEEKDAYS ->
-                    date.dayOfWeek in DayOfWeek.MONDAY..DayOfWeek.FRIDAY
+                RoutineEntity.REPEAT_WEEKDAYS -> {
+                    val d = date.dayOfWeek.value
+                    d in 1..5
+                }
                 RoutineEntity.REPEAT_WEEKLY -> {
-                    if (routine.weeklyDays.isBlank()) {
-                        true
-                    } else {
-                        val allowed =
-                            routine.weeklyDays.split(',')
-                                .mapNotNull { it.trim().toIntOrNull() }
-                                .toSet()
-                        allowed.contains(date.dayOfWeek.value)
-                    }
+                    val allowed =
+                        routine.weeklyDays.split(',')
+                            .mapNotNull { it.trim().toIntOrNull() }
+                            .toSet()
+                    if (allowed.isEmpty()) false else allowed.contains(date.dayOfWeek.value)
                 }
                 else -> false
             }
+
+        companion object {
+            const val DEFAULT_WINDOW_DAYS = 14
+        }
     }

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ebbplanner.data.local.entity.RoutineEntity
 import app.ebbplanner.data.repository.RoutineRepository
+import app.ebbplanner.domain.routines.RoutineInstanceGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +21,11 @@ data class RoutineEditorState(
     val weeklyDays: Set<Int> = setOf(1, 2, 3, 4, 5),
     val startLocalTime: String = "09:00",
     val durationMin: Int = 30,
+    val colorKey: String = "slate",
+    val iconKey: String? = "event_repeat",
+    val enabled: Boolean = true,
     val isNew: Boolean = true,
+    val saveError: String? = null,
 )
 
 @HiltViewModel
@@ -29,6 +34,7 @@ class RoutineEditorViewModel
     constructor(
         savedStateHandle: SavedStateHandle,
         private val routineRepository: RoutineRepository,
+        private val routineInstanceGenerator: RoutineInstanceGenerator,
     ) : ViewModel() {
         private val routineId: String = savedStateHandle.get<String>("routineId").orEmpty()
 
@@ -47,6 +53,9 @@ class RoutineEditorViewModel
                             weeklyDays = parseWeeklyDays(entity.weeklyDays),
                             startLocalTime = entity.startLocalTime,
                             durationMin = entity.durationMin,
+                            colorKey = entity.colorKey,
+                            iconKey = entity.iconKey,
+                            enabled = entity.enabled,
                             isNew = false,
                         )
                 }
@@ -80,6 +89,10 @@ class RoutineEditorViewModel
         fun save(onSaved: () -> Unit) {
             viewModelScope.launch {
                 val draft = _state.value
+                if (draft.repeatRule == RoutineEntity.REPEAT_WEEKLY && draft.weeklyDays.isEmpty()) {
+                    _state.value = draft.copy(saveError = "Pick at least one weekday")
+                    return@launch
+                }
                 val now = System.currentTimeMillis()
                 val id =
                     if (draft.isNew || draft.id == NEW_ROUTINE_ID) {
@@ -93,13 +106,17 @@ class RoutineEditorViewModel
                         id = id,
                         title = draft.title.ifBlank { "Routine" },
                         repeatRule = draft.repeatRule,
-                        weeklyDays = encodeWeeklyDays(draft.weeklyDays),
+                        weeklyDays = encodeWeeklyDays(draft.repeatRule, draft.weeklyDays),
                         startLocalTime = draft.startLocalTime,
                         durationMin = draft.durationMin,
+                        colorKey = draft.colorKey,
+                        iconKey = draft.iconKey,
+                        enabled = draft.enabled,
                         createdAt = existing?.createdAt ?: now,
                         updatedAt = now,
                     )
                 routineRepository.upsert(entity)
+                routineInstanceGenerator.syncFutureInstances(entity)
                 onSaved()
             }
         }
@@ -117,12 +134,19 @@ class RoutineEditorViewModel
 
         private fun parseWeeklyDays(raw: String): Set<Int> =
             if (raw.isBlank()) {
-                setOf(1, 2, 3, 4, 5)
+                emptySet()
             } else {
                 raw.split(',').mapNotNull { it.trim().toIntOrNull() }.toSet()
             }
 
-        private fun encodeWeeklyDays(days: Set<Int>): String = days.sorted().joinToString(",")
+        private fun encodeWeeklyDays(
+            repeatRule: String,
+            days: Set<Int>,
+        ): String =
+            when (repeatRule) {
+                RoutineEntity.REPEAT_WEEKLY -> days.sorted().joinToString(",")
+                else -> ""
+            }
 
         companion object {
             const val NEW_ROUTINE_ID = "new"

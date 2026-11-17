@@ -2,6 +2,7 @@ package app.ebbplanner.data.repository
 
 import app.ebbplanner.data.local.dao.RoutineDao
 import app.ebbplanner.data.local.entity.RoutineEntity
+import app.ebbplanner.domain.routines.RoutineInstanceGenerator
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
 import javax.inject.Inject
@@ -12,6 +13,7 @@ class RoutineRepository
     @Inject
     constructor(
         private val routineDao: RoutineDao,
+        private val routineInstanceGenerator: RoutineInstanceGenerator,
     ) {
         fun observeRoutines(): Flow<List<RoutineEntity>> = routineDao.observeEnabled()
 
@@ -26,6 +28,7 @@ class RoutineRepository
         }
 
         suspend fun delete(id: String) {
+            routineInstanceGenerator.onRoutineDeleted(id)
             routineDao.delete(id)
         }
 

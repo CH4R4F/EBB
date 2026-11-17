@@ -9,6 +9,7 @@ import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.reminders.TaskReminderSync
 import app.ebbplanner.domain.day.DayTimeShift
+import app.ebbplanner.domain.routines.RoutineInstanceGenerator
 import app.ebbplanner.ui.time.ClockFormat
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -28,6 +29,7 @@ class TaskRepository
         private val subtaskDao: SubtaskDao,
         private val reminderSync: TaskReminderSync,
         private val userPreferencesRepository: UserPreferencesRepository,
+        private val routineInstanceGenerator: RoutineInstanceGenerator,
     ) {
         private val zoneId: ZoneId = ZoneId.systemDefault()
 
@@ -131,9 +133,15 @@ class TaskRepository
         }
 
         suspend fun deleteTask(id: String) {
+            val task = taskDao.getById(id)
             val now = System.currentTimeMillis()
             taskDao.softDelete(id, now, now)
             reminderSync.cancelTask(id)
+            val routineId = task?.sourceRoutineId
+            val occurrence = task?.routineOccurrenceDate ?: task?.date
+            if (routineId != null && occurrence != null) {
+                routineInstanceGenerator.recordSkip(routineId, occurrence)
+            }
         }
 
         suspend fun markTaskDone(id: String) {
@@ -157,22 +165,56 @@ class TaskRepository
                         task.status != TaskEntity.STATUS_DONE &&
                         !task.pinned
                 }
+            val now = System.currentTimeMillis()
+            if (startFromNow) {
+                val parsed =
+                    tasks.mapNotNull { task ->
+                        val start = ClockFormat.parseMinutes(task.startLocalTime ?: return@mapNotNull null) ?: return@mapNotNull null
+                        task to start
+                    }
+                val overdue = parsed.filter { it.second < fromMinutes }.sortedBy { it.second }
+                val upcoming = parsed.filter { it.second >= fromMinutes }.sortedBy { it.second }
+                var cursor = fromMinutes
+                var shifted = 0
+                overdue.forEach { (task, start) ->
+                    val shiftedSchedule = DayTimeShift.shiftStart(date, start, cursor - start)
+                    val updated =
+                        task.copy(
+                            date = shiftedSchedule.date.toString(),
+                            startLocalTime = shiftedSchedule.startLocalTime,
+                            updatedAt = now,
+                        )
+                    taskDao.update(updated)
+                    reminderSync.syncTask(task.id)
+                    shifted++
+                    cursor += task.durationMin
+                }
+                if (upcoming.isEmpty()) return shifted
+                val push = (cursor - upcoming.first().second).coerceAtLeast(0)
+                upcoming.forEach { (task, start) ->
+                    val offset = if (push > 0) push else 0
+                    val shiftedSchedule = DayTimeShift.shiftStart(date, start, offset)
+                    val updated =
+                        task.copy(
+                            date = shiftedSchedule.date.toString(),
+                            startLocalTime = shiftedSchedule.startLocalTime,
+                            updatedAt = now,
+                        )
+                    taskDao.update(updated)
+                    reminderSync.syncTask(task.id)
+                    shifted++
+                }
+                return shifted
+            }
             val movable =
                 tasks.mapNotNull { task ->
                     val start = ClockFormat.parseMinutes(task.startLocalTime ?: return@mapNotNull null) ?: return@mapNotNull null
                     if (start < fromMinutes) return@mapNotNull null
                     task to start
                 }
-            val anchorOffset =
-                if (startFromNow && movable.isNotEmpty()) {
-                    fromMinutes - movable.minOf { it.second }
-                } else {
-                    offsetMinutes
-                }
-            val now = System.currentTimeMillis()
             var shifted = 0
             movable.forEach { (task, start) ->
-                val shiftedSchedule = DayTimeShift.shiftStart(date, start, anchorOffset)
+                val shiftedSchedule = DayTimeShift.shiftStart(date, start, offsetMinutes)
                 val updated =
                     task.copy(
                         date = shiftedSchedule.date.toString(),
@@ -294,6 +336,14 @@ class TaskRepository
             startLocalTime: String?,
         ) {
             val defaultReminders = userPreferencesRepository.remindersDefault.first()
+            val before = taskDao.getById(id)
+            val newDate = date?.toString()
+            if (before?.sourceRoutineId != null) {
+                val oldOccurrence = before.routineOccurrenceDate ?: before.date
+                if (oldOccurrence != null && newDate != null && oldOccurrence != newDate) {
+                    routineInstanceGenerator.recordSkip(before.sourceRoutineId, oldOccurrence)
+                }
+            }
             updateTaskFields(id) { task ->
                 val wasScheduled = task.placement == TaskEntity.PLACEMENT_SCHEDULED && task.startLocalTime != null
                 val userDisabled = wasScheduled && !task.reminderEnabled
@@ -308,6 +358,12 @@ class TaskRepository
                     date = date?.toString(),
                     startLocalTime = startLocalTime,
                     reminderEnabled = enableReminders,
+                    routineOccurrenceDate =
+                        if (task.sourceRoutineId != null && newDate != null) {
+                            newDate
+                        } else {
+                            task.routineOccurrenceDate
+                        },
                 )
             }
         }

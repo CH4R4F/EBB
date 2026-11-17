@@ -47,6 +47,7 @@ class DayPlanningUseCaseTest {
                 database.subtaskDao(),
                 mockk(relaxed = true),
                 prefs,
+                mockk(relaxed = true),
             )
         val clock = MutableEbbClock(Instant.parse("2026-11-17T10:00:00Z"))
         useCase = DayPlanningUseCase(repository, clock)
