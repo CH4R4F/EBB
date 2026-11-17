@@ -42,6 +42,7 @@ class RoutineInstanceGenerator
                 if (!routine.enabled || !appliesOn(routine, date)) return@forEach
                 if (routineSkipDao.isSkipped(routine.id, occurrences) != null) return@forEach
                 if (taskDao.getRoutineOccurrence(routine.id, occurrences) != null) return@forEach
+                if (taskDao.hasLiveRoutineTaskOnDate(routine.id, occurrences)) return@forEach
                 val task =
                     TaskEntity(
                         id = UUID.randomUUID().toString(),

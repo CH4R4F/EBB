@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -125,7 +126,10 @@ fun TodayTimeline(
 
         state.events.forEach { event ->
             val y = minutesToTimelineY(event.startMinutes, state.timelineStartHour)
-            val h = durationToHeight(event.durationMin).coerceAtLeast(52.dp)
+            val h =
+                durationToHeight(event.durationMin).coerceAtLeast(
+                    if (largeText) 80.dp else 52.dp,
+                )
             CalendarEventBlock(
                 title = event.title,
                 timeRange = formatRange(event.startMinutes, event.durationMin),
@@ -756,7 +760,8 @@ private fun CalendarEventBlock(
                         x += 8f
                     }
                 }
-                .padding(horizontal = 12.dp, vertical = if (largeText) 8.dp else 6.dp),
+                .padding(horizontal = 12.dp, vertical = if (largeText) 10.dp else 6.dp)
+                .then(if (largeText) Modifier.heightIn(min = 72.dp) else Modifier),
         horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
     ) {
         EbbSymbol("event", fontSize = if (largeText) 16.sp else 18.sp, color = accent)

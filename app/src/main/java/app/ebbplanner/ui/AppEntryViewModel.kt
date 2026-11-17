@@ -3,7 +3,7 @@ package app.ebbplanner.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ebbplanner.data.preferences.UserPreferencesRepository
-import app.ebbplanner.domain.routines.RoutineInstanceGenerator
+import app.ebbplanner.domain.routines.RoutineOccurrenceRepairRunner
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,11 +16,11 @@ class AppEntryViewModel
     @Inject
     constructor(
         private val userPreferencesRepository: UserPreferencesRepository,
-        private val routineInstanceGenerator: RoutineInstanceGenerator,
+        private val routineOccurrenceRepairRunner: RoutineOccurrenceRepairRunner,
     ) : ViewModel() {
         init {
             viewModelScope.launch {
-                routineInstanceGenerator.ensureRollingWindow()
+                routineOccurrenceRepairRunner.repairThenGenerateIfNeeded()
             }
         }
 

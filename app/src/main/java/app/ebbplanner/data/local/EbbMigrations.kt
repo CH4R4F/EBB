@@ -81,13 +81,21 @@ val MIGRATION_6_7 =
             db.execSQL(
                 "ALTER TABLE tasks ADD COLUMN breatherBufferMin INTEGER NOT NULL DEFAULT 0",
             )
-            RoutineOccurrenceBackfill.run(db)
+            RoutineOccurrenceRepair.runDuringMigration(db, recordPendingOnFailure = false)
         }
     }
 
 val MIGRATION_7_8 =
     object : Migration(7, 8) {
         override fun migrate(db: SupportSQLiteDatabase) {
-            RoutineOccurrenceBackfill.run(db)
+            RoutineOccurrenceRepair.runDuringMigration(db, recordPendingOnFailure = false)
+        }
+    }
+
+val MIGRATION_8_9 =
+    object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            RoutineOccurrenceRepair.ensureMetaTable(db)
+            RoutineOccurrenceRepair.runDuringMigration(db, recordPendingOnFailure = true)
         }
     }

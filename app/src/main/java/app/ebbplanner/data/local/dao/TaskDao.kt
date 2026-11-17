@@ -50,6 +50,17 @@ interface TaskDao {
 
     @Query(
         """
+        SELECT COUNT(*) > 0 FROM tasks
+        WHERE deletedAt IS NULL AND sourceRoutineId = :routineId AND date = :date
+        """,
+    )
+    suspend fun hasLiveRoutineTaskOnDate(
+        routineId: String,
+        date: String,
+    ): Boolean
+
+    @Query(
+        """
         SELECT * FROM tasks
         WHERE deletedAt IS NULL AND sourceRoutineId = :routineId
         AND date >= :fromDateInclusive AND status != 'done'

@@ -7,94 +7,192 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 
 /**
- * Conservative repair for routine instance keys and skip rows.
+ * Repairs routine occurrence keys and skip rows (no deletes / soft-deletes).
  */
-internal object RoutineOccurrenceBackfill {
-    private const val TAG = "RoutineOccurrenceBackfill"
-    private const val WINDOW_PAST = 13L
-    private const val WINDOW_FUTURE = 13L
+internal object RoutineOccurrenceRepair {
+    private const val TAG = "RoutineOccurrenceRepair"
+    private const val META_TABLE = "ebb_meta"
+    private const val META_KEY_PENDING = "routine_repair_pending"
+    private const val SAVEPOINT = "routine_occurrence_repair"
 
     private const val TASK_SNAPSHOT_COLUMNS =
         """
         id, sourceRoutineId, date, routineOccurrenceDate, title, startLocalTime,
-        durationMin, routineInstanceDetached, status, createdAt, updatedAt, deletedAt
+        durationMin, routineInstanceDetached, status, createdAt, updatedAt, deletedAt,
+        notes, reminderEnabled, energy
         """
 
-    fun run(db: SupportSQLiteDatabase) {
+    fun runDuringMigration(
+        db: SupportSQLiteDatabase,
+        recordPendingOnFailure: Boolean,
+    ) {
+        db.execSQL("SAVEPOINT $SAVEPOINT")
         try {
-            runOrThrow(db)
+            executeRepair(db)
+            db.execSQL("RELEASE SAVEPOINT $SAVEPOINT")
+            if (recordPendingOnFailure) {
+                clearPendingInMeta(db)
+            }
         } catch (t: Throwable) {
-            Log.e(TAG, "Routine occurrence backfill failed; opening DB without backfill.", t)
+            Log.e(TAG, "Routine occurrence repair failed during migration; rolling back savepoint.", t)
+            db.execSQL("ROLLBACK TO $SAVEPOINT")
+            db.execSQL("RELEASE SAVEPOINT $SAVEPOINT")
+            if (recordPendingOnFailure) {
+                setPendingInMeta(db)
+            }
         }
     }
 
-    private fun runOrThrow(db: SupportSQLiteDatabase) {
+    fun executeRepair(db: SupportSQLiteDatabase) {
+        ensureMetaTable(db)
         val routines = loadRoutines(db)
         if (routines.isEmpty()) return
-        val liveByRoutineDate = loadLiveTasksGrouped(db)
-
-        liveByRoutineDate.forEach { (key, tasks) ->
-            val routine = routines[key.routineId] ?: return@forEach
-            val scheduled = key.date
-            if (!appliesOn(routine, scheduled)) {
-                tasks.forEach { id -> markUnkeyedDetached(db, id, routines) }
-                return@forEach
-            }
-            if (tasks.size > 1) {
-                tasks.forEach { id -> markUnkeyedDetached(db, id, routines) }
-                return@forEach
-            }
-            val task = loadTask(db, tasks.first()) ?: return@forEach
-            if (isUnambiguousMatch(task, routine, scheduled)) {
-                if (task.occurrenceDate == scheduled.toString() && !task.detached) {
-                    return@forEach
-                }
-                db.execSQL(
-                    "UPDATE tasks SET routineOccurrenceDate = ?, routineInstanceDetached = 0 WHERE id = ?",
-                    arrayOf(scheduled.toString(), task.id),
-                )
-            } else {
-                if (!hasValidKey(task, routine, scheduled)) {
-                    markUnkeyedDetached(db, task.id, routines)
-                }
-            }
-        }
-
-        val allAfterKeying = loadAllRoutineTasks(db)
-        removeGeneratorDuplicates(db, routines, allAfterKeying)
+        purgeFutureSkipsWithoutEvidence(db, routines)
+        keyLiveRoutineTasks(db, routines)
+        detachStrictUntouchedDuplicates(db, routines)
         writeProvableSkips(db, routines, loadAllRoutineTasks(db))
     }
 
-    private fun hasValidKey(
-        task: TaskSnapshot,
-        routine: RoutineRow,
-        scheduled: LocalDate,
-    ): Boolean {
-        val occ = task.occurrenceDate ?: return false
-        val occDate = parseDateOrNull(occ) ?: return false
-        return occDate == scheduled && isUnambiguousMatch(task.copy(occurrenceDate = occ), routine, scheduled)
+    fun ensureMetaTable(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS $META_TABLE (
+                key TEXT NOT NULL PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+            """.trimIndent(),
+        )
     }
 
-    private fun removeGeneratorDuplicates(
+    fun isPendingInMeta(db: SupportSQLiteDatabase): Boolean {
+        ensureMetaTable(db)
+        db.query(
+            "SELECT value FROM $META_TABLE WHERE key = ? LIMIT 1",
+            arrayOf(META_KEY_PENDING),
+        ).use { c ->
+            if (!c.moveToFirst()) return false
+            return c.getString(0) == "1"
+        }
+    }
+
+    fun setPendingInMeta(db: SupportSQLiteDatabase) {
+        ensureMetaTable(db)
+        db.execSQL(
+            "INSERT OR REPLACE INTO $META_TABLE (key, value) VALUES (?, ?)",
+            arrayOf(META_KEY_PENDING, "1"),
+        )
+    }
+
+    fun clearPendingInMeta(db: SupportSQLiteDatabase) {
+        ensureMetaTable(db)
+        db.execSQL("DELETE FROM $META_TABLE WHERE key = ?", arrayOf(META_KEY_PENDING))
+    }
+
+    private fun purgeFutureSkipsWithoutEvidence(
         db: SupportSQLiteDatabase,
         routines: Map<String, RoutineRow>,
-        tasks: List<TaskSnapshot>,
     ) {
-        val live = tasks.filter { it.deletedAt == null }
+        val today = LocalDate.now()
+        val toDelete = mutableListOf<Pair<String, String>>()
+        db.query("SELECT routineId, occurrenceDate FROM routine_skips").use { c ->
+            while (c.moveToNext()) {
+                val routineId = c.getString(0)
+                if (routines[routineId] == null) continue
+                val occ = parseDateOrNull(c.getString(1)) ?: continue
+                if (occ.isBefore(today)) continue
+                if (!skipHasEvidence(db, routineId, occ)) {
+                    toDelete += routineId to occ.toString()
+                }
+            }
+        }
+        toDelete.forEach { (routineId, occ) ->
+            db.execSQL(
+                "DELETE FROM routine_skips WHERE routineId = ? AND occurrenceDate = ?",
+                arrayOf(routineId, occ),
+            )
+        }
+    }
+
+    private fun skipHasEvidence(
+        db: SupportSQLiteDatabase,
+        routineId: String,
+        occurrence: LocalDate,
+    ): Boolean {
+        val occ = occurrence.toString()
+        db.query(
+            """
+            SELECT 1 FROM tasks
+            WHERE sourceRoutineId = ? AND deletedAt IS NOT NULL
+            AND (date = ? OR routineOccurrenceDate = ?)
+            LIMIT 1
+            """.trimIndent(),
+            arrayOf(routineId, occ, occ),
+        ).use { if (it.moveToFirst()) return true }
+        db.query(
+            """
+            SELECT 1 FROM tasks
+            WHERE sourceRoutineId = ? AND deletedAt IS NULL
+            AND routineOccurrenceDate = ? AND date IS NOT NULL AND date != ?
+            LIMIT 1
+            """.trimIndent(),
+            arrayOf(routineId, occ, occ),
+        ).use { return it.moveToFirst() }
+    }
+
+    private fun keyLiveRoutineTasks(
+        db: SupportSQLiteDatabase,
+        routines: Map<String, RoutineRow>,
+    ) {
+        val liveByRoutineDate = loadLiveTasksGrouped(db)
+        liveByRoutineDate.forEach { (key, taskIds) ->
+            val routine = routines[key.routineId] ?: return@forEach
+            val scheduled = key.date
+            if (!appliesOn(routine, scheduled)) {
+                taskIds.forEach { markDetachedPreservingValidKey(db, it, routines) }
+                return@forEach
+            }
+            if (taskIds.size > 1) {
+                insertSkip(db, routine.id, scheduled.toString())
+                taskIds.forEach { markDetachedPreservingValidKey(db, it, routines) }
+                return@forEach
+            }
+            val task = loadTask(db, taskIds.first()) ?: return@forEach
+            if (hasValidOccurrenceKey(task, routine, scheduled)) {
+                return@forEach
+            }
+            db.execSQL(
+                """
+                UPDATE tasks
+                SET routineOccurrenceDate = ?, routineInstanceDetached = ?
+                WHERE id = ?
+                """.trimIndent(),
+                arrayOf(
+                    scheduled.toString(),
+                    if (task.detached) 1 else 0,
+                    task.id,
+                ),
+            )
+        }
+    }
+
+    private fun detachStrictUntouchedDuplicates(
+        db: SupportSQLiteDatabase,
+        routines: Map<String, RoutineRow>,
+    ) {
+        val live = loadAllRoutineTasks(db).filter { it.deletedAt == null }
         val bySchedule =
             live.groupBy { task ->
                 val d = task.date?.let { parseDateOrNull(it) } ?: return@groupBy null
                 task.routineId to d
             }
         bySchedule.forEach { (key, group) ->
-            if (key == null) return@forEach
-            val (routineId, _) = key
-            val routine = routines[routineId] ?: return@forEach
-            val done = group.any { it.status == STATUS_DONE }
-            if (!done) return@forEach
+            if (key == null || group.size < 2) return@forEach
+            val routine = routines[key.first] ?: return@forEach
+            val hasDone = group.any { it.status == STATUS_DONE }
+            if (!hasDone) return@forEach
             group.filter { it.status != STATUS_DONE }.forEach { open ->
-                if (!open.detached && isUntouchedGenerator(open, routine)) {
-                    softDeleteTask(db, open.id)
+                if (isStrictUntouchedGenerator(db, open, routine)) {
+                    detachTask(db, open.id)
                 }
             }
         }
@@ -108,25 +206,23 @@ internal object RoutineOccurrenceBackfill {
             }
         byOccurrence.forEach { (key, group) ->
             if (key == null) return@forEach
-            val (routineId, _) = key
-            val routine = routines[routineId] ?: return@forEach
-            resolveDeletedVsLiveGenerator(db, group, routine, key.second, routines)
-            val done = group.any { it.status == STATUS_DONE }
-            if (!done) return@forEach
+            val routine = routines[key.first] ?: return@forEach
+            detachGeneratorEchoes(db, group, routine, key.second)
+            val hasDone = group.any { it.status == STATUS_DONE }
+            if (!hasDone) return@forEach
             group.filter { it.status != STATUS_DONE }.forEach { open ->
-                if (!open.detached && isUntouchedGenerator(open, routine)) {
-                    softDeleteTask(db, open.id)
+                if (isStrictUntouchedGenerator(db, open, routine)) {
+                    detachTask(db, open.id)
                 }
             }
         }
     }
 
-    private fun resolveDeletedVsLiveGenerator(
+    private fun detachGeneratorEchoes(
         db: SupportSQLiteDatabase,
         liveOnOccurrence: List<TaskSnapshot>,
         routine: RoutineRow,
         occ: LocalDate,
-        routines: Map<String, RoutineRow>,
     ) {
         val deleted =
             queryTaskSnapshots(
@@ -142,11 +238,11 @@ internal object RoutineOccurrenceBackfill {
         val deletedAtMax = deleted.maxOf { it.deletedAt ?: it.updatedAt }
         liveOnOccurrence.forEach { liveTask ->
             if (liveTask.detached) return@forEach
-            val generatorEcho =
+            val echo =
                 liveTask.createdAt > deletedAtMax &&
-                    isUntouchedGenerator(liveTask, routine)
-            if (generatorEcho) {
-                softDeleteTask(db, liveTask.id)
+                    isStrictUntouchedGenerator(db, liveTask, routine)
+            if (echo) {
+                detachTask(db, liveTask.id)
                 insertSkip(db, routine.id, occ.toString())
             }
         }
@@ -175,28 +271,47 @@ internal object RoutineOccurrenceBackfill {
         }
     }
 
-    private fun isUntouchedGenerator(
+    private fun isStrictUntouchedGenerator(
+        db: SupportSQLiteDatabase,
         task: TaskSnapshot,
         routine: RoutineRow,
-    ): Boolean =
-        task.title == routine.title &&
-            task.startLocalTime == routine.startLocalTime &&
-            task.durationMin == routine.durationMin &&
-            !task.detached
+    ): Boolean {
+        if (task.status != STATUS_OPEN) return false
+        if (task.detached) return false
+        if (task.updatedAt != task.createdAt) return false
+        if (task.notes.isNotBlank()) return false
+        if (task.energy != null) return false
+        if (task.reminderEnabled != DEFAULT_REMINDER_ENABLED) return false
+        if (task.title != routine.title) return false
+        if (task.startLocalTime != routine.startLocalTime) return false
+        if (task.durationMin != routine.durationMin) return false
+        return !hasSubtasks(db, task.id)
+    }
 
-    private fun isUnambiguousMatch(
+    private fun hasSubtasks(
+        db: SupportSQLiteDatabase,
+        taskId: String,
+    ): Boolean {
+        db.query(
+            "SELECT 1 FROM subtasks WHERE taskId = ? LIMIT 1",
+            arrayOf(taskId),
+        ).use { return it.moveToFirst() }
+    }
+
+    private fun hasValidOccurrenceKey(
         task: TaskSnapshot,
         routine: RoutineRow,
         scheduled: LocalDate,
     ): Boolean {
-        if (task.startLocalTime != routine.startLocalTime) return false
-        if (task.durationMin != routine.durationMin) return false
-        if (task.title != routine.title) return false
-        if (task.detached) return false
-        return appliesOn(routine, scheduled)
+        val occ = task.occurrenceDate ?: return false
+        val occDate = parseDateOrNull(occ) ?: return false
+        if (!appliesOn(routine, occDate)) return false
+        if (occDate == scheduled) return true
+        val liveDate = task.date?.let { parseDateOrNull(it) } ?: return false
+        return occDate != liveDate
     }
 
-    private fun markUnkeyedDetached(
+    private fun markDetachedPreservingValidKey(
         db: SupportSQLiteDatabase,
         taskId: String,
         routines: Map<String, RoutineRow>,
@@ -204,7 +319,7 @@ internal object RoutineOccurrenceBackfill {
         val task = loadTask(db, taskId) ?: return
         val routine = routines[task.routineId] ?: return
         val scheduled = task.date?.let { parseDateOrNull(it) }
-        if (scheduled != null && hasValidKey(task, routine, scheduled)) {
+        if (scheduled != null && hasValidOccurrenceKey(task, routine, scheduled)) {
             db.execSQL(
                 "UPDATE tasks SET routineInstanceDetached = 1 WHERE id = ?",
                 arrayOf(taskId),
@@ -217,14 +332,13 @@ internal object RoutineOccurrenceBackfill {
         )
     }
 
-    private fun softDeleteTask(
+    private fun detachTask(
         db: SupportSQLiteDatabase,
         taskId: String,
     ) {
-        val now = System.currentTimeMillis()
         db.execSQL(
-            "UPDATE tasks SET deletedAt = ?, updatedAt = ? WHERE id = ?",
-            arrayOf(now, now, taskId),
+            "UPDATE tasks SET routineInstanceDetached = 1 WHERE id = ?",
+            arrayOf(taskId),
         )
     }
 
@@ -267,6 +381,9 @@ internal object RoutineOccurrenceBackfill {
         val createdAt: Long,
         val updatedAt: Long,
         val deletedAt: Long?,
+        val notes: String,
+        val reminderEnabled: Boolean,
+        val energy: String?,
     )
 
     private fun loadRoutines(db: SupportSQLiteDatabase): Map<String, RoutineRow> {
@@ -357,6 +474,9 @@ internal object RoutineOccurrenceBackfill {
             createdAt = c.getLong(col("createdAt")),
             updatedAt = c.getLong(col("updatedAt")),
             deletedAt = longOrNull(col("deletedAt")),
+            notes = c.getString(col("notes")),
+            reminderEnabled = c.getInt(col("reminderEnabled")) != 0,
+            energy = stringOrNull(col("energy")),
         )
     }
 
@@ -379,5 +499,7 @@ internal object RoutineOccurrenceBackfill {
             else -> false
         }
 
+    private const val STATUS_OPEN = "open"
     private const val STATUS_DONE = "done"
+    private const val DEFAULT_REMINDER_ENABLED = true
 }
