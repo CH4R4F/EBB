@@ -93,6 +93,11 @@ PAIRS: dict[str, str] = {
     "d6_welcome_back_default_dark.png": "32-d6-welcome-back-default-dark.png",
     "d7_event_detail_default_dark.png": "33-d7-event-detail-default-dark.png",
     "d8_jump_to_date_default_dark.png": "34-d8-jump-to-date-default-dark.png",
+    "r1_routine_editor_editing_dark.png": "39-r1-routine-editor-editing-dark.png",
+    "r2_routine_run_first_dark.png": "40-r2-routine-run-first-dark.png",
+    "r3_templates_gallery_dark.png": "41-r3-templates-gallery-dark.png",
+    "g1_garden_wins_mature_dark.png": "42-g1-garden-wins-mature-dark.png",
+    "g2_celebration_small_calm_dark.png": "43-g2-celebration-small-calm-dark.png",
 }
 
 

@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.ebbplanner.ui.components.EbbHeroIllustration
 import app.ebbplanner.ui.components.EbbRadioDot
 import app.ebbplanner.ui.onboarding.OnboardingAppPreview
 import app.ebbplanner.ui.sheets.EbbSheetScaffold
@@ -52,9 +53,9 @@ import app.ebbplanner.ui.theme.EbbTypography
 import app.ebbplanner.ui.today.TodayScreenDesign
 import app.ebbplanner.ui.today.todayPopulatedDark
 
-private val DAY_TOOL_SHEET_TOP_INSET = 72.dp
+private val DAY_TOOL_SHEET_TOP_INSET = 66.dp
 private const val SHIFT_TIMELINE_DESIGN_PX = 230.0
-private val SHIFT_TIMELINE_HEIGHT = 280.dp
+private val SHIFT_TIMELINE_HEIGHT = 250.dp
 private const val SHIFT_TIMELINE_MINUTES = 360.0
 private const val SHIFT_PREVIEW_MINUTES = 15.0
 
@@ -93,6 +94,7 @@ fun ShiftTheRestDesign(modifier: Modifier = Modifier) {
         doneLeadingIcon = "more_time",
         sheetTopInset = DAY_TOOL_SHEET_TOP_INSET,
         sheetContainerColor = EbbPalette.darkSurfaceContainerHigh,
+        sheetWrapContent = true,
         modifier = modifier,
     ) {
         ShiftAmountChips(selected = 1)
@@ -103,7 +105,10 @@ fun ShiftTheRestDesign(modifier: Modifier = Modifier) {
             ShiftPreviewColumn("Now", afterShift = false)
             ShiftPreviewColumn("After +15 min", afterShift = true)
         }
-        Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.padding(top = 12.dp, bottom = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             EbbSymbol("keep", fontSize = 16.sp)
             Text("Pinned stays put", style = EbbTypography.labelM, modifier = Modifier.padding(start = 4.dp, end = 20.dp))
             Box(
@@ -248,8 +253,8 @@ fun EndOfDayReviewDesign(modifier: Modifier = Modifier) {
             Modifier.fillMaxWidth().padding(horizontal = EbbSpacing.s4, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            EbbHeroIllustration(icon = "celebration")
-            Text("You did 6 things today", style = EbbTypography.headlineM, modifier = Modifier.padding(top = 16.dp))
+            EbbHeroIllustration(icon = "celebration", size = 140.dp)
+            Text("You did 6 things today", style = EbbTypography.headlineL, modifier = Modifier.padding(top = 16.dp))
             Text(
                 "Rest well.",
                 style = EbbTypography.bodyM,
@@ -260,12 +265,12 @@ fun EndOfDayReviewDesign(modifier: Modifier = Modifier) {
         Surface(
             Modifier.fillMaxWidth().padding(horizontal = EbbSpacing.s4, vertical = 8.dp),
             shape = EbbShapes.lg,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
         ) {
             Column(Modifier.padding(vertical = 4.dp)) {
                 listOf("Work start-up", "Emails", "Write project brief", "Call bank", "Lunch with Ines", "Buy stamps").forEach { item ->
                     Row(Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        EbbSymbol("check_circle", fontSize = 22.sp, color = MaterialTheme.colorScheme.tertiary)
+                        EbbDoneCheckmark()
                         Text(item, style = EbbTypography.bodyL, modifier = Modifier.padding(start = 12.dp))
                     }
                 }
@@ -306,9 +311,14 @@ fun WelcomeBackDesign(modifier: Modifier = Modifier) {
             )
         }
         Column(Modifier.padding(horizontal = EbbSpacing.s4, vertical = 32.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            WelcomeBackCard("Fresh start", "Waiting things go quietly to your Inbox", icon = "wb_twilight", filledIcon = true)
-            WelcomeBackCard("Review what’s waiting", "Decide one by one", icon = "checklist", filledIcon = false)
-            WelcomeBackCard("Just show today", "Deal with it later", icon = "today", filledIcon = false)
+            WelcomeBackCard(
+                "Fresh start",
+                "Waiting things go quietly to your Inbox",
+                icon = "wb_twilight",
+                selected = true,
+            )
+            WelcomeBackCard("Review what’s waiting", "Decide one by one", icon = "checklist", selected = false)
+            WelcomeBackCard("Just show today", "Deal with it later", icon = "today", selected = false)
         }
         Box(Modifier.weight(1f))
         Row(
@@ -334,6 +344,7 @@ fun EventDetailDesign(modifier: Modifier = Modifier) {
         title = "Lunch with Ines",
         doneLabel = "Open in calendar",
         doneLeadingIcon = "open_in_new",
+        cancelLabel = "Close",
         sheetTopInset = DAY_TOOL_SHEET_TOP_INSET,
         sheetContainerColor = EbbPalette.darkSurfaceContainerHigh,
         modifier = modifier,
@@ -385,7 +396,7 @@ fun JumpToDateDesign(modifier: Modifier = Modifier) {
         TodayScreenDesign(state = todayPopulatedDark(), showBottomNav = true, modifier = Modifier.fillMaxSize())
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f)))
         Surface(
-            modifier = Modifier.align(Alignment.Center).padding(horizontal = 12.dp),
+            modifier = Modifier.align(Alignment.Center).padding(horizontal = 28.dp),
             shape = EbbShapes.lg,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
@@ -401,7 +412,7 @@ fun JumpToDateDesign(modifier: Modifier = Modifier) {
                     style = EbbTypography.headlineM,
                     modifier = Modifier.padding(horizontal = 16.dp).padding(top = 4.dp),
                 )
-                HorizontalDivider(Modifier.padding(vertical = 12.dp))
+                HorizontalDivider(Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                         Text("November 2026", style = EbbTypography.titleM)
@@ -410,7 +421,34 @@ fun JumpToDateDesign(modifier: Modifier = Modifier) {
                     IconButton(onClick = {}) { EbbSymbol("chevron_left", fontSize = 22.sp) }
                     IconButton(onClick = {}) { EbbSymbol("chevron_right", fontSize = 22.sp) }
                 }
-                JumpToDateMonthGrid(selectedDay = 19)
+                JumpToDateMonthGrid(selectedDay = 19, todayDay = 16)
+                Text(
+                    "Dots show how full a day is — no counts.",
+                    style = EbbTypography.bodyM,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                )
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Today", style = EbbTypography.labelL, color = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        "Cancel",
+                        style = EbbTypography.labelL,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(end = 16.dp),
+                    )
+                    Surface(shape = EbbShapes.full, color = MaterialTheme.colorScheme.primary) {
+                        Text(
+                            "Go",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            style = EbbTypography.labelL,
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp),
+                        )
+                    }
+                }
             }
         }
     }
@@ -575,10 +613,14 @@ private fun OverlapTimelineCard() {
                         .offset(y = 10.dp),
                     shape = EbbShapes.sm,
                     color = EbbTaskColors.tint("green", dark = true),
+                    border = BorderStroke(0.dp, Color.Transparent),
                 ) {
-                    Column(Modifier.padding(8.dp)) {
-                        Text("Call bank", style = EbbTypography.labelL)
-                        Text("11:40–12:20", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(Modifier.fillMaxSize()) {
+                        Box(Modifier.width(3.dp).fillMaxHeight().background(EbbTaskColors.strong("green")))
+                        Column(Modifier.padding(8.dp)) {
+                            Text("Call bank", style = EbbTypography.labelL)
+                            Text("11:40–12:20", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
                 Surface(
@@ -590,9 +632,12 @@ private fun OverlapTimelineCard() {
                     shape = EbbShapes.sm,
                     color = EbbTaskColors.tint("sky", dark = true),
                 ) {
-                    Column(Modifier.padding(8.dp)) {
-                        Text("Plan the week", style = EbbTypography.labelL)
-                        Text("12:00–13:00", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(Modifier.fillMaxSize()) {
+                        Box(Modifier.width(3.dp).fillMaxHeight().background(EbbTaskColors.strong("sky")))
+                        Column(Modifier.padding(8.dp)) {
+                            Text("Plan the week", style = EbbTypography.labelL)
+                            Text("12:00–13:00", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
                 val hatchBase = MaterialTheme.colorScheme.secondary
@@ -729,15 +774,14 @@ private fun PlanTaskRow(
 }
 
 @Composable
-private fun EbbHeroIllustration(
-    icon: String,
-    size: androidx.compose.ui.unit.Dp = 140.dp,
-) {
-    Box(Modifier.size(size), contentAlignment = Alignment.Center) {
-        Canvas(Modifier.fillMaxSize()) {
-            drawCircle(color = Color(0xFF4D4433), radius = size.toPx() * 0.4f)
-        }
-        EbbSymbol(icon, fontSize = 56.sp, color = MaterialTheme.colorScheme.tertiary)
+private fun EbbDoneCheckmark() {
+    Box(
+        Modifier
+            .size(22.dp)
+            .background(MaterialTheme.colorScheme.primary, EbbShapes.full),
+        contentAlignment = Alignment.Center,
+    ) {
+        EbbSymbol("check", fontSize = 16.sp, color = MaterialTheme.colorScheme.onPrimary)
     }
 }
 
@@ -746,13 +790,19 @@ private fun WelcomeBackCard(
     title: String,
     body: String,
     icon: String,
-    filledIcon: Boolean,
+    selected: Boolean,
 ) {
-    Surface(shape = EbbShapes.lg, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+    val containerColor =
+        if (selected) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerLow
+        }
+    Surface(shape = EbbShapes.lg, color = containerColor) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Surface(
                 shape = RoundedCornerShape(14.dp),
-                color = if (filledIcon) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant,
+                color = if (selected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier.size(48.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -760,10 +810,27 @@ private fun WelcomeBackCard(
                 }
             }
             Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
-                Text(title, style = EbbTypography.titleM)
-                Text(body, style = EbbTypography.bodyM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    title,
+                    style = EbbTypography.titleM,
+                    color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    body,
+                    style = EbbTypography.bodyM,
+                    color =
+                        if (selected) {
+                            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                )
             }
-            EbbSymbol("chevron_right", fontSize = 22.sp)
+            EbbSymbol(
+                "chevron_right",
+                fontSize = 22.sp,
+                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+            )
         }
     }
 }
@@ -782,11 +849,7 @@ private fun EventDetailRow(
             .padding(vertical = if (tall) 8.dp else 4.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.size(40.dp)) {
-            Box(contentAlignment = Alignment.Center) {
-                EbbSymbol(icon, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary)
-            }
-        }
+        EbbSymbol(icon, fontSize = 22.sp, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 4.dp).width(40.dp))
         Column(Modifier.weight(1f).padding(start = 12.dp)) {
             Text(title, style = EbbTypography.bodyL)
             subtitle?.let {
@@ -798,7 +861,10 @@ private fun EventDetailRow(
 }
 
 @Composable
-private fun JumpToDateMonthGrid(selectedDay: Int) {
+private fun JumpToDateMonthGrid(
+    selectedDay: Int,
+    todayDay: Int,
+) {
     val weekdays = listOf("M", "T", "W", "T", "F", "S", "S")
     val dotsByDay =
         mapOf(
@@ -806,44 +872,75 @@ private fun JumpToDateMonthGrid(selectedDay: Int) {
             2 to 2,
             3 to 1,
             5 to 2,
+            6 to 1,
+            8 to 1,
+            9 to 2,
+            10 to 1,
+            12 to 2,
+            13 to 1,
+            15 to 2,
+            16 to 3,
+            17 to 1,
             19 to 3,
+            20 to 1,
+            22 to 2,
+            24 to 1,
+            25 to 1,
+            26 to 2,
+            27 to 1,
+            28 to 2,
+            29 to 1,
         )
-    Column(Modifier.padding(top = 8.dp)) {
+    Column(Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp)) {
         Row(Modifier.fillMaxWidth()) {
             weekdays.forEach {
                 Text(
                     it,
                     style = EbbTypography.labelM,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).height(32.dp),
                     textAlign = TextAlign.Center,
                 )
             }
         }
         val leadingBlanks = 6
-        val days = (1..30).toList()
-        val cells = List(leadingBlanks) { null } + days
+        val monthDays = (1..29).toList()
+        val cells: List<Int?> = List(leadingBlanks) { null } + monthDays.map { it as Int? }
         cells.chunked(7).forEach { week ->
-            Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+            Row(Modifier.fillMaxWidth()) {
                 week.forEach { day ->
                     Box(Modifier.weight(1f).height(48.dp), contentAlignment = Alignment.Center) {
                         if (day != null) {
                             val selected = day == selectedDay
+                            val isToday = day == todayDay
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Surface(
-                                    shape = EbbShapes.full,
-                                    color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                ) {
+                                val dayModifier =
+                                    Modifier
+                                        .size(40.dp)
+                                        .then(
+                                            if (isToday && !selected) {
+                                                Modifier.border(1.dp, MaterialTheme.colorScheme.primary, EbbShapes.full)
+                                            } else {
+                                                Modifier
+                                            },
+                                        )
+                                        .then(
+                                            if (selected) {
+                                                Modifier.background(MaterialTheme.colorScheme.primary, EbbShapes.full)
+                                            } else {
+                                                Modifier
+                                            },
+                                        )
+                                Box(dayModifier, contentAlignment = Alignment.Center) {
                                     Text(
                                         day.toString(),
                                         style = EbbTypography.bodyM,
                                         color =
-                                            if (selected) {
-                                                MaterialTheme.colorScheme.onPrimary
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurface
+                                            when {
+                                                selected -> MaterialTheme.colorScheme.onPrimary
+                                                isToday -> MaterialTheme.colorScheme.primary
+                                                else -> MaterialTheme.colorScheme.onSurface
                                             },
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                     )
                                 }
                                 Row(Modifier.padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -863,7 +960,7 @@ private fun JumpToDateMonthGrid(selectedDay: Int) {
                     }
                 }
                 repeat(7 - week.size) {
-                    Box(Modifier.weight(1f))
+                    Box(Modifier.weight(1f).height(48.dp))
                 }
             }
         }

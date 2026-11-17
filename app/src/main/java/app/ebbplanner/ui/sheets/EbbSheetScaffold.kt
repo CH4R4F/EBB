@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -33,7 +34,7 @@ import app.ebbplanner.ui.theme.EbbTypography
 import app.ebbplanner.ui.today.TodayScreenDesign
 import app.ebbplanner.ui.today.todayPopulatedDark
 
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "LongMethod")
 @Composable
 fun EbbSheetScaffold(
     title: String,
@@ -45,6 +46,8 @@ fun EbbSheetScaffold(
     sheetTopInset: androidx.compose.ui.unit.Dp = 0.dp,
     sheetContainerColor: Color = Color.Unspecified,
     showBottomActions: Boolean = true,
+    sheetWrapContent: Boolean = false,
+    cancelLabel: String = "Cancel",
     content: @Composable () -> Unit,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -52,11 +55,12 @@ fun EbbSheetScaffold(
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f)))
         val sheetModifier =
             if (sheetTopInset > 0.dp) {
-                Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .fillMaxHeight()
-                    .padding(top = sheetTopInset)
+                val base = Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = sheetTopInset)
+                if (sheetWrapContent) {
+                    base.wrapContentHeight()
+                } else {
+                    base.fillMaxHeight()
+                }
             } else {
                 Modifier
                     .align(Alignment.BottomCenter)
@@ -74,7 +78,7 @@ fun EbbSheetScaffold(
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             color = containerColor,
         ) {
-            Column(Modifier.fillMaxSize()) {
+            Column(if (sheetWrapContent) Modifier.wrapContentHeight() else Modifier.fillMaxSize()) {
                 SheetGrabber()
                 Text(title, style = EbbTypography.titleL, modifier = Modifier.padding(horizontal = EbbSpacing.s4))
                 subtitle?.let {
@@ -85,17 +89,29 @@ fun EbbSheetScaffold(
                         modifier = Modifier.padding(horizontal = EbbSpacing.s4, vertical = 4.dp),
                     )
                 }
-                Column(
-                    modifier =
-                        Modifier
-                            .weight(1f)
-                            .verticalScroll(rememberScrollState())
-                            .padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s2),
-                ) {
-                    content()
+                if (sheetWrapContent) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s2),
+                    ) {
+                        content()
+                    }
+                } else {
+                    Column(
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState())
+                                .padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s2),
+                    ) {
+                        content()
+                    }
                 }
                 if (showBottomActions) {
-                    SheetActions(doneLabel = doneLabel, doneLeadingIcon = doneLeadingIcon)
+                    SheetActions(
+                        doneLabel = doneLabel,
+                        doneLeadingIcon = doneLeadingIcon,
+                        cancelLabel = cancelLabel,
+                    )
                 }
             }
         }
@@ -113,6 +129,7 @@ private fun SheetGrabber() {
 fun SheetActions(
     doneLabel: String = "Done",
     doneLeadingIcon: String? = null,
+    cancelLabel: String = "Cancel",
 ) {
     HorizontalDivider()
     Row(
@@ -121,7 +138,7 @@ fun SheetActions(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            "Cancel",
+            cancelLabel,
             style = EbbTypography.labelL,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(horizontal = EbbSpacing.s3, vertical = 10.dp),
