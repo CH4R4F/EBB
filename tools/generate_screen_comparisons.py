@@ -74,6 +74,14 @@ PAIRS: dict[str, str] = {
     "m6_done_history_populated_dark.png": "15-m6-done-history-populated-dark.png",
     "t4_color_icon_search_empty_dark.png": "19-t4-color-icon-search-empty-dark.png",
     "t4_color_icon_selected_dark.png": "19-t4-color-icon-selected-dark.png",
+    "t5_reminder_picker_default_dark.png": "20-t5-reminder-picker-default-dark.png",
+    "t6_repeat_editor_presets_dark.png": "21-t6-repeat-editor-presets-dark.png",
+    "t7_break_it_down_empty_dark.png": "22-t7-break-it-down-empty-dark.png",
+    "t8_schedule_picker_default_dark.png": "23-t8-schedule-picker-default-dark.png",
+    "f1_focus_setup_dark.png": "35-f1-focus-setup-dark.png",
+    "f2_times_up_in_app_dark.png": "36-f2-times-up-in-app-dark.png",
+    "f3_hyperfocus_gentle_dark.png": "37-f3-hyperfocus-gentle-dark.png",
+    "f4_break_ended_dark.png": "38-f4-break-ended-dark.png",
 }
 
 

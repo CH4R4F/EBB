@@ -74,7 +74,7 @@ fun RoutinesScreenDesign(
                             "Recurring tasks",
                             style = EbbTypography.labelL,
                             modifier = Modifier.padding(top = EbbSpacing.s4, bottom = EbbSpacing.s2),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                     items(state.recurring) { row -> RecurringRow(row) }
@@ -101,7 +101,7 @@ private fun RoutineCardUi(card: RoutineCard) {
     Surface(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         shape = EbbShapes.md,
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
     ) {
         Column(modifier = Modifier.padding(EbbSpacing.s4)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

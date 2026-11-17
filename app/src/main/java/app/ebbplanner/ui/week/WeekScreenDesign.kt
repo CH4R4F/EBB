@@ -14,10 +14,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.IconButton
@@ -143,12 +145,18 @@ private fun WeekDayCard(day: WeekDayRow) {
             null
         }
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(72.dp),
         shape = EbbShapes.md,
         color = MaterialTheme.colorScheme.surfaceContainer,
         border = border,
     ) {
-        Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.Top) {
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Column(modifier = Modifier.width(40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(day.weekday, style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
@@ -173,15 +181,21 @@ private fun WeekDayCard(day: WeekDayRow) {
 
 @Composable
 private fun WeekLoadRow(day: WeekDayRow) {
+    val barColor =
+        if (day.loadFull) {
+            MaterialTheme.colorScheme.tertiary
+        } else {
+            MaterialTheme.colorScheme.primary
+        }
     Row(
         modifier = Modifier.padding(top = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Box(
             modifier =
                 Modifier
-                    .weight(1f)
+                    .width(64.dp)
                     .height(6.dp)
                     .background(MaterialTheme.colorScheme.surfaceVariant, EbbShapes.full),
         ) {
@@ -189,16 +203,35 @@ private fun WeekLoadRow(day: WeekDayRow) {
                 modifier =
                     Modifier
                         .fillMaxHeight()
-                        .fillMaxWidth(day.loadProgress)
-                        .background(
-                            if (day.loadFull) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
-                            EbbShapes.full,
-                        ),
+                        .fillMaxWidth(day.loadProgress.coerceIn(0f, 1f))
+                        .background(barColor, EbbShapes.full),
             )
         }
-        Text(day.loadLabel, style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            day.loadLabel,
+            style = EbbTypography.labelM,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(52.dp),
+        )
         if (day.eventCount > 0) {
-            Text("$day.eventCount events", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                repeat(day.eventCount.coerceAtMost(3)) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .size(6.dp)
+                                .background(MaterialTheme.colorScheme.primary, CircleShape),
+                    )
+                }
+                Text(
+                    "${day.eventCount} ${if (day.eventCount == 1) "event" else "events"}",
+                    style = EbbTypography.labelM,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
