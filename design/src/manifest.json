@@ -1,0 +1,2022 @@
+[
+  {
+    "nn": 1,
+    "id": "O1",
+    "slug": "welcome",
+    "name": "Welcome",
+    "group": "Onboarding",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 2,
+    "id": "O2",
+    "slug": "our-promise",
+    "name": "Our promise",
+    "group": "Onboarding",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 3,
+    "id": "O3",
+    "slug": "day-shape",
+    "name": "Your day shape",
+    "group": "Onboarding",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default 07:00–23:00",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "after-midnight",
+        "label": "Sleep before wake → next day",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 4,
+    "id": "O4",
+    "slug": "preferences",
+    "name": "A few preferences",
+    "group": "Onboarding",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 5,
+    "id": "O8",
+    "slug": "try-it",
+    "name": "Try it: dump & drag",
+    "group": "Onboarding",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "step1-empty",
+        "label": "Step 1 — typed 0 items (Skip allowed)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "step1-typed",
+        "label": "Step 1 — 3 typed",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "step2-drag",
+        "label": "Step 2 — coach mark + drag (with Schedule alternative)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "success",
+        "label": "Drag success celebration",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 6,
+    "id": "O5",
+    "slug": "notifications-primer",
+    "name": "Notifications primer",
+    "group": "Onboarding",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "granted",
+        "label": "Granted ✓",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "denied",
+        "label": "Denied → note",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 7,
+    "id": "O6",
+    "slug": "exact-alarms-primer",
+    "name": "Exact alarms primer",
+    "group": "Onboarding",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default (API ≥ 31, not granted)",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 8,
+    "id": "O7",
+    "slug": "calendar-primer",
+    "name": "Calendar primer",
+    "group": "Onboarding",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "chooser",
+        "label": "After grant → inline calendar chooser",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 9,
+    "id": "O9",
+    "slug": "youre-set",
+    "name": "You’re set",
+    "group": "Onboarding",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 10,
+    "id": "M1",
+    "slug": "today",
+    "name": "Today",
+    "group": "Main",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "populated",
+        "label": "Populated (now 10:42, current block draining)",
+        "variants": [
+          "dyn",
+          "hc"
+        ],
+        "opts": {}
+      },
+      {
+        "key": "empty",
+        "label": "Empty day",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "loading",
+        "label": "Loading skeleton",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "overfull",
+        "label": "Overfull banner",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "overlap",
+        "label": "Overlap hint chip",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "past-day",
+        "label": "Past day (read-mostly)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "future-day",
+        "label": "Future day",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "after-bedtime",
+        "label": "After bedtime banner",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "reminders-banner",
+        "label": "Reminders unhealthy banner",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "drag",
+        "label": "Drag in progress (ghost + snap tooltip)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "multiselect",
+        "label": "Multi-select mode",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "dense",
+        "label": "Very dense day (22 blocks, compact zoom)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "font200",
+        "label": "200% font scale (rail shows “9”, blocks title only)",
+        "variants": [],
+        "opts": {
+          "fs200": true
+        }
+      },
+      {
+        "key": "rtl",
+        "label": "RTL (Arabic) mirror",
+        "variants": [],
+        "opts": {
+          "rtl": true
+        }
+      },
+      {
+        "key": "small",
+        "label": "Small phone 360×640",
+        "variants": [],
+        "opts": {
+          "small": true
+        }
+      }
+    ]
+  },
+  {
+    "nn": 11,
+    "id": "M2",
+    "slug": "inbox",
+    "name": "Inbox",
+    "group": "Main",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "populated",
+        "label": "Populated",
+        "variants": [
+          "dyn",
+          "hc"
+        ],
+        "opts": {}
+      },
+      {
+        "key": "empty",
+        "label": "Empty",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "filtered-empty",
+        "label": "Filtered — nothing matches",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "swipe-right",
+        "label": "Swipe right → Today",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "swipe-left",
+        "label": "Swipe left → Later… menu",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "multiselect",
+        "label": "Multi-select + action bar",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "tidy-up",
+        "label": "Monthly “Tidy up?” card",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "loading",
+        "label": "Loading skeleton",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "many",
+        "label": "500+ items (virtualised, Someday collapsed)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "rtl",
+        "label": "RTL (Arabic) mirror",
+        "variants": [],
+        "opts": {
+          "rtl": true
+        }
+      },
+      {
+        "key": "small",
+        "label": "Small phone 360×640",
+        "variants": [],
+        "opts": {
+          "small": true
+        }
+      }
+    ]
+  },
+  {
+    "nn": 12,
+    "id": "M3",
+    "slug": "week",
+    "name": "Week",
+    "group": "Main",
+    "pri": "MVP (drag v1.x)",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "portrait",
+        "label": "Portrait list (today highlighted, past muted)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "empty",
+        "label": "Empty week",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "landscape",
+        "label": "Landscape / tablet columns",
+        "variants": [],
+        "opts": {
+          "land": true
+        }
+      },
+      {
+        "key": "drag-v1x",
+        "label": "Drag between days (v1.x)",
+        "variants": [],
+        "opts": {
+          "land": true
+        }
+      }
+    ]
+  },
+  {
+    "nn": 13,
+    "id": "M4",
+    "slug": "routines",
+    "name": "Routines",
+    "group": "Main",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "populated",
+        "label": "Populated",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "empty",
+        "label": "Empty",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "running",
+        "label": "Routine currently running",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 14,
+    "id": "M5",
+    "slug": "search",
+    "name": "Search",
+    "group": "Main",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "recent",
+        "label": "Initial — recent searches",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "results",
+        "label": "Results with highlighted match",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "no-results",
+        "label": "No results → add as task",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 15,
+    "id": "M6",
+    "slug": "done-history",
+    "name": "Done history",
+    "group": "Main",
+    "pri": "v1.x",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "populated",
+        "label": "Populated",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "empty",
+        "label": "Empty",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 16,
+    "id": "T1",
+    "slug": "quick-capture",
+    "name": "Quick capture",
+    "group": "Task & capture",
+    "pri": "MVP",
+    "type": "Sheet (+ transparent activity)",
+    "states": [
+      {
+        "key": "empty",
+        "label": "In-app sheet, empty (keyboard open)",
+        "variants": [
+          "dyn",
+          "hc"
+        ],
+        "opts": {}
+      },
+      {
+        "key": "typing",
+        "label": "Typing",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "paste-prompt",
+        "label": "Multi-line paste prompt",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "counter",
+        "label": "Saved — “3 added” counter, sheet stays open",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "draft-restored",
+        "label": "Draft restored",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "over-home",
+        "label": "Over home screen (widget / tile / shortcut)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "nl-highlight-v1x",
+        "label": "Natural-language highlight (v1.x)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "font200",
+        "label": "Keyboard + 200% font",
+        "variants": [],
+        "opts": {
+          "fs200": true
+        }
+      },
+      {
+        "key": "rtl",
+        "label": "RTL (Arabic) mirror",
+        "variants": [],
+        "opts": {
+          "rtl": true
+        }
+      },
+      {
+        "key": "small",
+        "label": "Small phone 360×640",
+        "variants": [],
+        "opts": {
+          "small": true
+        }
+      }
+    ]
+  },
+  {
+    "nn": 17,
+    "id": "T2",
+    "slug": "task-detail",
+    "name": "Task detail",
+    "group": "Task & capture",
+    "pri": "MVP",
+    "type": "Full-screen sheet",
+    "states": [
+      {
+        "key": "existing",
+        "label": "Existing task",
+        "variants": [
+          "dyn",
+          "hc"
+        ],
+        "opts": {}
+      },
+      {
+        "key": "new",
+        "label": "New task",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "recurring",
+        "label": "Recurring instance",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "done",
+        "label": "Done state",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "many-subtasks",
+        "label": "20+ subtasks + long title",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "font200",
+        "label": "200% font",
+        "variants": [],
+        "opts": {
+          "fs200": true
+        }
+      },
+      {
+        "key": "rtl",
+        "label": "RTL (Arabic) mirror",
+        "variants": [],
+        "opts": {
+          "rtl": true
+        }
+      },
+      {
+        "key": "small",
+        "label": "Small phone 360×640",
+        "variants": [],
+        "opts": {
+          "small": true
+        }
+      }
+    ]
+  },
+  {
+    "nn": 18,
+    "id": "T3",
+    "slug": "estimate-picker",
+    "name": "Estimate picker",
+    "group": "Task & capture",
+    "pri": "MVP",
+    "type": "Sheet",
+    "states": [
+      {
+        "key": "presets",
+        "label": "Presets",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "custom",
+        "label": "Custom wheel",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "big-prompt",
+        "label": "≥ 2 h link / > 4 h prompt",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 19,
+    "id": "T4",
+    "slug": "color-icon",
+    "name": "Color & icon",
+    "group": "Task & capture",
+    "pri": "MVP",
+    "type": "Sheet",
+    "states": [
+      {
+        "key": "selected",
+        "label": "Selected (with names + a11y patterns)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "search-empty",
+        "label": "Icon search — no results",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 20,
+    "id": "T5",
+    "slug": "reminder-picker",
+    "name": "Reminder picker",
+    "group": "Task & capture",
+    "pri": "MVP",
+    "type": "Sheet",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "permission-missing",
+        "label": "Permissions missing row",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "alarm-unavailable",
+        "label": "Alarm-style unavailable",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 21,
+    "id": "T6",
+    "slug": "repeat-editor",
+    "name": "Repeat editor",
+    "group": "Task & capture",
+    "pri": "MVP",
+    "type": "Full screen",
+    "states": [
+      {
+        "key": "presets",
+        "label": "Presets",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "custom",
+        "label": "Custom (live summary, invalid combos disabled)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "after-completion",
+        "label": "After-completion mode",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 22,
+    "id": "T7",
+    "slug": "break-it-down",
+    "name": "Break it down",
+    "group": "Task & capture",
+    "pri": "MVP",
+    "type": "Sheet",
+    "states": [
+      {
+        "key": "empty",
+        "label": "0 steps",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "many",
+        "label": "Many steps",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 23,
+    "id": "T8",
+    "slug": "schedule-picker",
+    "name": "Schedule picker",
+    "group": "Task & capture",
+    "pri": "MVP",
+    "type": "Sheet",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default (with landing preview)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "today-full",
+        "label": "“Today’s full”",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 24,
+    "id": "T9",
+    "slug": "voice-capture",
+    "name": "Voice capture",
+    "group": "Task & capture",
+    "pri": "MVP",
+    "type": "Overlay",
+    "states": [
+      {
+        "key": "listening",
+        "label": "Listening",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "processing",
+        "label": "Processing",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "no-match",
+        "label": "No match",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "unavailable",
+        "label": "Unavailable",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 25,
+    "id": "T10",
+    "slug": "share-receive",
+    "name": "Share receive",
+    "group": "Task & capture",
+    "pri": "MVP",
+    "type": "Sheet (over source app)",
+    "states": [
+      {
+        "key": "link",
+        "label": "Text / link",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "multiple",
+        "label": "Multiple items",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 26,
+    "id": "T11",
+    "slug": "brain-dump",
+    "name": "Brain dump",
+    "group": "Task & capture",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "empty",
+        "label": "Empty (rotating prompt)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "draft",
+        "label": "Draft — 6 thoughts",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "duplicates",
+        "label": "Duplicates prompt",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "success",
+        "label": "Success",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 27,
+    "id": "D1",
+    "slug": "shift-the-rest",
+    "name": "Shift the rest of my day",
+    "group": "Day operations",
+    "pri": "MVP",
+    "type": "Sheet",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default — everything fits (+15)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "some-wont-fit",
+        "label": "Some won’t fit today",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "pinned-conflict",
+        "label": "Pinned conflict",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "nothing-to-shift",
+        "label": "Nothing to shift",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "applied",
+        "label": "Applied + snackbar (Undo)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "font200",
+        "label": "200% font",
+        "variants": [],
+        "opts": {
+          "fs200": true
+        }
+      },
+      {
+        "key": "rtl",
+        "label": "RTL (Arabic) mirror",
+        "variants": [],
+        "opts": {
+          "rtl": true
+        }
+      },
+      {
+        "key": "small",
+        "label": "Small phone 360×640",
+        "variants": [],
+        "opts": {
+          "small": true
+        }
+      }
+    ]
+  },
+  {
+    "nn": 28,
+    "id": "D2",
+    "slug": "overlap-helper",
+    "name": "Overlap helper",
+    "group": "Day operations",
+    "pri": "MVP",
+    "type": "Sheet",
+    "states": [
+      {
+        "key": "default",
+        "label": "Two tasks overlap",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "with-event",
+        "label": "With a calendar event (event can’t move)",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 29,
+    "id": "D3",
+    "slug": "make-it-fit",
+    "name": "Make it fit",
+    "group": "Day operations",
+    "pri": "MVP",
+    "type": "Sheet",
+    "states": [
+      {
+        "key": "default",
+        "label": "Suggestions",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "nothing",
+        "label": "Nothing to suggest",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 30,
+    "id": "D4",
+    "slug": "plan-my-day",
+    "name": "Plan my day",
+    "group": "Day operations",
+    "pri": "MVP",
+    "type": "Screen (3-step)",
+    "states": [
+      {
+        "key": "step1",
+        "label": "Step 1 — what matters today",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "step1-too-much",
+        "label": "Too much selected",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "step1-nothing",
+        "label": "Nothing in Inbox → brain dump",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "step2",
+        "label": "Step 2 — split view (timeline + tray)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "step2-auto-placed",
+        "label": "Auto-place result",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "step3",
+        "label": "Step 3 — summary",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 31,
+    "id": "D5",
+    "slug": "end-of-day-review",
+    "name": "End-of-day review",
+    "group": "Day operations",
+    "pri": "MVP",
+    "type": "Screen (3–4 steps)",
+    "states": [
+      {
+        "key": "step1",
+        "label": "Step 1 — celebration",
+        "variants": [
+          "dyn",
+          "hc"
+        ],
+        "opts": {}
+      },
+      {
+        "key": "step2",
+        "label": "Step 2 — re-home open items",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "step3-v1x",
+        "label": "Step 3 — reflection (v1.x)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "step4",
+        "label": "Step 4 — rest well + tomorrow preview",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "nothing-done",
+        "label": "Nothing-done variant",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "small",
+        "label": "Small phone 360×640",
+        "variants": [],
+        "opts": {
+          "small": true
+        }
+      }
+    ]
+  },
+  {
+    "nn": 32,
+    "id": "D6",
+    "slug": "welcome-back",
+    "name": "Welcome back",
+    "group": "Day operations",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "review-list",
+        "label": "Review list (grouped by item)",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 33,
+    "id": "D7",
+    "slug": "event-detail",
+    "name": "Calendar event detail",
+    "group": "Day operations",
+    "pri": "MVP",
+    "type": "Sheet",
+    "states": [
+      {
+        "key": "default",
+        "label": "Recurring event with details",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "all-day",
+        "label": "All-day, no details",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 34,
+    "id": "D8",
+    "slug": "jump-to-date",
+    "name": "Jump to date",
+    "group": "Day operations",
+    "pri": "MVP",
+    "type": "Dialog",
+    "states": [
+      {
+        "key": "default",
+        "label": "Month grid with load dots",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 35,
+    "id": "F1",
+    "slug": "focus",
+    "name": "Focus",
+    "group": "Focus",
+    "pri": "MVP",
+    "type": "Full screen",
+    "states": [
+      {
+        "key": "setup",
+        "label": "Idle / setup",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "running-ring",
+        "label": "Running — ring",
+        "variants": [
+          "dyn",
+          "hc"
+        ],
+        "opts": {}
+      },
+      {
+        "key": "running-bar",
+        "label": "Running — bar",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "hide-numbers",
+        "label": "Hide-numbers mode",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "paused",
+        "label": "Paused",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "interval",
+        "label": "Interval (2 of 4)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "just-5-min",
+        "label": "“Just 5 minutes” mode + keep going?",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "landscape",
+        "label": "Landscape",
+        "variants": [],
+        "opts": {
+          "land": true
+        }
+      },
+      {
+        "key": "font200",
+        "label": "200% font",
+        "variants": [],
+        "opts": {
+          "fs200": true
+        }
+      },
+      {
+        "key": "small",
+        "label": "Small phone 360×640",
+        "variants": [],
+        "opts": {
+          "small": true
+        }
+      }
+    ]
+  },
+  {
+    "nn": 36,
+    "id": "F2",
+    "slug": "times-up",
+    "name": "Time’s up check-in",
+    "group": "Focus",
+    "pri": "MVP",
+    "type": "Dialog / overlay",
+    "states": [
+      {
+        "key": "in-app",
+        "label": "In app",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "lockscreen",
+        "label": "From notification (lock screen)",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 37,
+    "id": "F3",
+    "slug": "hyperfocus",
+    "name": "Hyperfocus check-in",
+    "group": "Focus",
+    "pri": "MVP",
+    "type": "Full-screen overlay / heads-up",
+    "states": [
+      {
+        "key": "gentle",
+        "label": "Gentle (heads-up card)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "strong",
+        "label": "Strong (full-screen)",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 38,
+    "id": "F4",
+    "slug": "break",
+    "name": "Break",
+    "group": "Focus",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "running",
+        "label": "Break countdown",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "ended",
+        "label": "Break ended prompt",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 39,
+    "id": "R1",
+    "slug": "routine-editor",
+    "name": "Routine editor",
+    "group": "Routines",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "editing",
+        "label": "Editing (from Work start-up template)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "new-empty",
+        "label": "New, 0 steps (save disabled + hint)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "long",
+        "label": "Very long routine (30 steps)",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 40,
+    "id": "R2",
+    "slug": "routine-run",
+    "name": "Routine run",
+    "group": "Routines",
+    "pri": "MVP",
+    "type": "Full screen",
+    "states": [
+      {
+        "key": "first",
+        "label": "First step",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "mid-behind",
+        "label": "Mid step + running-behind chip",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "last",
+        "label": "Last step",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "resumed",
+        "label": "Resumed after interruption",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "finished",
+        "label": "Finished celebration",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 41,
+    "id": "R3",
+    "slug": "templates",
+    "name": "Templates gallery",
+    "group": "Routines",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "gallery",
+        "label": "Gallery",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "preview",
+        "label": "Template preview sheet",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 42,
+    "id": "G1",
+    "slug": "garden-wins",
+    "name": "Garden & wins",
+    "group": "Feedback & progress",
+    "pri": "v1.x",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "mature",
+        "label": "Mature garden",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "empty",
+        "label": "Empty",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 43,
+    "id": "G2",
+    "slug": "celebration",
+    "name": "Celebration overlay",
+    "group": "Feedback & progress",
+    "pri": "MVP",
+    "type": "Overlay",
+    "states": [
+      {
+        "key": "small-calm",
+        "label": "Small · calm",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "small-lively",
+        "label": "Small · lively",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "medium-calm",
+        "label": "Medium · calm",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "medium-lively",
+        "label": "Medium · lively",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "large-calm",
+        "label": "Large · calm (soft particles)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "large-lively",
+        "label": "Large · lively (confetti ≤1.5 s)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "reduced-motion",
+        "label": "Reduced-motion static",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 44,
+    "id": "S1",
+    "slug": "settings-hub",
+    "name": "Settings hub",
+    "group": "Settings",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "good",
+        "label": "Health pill — good",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "warn",
+        "label": "Health pill — warn",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 45,
+    "id": "S2",
+    "slug": "day-time",
+    "name": "Day & time",
+    "group": "Settings",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 46,
+    "id": "S3",
+    "slug": "reminders",
+    "name": "Reminders & notifications",
+    "group": "Settings",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 47,
+    "id": "S4",
+    "slug": "reminder-health",
+    "name": "Reminder health check",
+    "group": "Settings",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "all-good",
+        "label": "All good",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "problems",
+        "label": "Problems",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "test-sent",
+        "label": "Test sent",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 48,
+    "id": "S5",
+    "slug": "appearance",
+    "name": "Appearance",
+    "group": "Settings",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "With live preview",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 49,
+    "id": "S6",
+    "slug": "accessibility",
+    "name": "Accessibility",
+    "group": "Settings",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 50,
+    "id": "S7",
+    "slug": "calendars",
+    "name": "Calendars",
+    "group": "Settings",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "off",
+        "label": "Permission off",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "list",
+        "label": "Calendar list",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 51,
+    "id": "S8",
+    "slug": "focus-timer",
+    "name": "Focus & timer",
+    "group": "Settings",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 52,
+    "id": "S9",
+    "slug": "celebrations",
+    "name": "Celebrations, sounds & haptics",
+    "group": "Settings",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 53,
+    "id": "S10",
+    "slug": "backup-export",
+    "name": "Backup & export",
+    "group": "Settings",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "no-folder",
+        "label": "No folder",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "folder-set",
+        "label": "Folder set",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "failed",
+        "label": "Last backup failed",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 54,
+    "id": "S11",
+    "slug": "sync",
+    "name": "Sync",
+    "group": "Settings",
+    "pri": "v1.x",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Folder sync set up (v1.x)",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 55,
+    "id": "S12",
+    "slug": "import",
+    "name": "Import",
+    "group": "Settings",
+    "pri": "v1.x",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "source",
+        "label": "Source picker",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "mapping",
+        "label": "Field-mapping preview",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "summary",
+        "label": "Result summary",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 56,
+    "id": "S13",
+    "slug": "widgets-help",
+    "name": "Widgets help",
+    "group": "Settings",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Gallery + tips",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 57,
+    "id": "S14",
+    "slug": "about",
+    "name": "About & open source",
+    "group": "Settings",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 58,
+    "id": "S15",
+    "slug": "privacy",
+    "name": "Privacy",
+    "group": "Settings",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Default",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 59,
+    "id": "X1",
+    "slug": "task-actions",
+    "name": "Task actions sheet",
+    "group": "System dialogs & special",
+    "pri": "MVP",
+    "type": "Sheet",
+    "states": [
+      {
+        "key": "single",
+        "label": "Single task",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "recurring",
+        "label": "Recurring task",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "event",
+        "label": "Calendar event (limited)",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 60,
+    "id": "X2",
+    "slug": "permission",
+    "name": "Permission rationale / denied",
+    "group": "System dialogs & special",
+    "pri": "MVP",
+    "type": "Dialog",
+    "states": [
+      {
+        "key": "notifications",
+        "label": "Notifications — first ask",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "exact-alarms",
+        "label": "Exact alarms",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "calendar",
+        "label": "Calendar",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "full-screen",
+        "label": "Full-screen alerts",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "denied",
+        "label": "Permanently denied",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 61,
+    "id": "X3",
+    "slug": "restore-confirm",
+    "name": "Restore confirm",
+    "group": "System dialogs & special",
+    "pri": "MVP",
+    "type": "Dialog",
+    "states": [
+      {
+        "key": "default",
+        "label": "Summary + Replace / Merge",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "newer-schema",
+        "label": "Newer schema error",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "corrupt",
+        "label": "Corrupt file",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 62,
+    "id": "X4",
+    "slug": "sync-conflict",
+    "name": "Sync conflict",
+    "group": "System dialogs & special",
+    "pri": "v1.x",
+    "type": "Dialog / screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "Side by side (1 of 2 in queue)",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 63,
+    "id": "X5",
+    "slug": "edit-scope",
+    "name": "Recurring edit scope",
+    "group": "System dialogs & special",
+    "pri": "MVP",
+    "type": "Dialog",
+    "states": [
+      {
+        "key": "edit",
+        "label": "Edit",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "delete",
+        "label": "Delete variant",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 64,
+    "id": "X6",
+    "slug": "full-screen-alarm",
+    "name": "Full-screen alarm",
+    "group": "System dialogs & special",
+    "pri": "MVP",
+    "type": "Activity over lock screen",
+    "states": [
+      {
+        "key": "locked",
+        "label": "Locked, ringing",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "unlocked",
+        "label": "Unlocked, ringing",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "snoozed",
+        "label": "Snoozed",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 65,
+    "id": "X7",
+    "slug": "delete-confirm",
+    "name": "Let go / delete confirm",
+    "group": "System dialogs & special",
+    "pri": "MVP",
+    "type": "Dialog",
+    "states": [
+      {
+        "key": "bulk",
+        "label": "Bulk",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "series",
+        "label": "Series",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "all-data",
+        "label": "Delete all data (type DELETE)",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  },
+  {
+    "nn": 66,
+    "id": "WC",
+    "slug": "widget-config",
+    "name": "Widget configuration",
+    "group": "Widget configuration",
+    "pri": "MVP",
+    "type": "Screen",
+    "states": [
+      {
+        "key": "default",
+        "label": "With live preview (Now & Next)",
+        "variants": [],
+        "opts": {}
+      },
+      {
+        "key": "routine-picker",
+        "label": "W7 routine picker (v1.x)",
+        "variants": [],
+        "opts": {}
+      }
+    ]
+  }
+]
