@@ -17,15 +17,7 @@ class TaskDetailPaparazziFont200Test {
     @Test
     fun t2_task_detail_font200_dark() {
         paparazzi.snapshot("t2_task_detail_font200_dark") {
-            TaskDetailAppPreview(
-                darkTheme = true,
-                state =
-                    taskDetailExisting().copy(
-                        title = "Write project brief",
-                        whenLabel = "Today · 9:00–10:00",
-                        estimate = "1 h",
-                    ),
-            )
+            TaskDetailAppPreview(darkTheme = true, state = taskDetailExisting())
         }
     }
 }

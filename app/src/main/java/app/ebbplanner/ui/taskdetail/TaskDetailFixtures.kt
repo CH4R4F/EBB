@@ -4,7 +4,18 @@ package app.ebbplanner.ui.taskdetail
 
 fun taskDetailExisting(): TaskDetailPresentationState =
     TaskDetailPresentationState(
+        title = "Write project brief",
+        whenLabel = "Today · 10:00–11:15",
+        dateLabel = "Mon 16 Nov",
+        estimate = "1 h 15 min",
         pinned = false,
+        energySelected = 3,
+        colorLabel = "Amber · Edit note",
+        colorIconKey = "edit_note",
+        colorKey = "amber",
+        remindersLabel = "At start · 5 min before",
+        remindersEnabled = true,
+        subtaskProgress = "2/5",
         subtasks =
             listOf(
                 TaskSubtaskRow("Gather last year's numbers", "10 min", true),
@@ -14,6 +25,7 @@ fun taskDetailExisting(): TaskDetailPresentationState =
                 TaskSubtaskRow("Final read-through", "10 min", false),
             ),
         notes = "Brief for the spring campaign. Keep it to one page.",
+        mode = TaskDetailMode.Existing,
     )
 
 fun taskDetailNew(): TaskDetailPresentationState =
