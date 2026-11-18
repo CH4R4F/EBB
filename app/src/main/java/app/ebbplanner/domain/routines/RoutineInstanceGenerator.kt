@@ -1,5 +1,6 @@
 package app.ebbplanner.domain.routines
 
+import android.util.Log
 import app.ebbplanner.data.local.dao.RoutineDao
 import app.ebbplanner.data.local.dao.RoutineSkipDao
 import app.ebbplanner.data.local.dao.TaskDao
@@ -139,10 +140,20 @@ class RoutineInstanceGenerator
                     return@withExclusive
                 }
                 drainDeferredQueueBeforeGenerationLocked()
-                if (linkTaskId != null && linkOnSave) {
-                    linkExistingTaskLocked(linkTaskId, routine)
-                } else {
-                    syncFutureInstancesLocked(routine)
+                try {
+                    if (linkTaskId != null && linkOnSave) {
+                        linkExistingTaskLocked(linkTaskId, routine)
+                    } else {
+                        syncFutureInstancesLocked(routine)
+                    }
+                } catch (t: Throwable) {
+                    Log.e(TAG, "Routine save could not apply link/sync; queueing for retry", t)
+                    if (linkTaskId != null && linkOnSave) {
+                        deferredWorkPreferences.enqueuePendingLink(routine.id, linkTaskId)
+                    } else {
+                        deferredWorkPreferences.enqueuePendingSync(routine.id)
+                    }
+                    deferred = true
                 }
             }
             return deferred
@@ -167,23 +178,31 @@ class RoutineInstanceGenerator
         private suspend fun applyDeferredRoutineWorkBodyLocked() {
             val links = deferredWorkPreferences.snapshotPendingLinks()
             links.forEach { (routineId, taskId) ->
-                val routine =
-                    routineDao.getById(routineId) ?: run {
-                        deferredWorkPreferences.removePendingLink(routineId, taskId)
-                        return@forEach
-                    }
-                applyLinkToTaskOnlyLocked(taskId, routine)
-                deferredWorkPreferences.removePendingLink(routineId, taskId)
+                try {
+                    val routine =
+                        routineDao.getById(routineId) ?: run {
+                            deferredWorkPreferences.removePendingLink(routineId, taskId)
+                            return@forEach
+                        }
+                    applyLinkToTaskOnlyLocked(taskId, routine)
+                    deferredWorkPreferences.removePendingLink(routineId, taskId)
+                } catch (t: Throwable) {
+                    Log.e(TAG, "Deferred link failed (kept queued): routine=$routineId task=$taskId", t)
+                }
             }
             val syncIds = deferredWorkPreferences.snapshotPendingSyncRoutineIds()
             syncIds.forEach { routineId ->
-                val routine =
-                    routineDao.getById(routineId) ?: run {
-                        deferredWorkPreferences.removePendingSync(routineId)
-                        return@forEach
-                    }
-                syncFutureInstancesLocked(routine, skipLinkDay = null, runRollingWindowAfter = false)
-                deferredWorkPreferences.removePendingSync(routineId)
+                try {
+                    val routine =
+                        routineDao.getById(routineId) ?: run {
+                            deferredWorkPreferences.removePendingSync(routineId)
+                            return@forEach
+                        }
+                    syncFutureInstancesLocked(routine, skipLinkDay = null, runRollingWindowAfter = false)
+                    deferredWorkPreferences.removePendingSync(routineId)
+                } catch (t: Throwable) {
+                    Log.e(TAG, "Deferred sync failed (kept queued): routine=$routineId", t)
+                }
             }
         }
 
@@ -369,5 +388,6 @@ class RoutineInstanceGenerator
 
         companion object {
             const val DEFAULT_WINDOW_DAYS = 14
+            private const val TAG = "RoutineInstanceGenerator"
         }
     }

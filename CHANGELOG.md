@@ -7,26 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-18
+
+First public preview of Ebb — an ADHD-friendly day planner for Android.
+
 ### Added
 
-- Onboarding flow: day shape (wake/bed), preferences, try-it capture, notification and exact-alarm education, calendar intro.
-- **Today** timeline with scheduled and anytime tasks, calendar-event blocks, gaps, ring progress, multiselect, and quick capture with draft restore.
-- **Inbox** and **Week** for triage and week-at-a-glance planning.
-- **Routines (Repeat)** with daily/weekdays/weekly rules, rolling 14-day instance generation, skip rows, and link-from-task.
-- **Task detail**: subtasks, estimates, color/icon, reminders, schedule placement, routine detach.
-- **Focus** sessions: block-until-end, fixed minutes, count-up, and interval modes with in-app ring/bar and background alarms.
-- **Day tools** navigation: shift the rest of the day, plan my day, overlap helper, make it fit.
-- Reminders via `AlarmManager`, boot reschedule, and notification actions.
-- **Settings**: Material You toggle, default reminders, wake/bed display, app version from `BuildConfig`.
-- Room database (v12) with data-safe upgrade path, routine-occurrence repair, deferred routine work queue, and SQLite triggers for occurrence uniqueness.
+- **Onboarding** — set your day boundaries, pick preferences, try capturing a task, and learn about reminders, exact alarms, and calendars.
+- **Today** — scrollable timeline with scheduled tasks, calendar events, focus ring, multiselect, and **quick capture** with draft restore.
+- **Inbox & Week** — capture later, triage, and see the week at a glance.
+- **Routines (Repeat)** — daily, weekdays, or weekly repeats that materialise on your timeline; skip a day; turn an inbox task into a repeat.
+- **Tasks** — titles, notes, subtasks, time estimates, colours/icons, reminders, and scheduling.
+- **Focus** — work timers (fixed, until block end, count-up, intervals) with on-screen progress and alarms when the app is in the background.
+- **Day tools** — shift the rest of the day, plan my day, overlap helper, and make it fit (from navigation).
+- **Reminders** — notifications for planned tasks, rescheduled after reboot.
+- **Settings** — Material You, default reminders, wake/bed summary, and app version.
 
 ### Changed
 
-- Routine generation is gated and repair-aware; deferred link/sync drains before instance generation.
-
-## [0.1.0] - TBD
-
-_First tagged release — move items from [Unreleased] here when releasing._
+- Repeat and routine edits respect database repair and safely drain queued link/sync work before generating new days.
 
 [Unreleased]: https://github.com/CH4R4F/EBB/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/CH4R4F/EBB/releases/tag/v0.1.0

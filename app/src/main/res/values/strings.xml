@@ -186,6 +186,7 @@
     <string name="onboarding_try_it_success_celebration_body_tomorrow_timed">%1$s is on tomorrow at %2$s.</string>
     <string name="routine_editor_new">New routine</string>
     <string name="routine_saved_deferred_days">Saved. Updating your days shortly.</string>
+    <string name="routine_save_failed">Could not save routine. Try again.</string>
     <string name="routine_delete">Delete routine</string>
     <string name="task_delete">Delete task</string>
     <string name="task_repeat_routine">From routine</string>

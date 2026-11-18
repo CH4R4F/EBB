@@ -112,7 +112,10 @@ class RoutineEditorViewModel
             _state.value = _state.value.copy(durationMin = minutes)
         }
 
-        fun save(onSaved: (deferredInstanceWork: Boolean) -> Unit) {
+        fun save(
+            onSaved: (deferredInstanceWork: Boolean) -> Unit,
+            onSaveFailed: () -> Unit = {},
+        ) {
             viewModelScope.launch {
                 val draft = _state.value
                 if (draft.saveInFlight) return@launch
@@ -157,9 +160,15 @@ class RoutineEditorViewModel
                             linkTaskId = linkTaskId,
                             linkOnSave = linkTaskId != null && existing == null,
                         )
-                    onSaved(deferred)
-                } finally {
                     _state.value = _state.value.copy(saveInFlight = false)
+                    onSaved(deferred)
+                } catch (t: Throwable) {
+                    _state.value =
+                        _state.value.copy(
+                            saveInFlight = false,
+                            saveError = "Could not save routine. Try again.",
+                        )
+                    onSaveFailed()
                 }
             }
         }
