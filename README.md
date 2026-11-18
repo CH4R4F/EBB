@@ -14,6 +14,7 @@
   <img src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=android&logoColor=white" alt="Jetpack Compose / Material 3" />
   <img src="https://img.shields.io/badge/minSdk-26-green" alt="minSdk 26" />
   <a href="https://github.com/CH4R4F/EBB/actions/workflows/android.yml"><img src="https://github.com/CH4R4F/EBB/actions/workflows/android.yml/badge.svg" alt="Android CI" /></a>
+  <a href="https://github.com/CH4R4F/EBB/releases"><img src="https://img.shields.io/github/v/release/CH4R4F/EBB?include_prereleases&label=release&display_name=tag&logo=github" alt="GitHub release" /></a>
 </p>
 
 ---
@@ -128,6 +129,17 @@ flowchart TB
 - **Screens & flows** — Search, done history, garden/wins, remaining design coverage ([`design/COVERAGE.md`](design/COVERAGE.md))
 - **Home screen** — Glance widgets, quick settings tile, shortcuts
 - **Release** — Play listing, signing, privacy policy, production `applicationId`
+
+## Releases
+
+| Track | How to get it |
+|-------|----------------|
+| **Latest dev build** | [debug-latest](https://github.com/CH4R4F/EBB/releases/tag/debug-latest) prerelease (every push to `main`) |
+| **Versioned release** | Tagged `v*.*.*` builds on [GitHub Releases](https://github.com/CH4R4F/EBB/releases) (`ebb-vX.Y.Z-debug.apk` today; Play signing later) |
+
+Version numbers live in [`version.properties`](version.properties). See [`docs/RELEASING.md`](docs/RELEASING.md) for bumping, changelog, and tagging. [CHANGELOG.md](CHANGELOG.md) lists user-visible changes.
+
+Current app version: **0.1.0** (`versionCode` 100).
 
 ## Contributing
 

@@ -1,4 +1,5 @@
 import java.time.Duration
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -12,11 +13,16 @@ plugins {
 val ebbApplicationId = providers.gradleProperty("ebb.applicationId").get()
 val ebbNamespace = providers.gradleProperty("ebb.namespace").get()
 
-val ciVersionCode: Int =
-    providers.environmentVariable("GITHUB_RUN_NUMBER")
-        .map { it.toIntOrNull() ?: 1 }
-        .orElse(1)
-        .get()
+val ebbVersionPropertiesFile = rootProject.file("version.properties")
+val ebbVersionProperties =
+    Properties().apply {
+        ebbVersionPropertiesFile.inputStream().use { load(it) }
+    }
+val ebbVersionMajor = ebbVersionProperties.getProperty("VERSION_MAJOR").toInt()
+val ebbVersionMinor = ebbVersionProperties.getProperty("VERSION_MINOR").toInt()
+val ebbVersionPatch = ebbVersionProperties.getProperty("VERSION_PATCH").toInt()
+val ebbVersionName = "$ebbVersionMajor.$ebbVersionMinor.$ebbVersionPatch"
+val ebbVersionCode = ebbVersionMajor * 10_000 + ebbVersionMinor * 100 + ebbVersionPatch
 
 android {
     namespace = ebbNamespace
@@ -35,8 +41,8 @@ android {
         applicationId = ebbApplicationId
         minSdk = 26
         targetSdk = 35
-        versionCode = ciVersionCode
-        versionName = "0.1.0"
+        versionCode = ebbVersionCode
+        versionName = ebbVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

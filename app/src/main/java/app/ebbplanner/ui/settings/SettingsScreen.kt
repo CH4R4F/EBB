@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.ebbplanner.BuildConfig
 import app.ebbplanner.R
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
@@ -72,6 +73,12 @@ fun SettingsScreen(
                 stringResource(R.string.settings_wake_bed_hint),
                 style = EbbTypography.bodyM,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                stringResource(R.string.settings_version_format, BuildConfig.VERSION_NAME),
+                style = EbbTypography.bodyM,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = EbbSpacing.s4),
             )
         }
     }
