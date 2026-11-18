@@ -92,7 +92,6 @@ fun TodayTimeline(
     val overflowSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val hours = (state.timelineStartHour until state.timelineEndHour).toList()
     val totalMinutes = (state.timelineEndHour - state.timelineStartHour) * 60
-    val baselineHeight = timelineOriginY + durationToHeight(totalMinutes)
     val visibleBlocks =
         remember(state.blocks) {
             applyOverlapMetadata(state.blocks.filter { !it.isLifted })
@@ -101,12 +100,22 @@ fun TodayTimeline(
     val trackStart = timelineHourRail + 4.dp
     val trackEnd = 8.dp
     val trackWidth = (screenWidthDp - trackStart - trackEnd).coerceAtLeast(120.dp)
-    val overlapPlan =
-        remember(visibleBlocks, layoutMetrics, trackWidth, state.timelineStartHour) {
-            planTimelineOverlaps(visibleBlocks, layoutMetrics, trackWidth, state.timelineStartHour)
+    val timeMapping =
+        remember(visibleBlocks, layoutMetrics, state.timelineStartHour, state.timelineEndHour) {
+            buildTimelineTimeMapping(
+                visibleBlocks,
+                layoutMetrics,
+                state.timelineStartHour,
+                state.timelineEndHour,
+            )
         }
-    val planBottom = planTimelineBottomDp(overlapPlan) + 12.dp + timelineFabScrollClearance
-    val trackHeight = maxOf(baselineHeight, planBottom)
+    val overlapPlan =
+        remember(visibleBlocks, layoutMetrics, trackWidth, timeMapping) {
+            planTimelineOverlaps(visibleBlocks, layoutMetrics, trackWidth, timeMapping)
+        }
+    val windowEndY = timeMapping.y(state.timelineEndHour * 60)
+    val planBottom = planTimelineBottomDp(overlapPlan, timeMapping) + 12.dp
+    val trackHeight = maxOf(windowEndY + 12.dp, planBottom)
 
     Box(
         modifier =
@@ -116,7 +125,7 @@ fun TodayTimeline(
                 .testTag(TODAY_TIMELINE_TAG),
     ) {
         if (state.showNowLine && state.nowMinutes != null) {
-            val pastHeight = minutesToTimelineY(state.nowMinutes, state.timelineStartHour)
+            val pastHeight = timeMapping.y(state.nowMinutes)
             PastZone(
                 height = pastHeight,
                 modifier = Modifier.align(Alignment.TopStart),
@@ -124,7 +133,7 @@ fun TodayTimeline(
         }
         val compactRail = state.compactHourRail || largeText
         hours.forEachIndexed { index, hour ->
-            val y = timelineOriginY + durationToHeight(index * 60)
+            val y = timeMapping.y(state.timelineStartHour * 60 + index * 60)
             val label =
                 if (compactRail) {
                     hour.toString()
@@ -138,8 +147,9 @@ fun TodayTimeline(
         }
 
         state.gaps.forEach { gap ->
-            val y = minutesToTimelineY(gap.startMinutes, state.timelineStartHour)
-            val h = durationToHeight(gap.durationMin).coerceAtLeast(24.dp)
+            val y = timeMapping.y(gap.startMinutes)
+            val h =
+                (timeMapping.y(gap.startMinutes + gap.durationMin) - y).coerceAtLeast(24.dp)
             GapChip(
                 label = gap.label,
                 largeText = largeText,
@@ -154,9 +164,9 @@ fun TodayTimeline(
         }
 
         state.events.forEach { event ->
-            val y = minutesToTimelineY(event.startMinutes, state.timelineStartHour)
-            val slotHeight = durationToHeight(event.durationMin).coerceAtLeast(52.dp)
-            val eventHeight = slotHeight
+            val y = timeMapping.y(event.startMinutes)
+            val eventHeight =
+                (timeMapping.y(event.startMinutes + event.durationMin) - y).coerceAtLeast(52.dp)
             CalendarEventBlock(
                 title = event.title,
                 timeRange = formatRange(event.startMinutes, event.durationMin),
@@ -177,11 +187,16 @@ fun TodayTimeline(
 
         overlapPlan.placements.forEach { (block, placement) ->
             val compactLane = placement.widthDp < 100.dp
+            val showMetaRow =
+                !state.titleOnlyBlocks && !compactLane && block.hasMetaRow() &&
+                    placement.heightDp >= minBlockHeightDp(block, layoutMetrics)
             ScheduledTaskBlock(
                 block = block,
                 dark = dark,
                 titleOnly = state.titleOnlyBlocks,
                 compactLane = compactLane,
+                showMetaRow = showMetaRow,
+                allowTwoLineTitle = compactLane && placement.heightDp >= 36.dp,
                 largeText = largeText,
                 onClick = { onTaskClick(block.id) },
                 onLongClick = { onTaskLongPress(block.id) },
@@ -195,7 +210,13 @@ fun TodayTimeline(
                         .width(placement.widthDp)
                         .height(placement.heightDp)
                         .zIndex(2f)
-                        .alpha(if (block.isGhost) 0.45f else 1f),
+                        .alpha(
+                            when {
+                                block.isGhost -> 0.45f
+                                block.done -> 0.55f
+                                else -> 1f
+                            },
+                        ),
             )
         }
         overlapPlan.overflow.forEach { cluster ->
@@ -215,8 +236,8 @@ fun TodayTimeline(
         }
 
         state.blocks.filter { it.isLifted }.forEach { block ->
-            val y = state.dragOverlay?.liftedTopDp ?: minutesToTimelineY(block.startMinutes, state.timelineStartHour)
-            val h = durationToHeight(block.durationMin).coerceAtLeast(52.dp)
+            val y = state.dragOverlay?.liftedTopDp ?: timeMapping.y(block.startMinutes)
+            val h = timeMapping.blockHeightDp(block).coerceAtLeast(52.dp)
             ScheduledTaskBlock(
                 block = block,
                 dark = dark,
@@ -259,7 +280,7 @@ fun TodayTimeline(
         }
 
         if (state.showNowLine && state.nowMinutes != null) {
-            val y = minutesToTimelineY(state.nowMinutes, state.timelineStartHour)
+            val y = timeMapping.y(state.nowMinutes)
             NowLine(label = formatClock(state.nowMinutes), y = y)
         }
     }
@@ -437,6 +458,8 @@ private fun ScheduledTaskBlock(
     dark: Boolean,
     titleOnly: Boolean,
     compactLane: Boolean = false,
+    showMetaRow: Boolean = false,
+    allowTwoLineTitle: Boolean = false,
     largeText: Boolean = false,
     tallBlock: Boolean = false,
     onClick: () -> Unit = {},
@@ -477,9 +500,9 @@ private fun ScheduledTaskBlock(
                         accent = accent,
                         titleOnly = titleOnly,
                         compactLane = compactLane,
+                        allowTwoLineTitle = allowTwoLineTitle,
                         largeText = largeText,
                         tallBlock = tallBlock,
-                        onMarkDone = onMarkDone,
                     )
                 } else {
                     StandardTaskRow(
@@ -487,11 +510,13 @@ private fun ScheduledTaskBlock(
                         accent = accent,
                         titleOnly = titleOnly,
                         compactLane = compactLane,
+                        showMetaRow = showMetaRow,
+                        allowTwoLineTitle = allowTwoLineTitle,
                         largeText = largeText,
                         tallBlock = tallBlock,
-                        onMarkDone = onMarkDone,
                     )
                 }
+                TaskDoneRingOverlay(block = block, onMarkDone = onMarkDone)
             }
         }
     }
@@ -503,76 +528,9 @@ private fun ShortTaskRow(
     accent: Color,
     titleOnly: Boolean,
     compactLane: Boolean = false,
+    allowTwoLineTitle: Boolean = false,
     largeText: Boolean = false,
     tallBlock: Boolean = false,
-    onMarkDone: () -> Unit = {},
-) {
-    Row(
-        modifier = Modifier.fillMaxSize(),
-        verticalAlignment = if (tallBlock) Alignment.Top else Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .width(4.dp)
-                    .fillMaxHeight()
-                    .background(accent),
-        )
-        if (!compactLane) {
-            EbbSymbol(
-                block.iconKey,
-                fontSize = if (largeText) 16.sp else 18.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(start = 8.dp),
-            )
-        }
-        Column(modifier = Modifier.weight(1f).padding(horizontal = if (compactLane) 4.dp else 6.dp)) {
-            Text(
-                text = block.title,
-                style =
-                    if (compactLane) {
-                        EbbTypography.labelL
-                    } else if (largeText) {
-                        EbbTypography.titleM.copy(fontSize = 14.sp, lineHeight = 18.sp)
-                    } else {
-                        EbbTypography.titleM
-                    },
-                maxLines = if (largeText) 2 else 1,
-                overflow = if (compactLane) TextOverflow.Clip else TextOverflow.Ellipsis,
-                softWrap = false,
-            )
-            if (block.isCurrent && block.minutesLeftLabel != null) {
-                TimeLeftPill(
-                    label = block.minutesLeftLabel,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            }
-        }
-        if (!titleOnly) {
-            val trailing = block.metaDuration ?: block.metaTimeRange
-            trailing?.let {
-                Text(
-                    it,
-                    style = EbbTypography.labelM,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    modifier = Modifier.padding(end = 4.dp),
-                )
-            }
-        }
-        TaskDoneRingSlot(block = block, onMarkDone = onMarkDone)
-    }
-}
-
-@Composable
-private fun StandardTaskRow(
-    block: TodayScheduledBlock,
-    accent: Color,
-    titleOnly: Boolean,
-    compactLane: Boolean = false,
-    largeText: Boolean = false,
-    tallBlock: Boolean = false,
-    onMarkDone: () -> Unit = {},
 ) {
     Row(
         modifier = Modifier.fillMaxSize(),
@@ -598,8 +556,8 @@ private fun StandardTaskRow(
                 Modifier
                     .weight(1f)
                     .padding(
-                        horizontal = if (compactLane) 4.dp else 6.dp,
-                        vertical = if (largeText) 4.dp else 6.dp,
+                        start = if (compactLane) 4.dp else 6.dp,
+                        end = 22.dp,
                     ),
         ) {
             Text(
@@ -612,9 +570,13 @@ private fun StandardTaskRow(
                     } else {
                         EbbTypography.titleM
                     },
-                maxLines = if (largeText) 2 else 1,
+                maxLines = when {
+                    allowTwoLineTitle -> 2
+                    largeText -> 2
+                    else -> 1
+                },
                 overflow = if (compactLane) TextOverflow.Clip else TextOverflow.Ellipsis,
-                softWrap = !compactLane,
+                softWrap = allowTwoLineTitle,
             )
             if (block.isCurrent && block.minutesLeftLabel != null) {
                 TimeLeftPill(
@@ -622,8 +584,88 @@ private fun StandardTaskRow(
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
-            val showMeta = !titleOnly && !compactLane && block.hasMetaRow()
-            if (showMeta) {
+        }
+        if (!titleOnly && !compactLane) {
+            val trailing = block.metaDuration ?: block.metaTimeRange
+            trailing?.let {
+                Text(
+                    it,
+                    style = EbbTypography.labelM,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    modifier = Modifier.padding(end = 4.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StandardTaskRow(
+    block: TodayScheduledBlock,
+    accent: Color,
+    titleOnly: Boolean,
+    compactLane: Boolean = false,
+    showMetaRow: Boolean = false,
+    allowTwoLineTitle: Boolean = false,
+    largeText: Boolean = false,
+    tallBlock: Boolean = false,
+) {
+    Row(
+        modifier = Modifier.fillMaxSize(),
+        verticalAlignment = if (tallBlock) Alignment.Top else Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .width(4.dp)
+                    .fillMaxHeight()
+                    .background(accent),
+        )
+        if (!compactLane) {
+            EbbSymbol(
+                block.iconKey,
+                fontSize = if (largeText) 16.sp else 18.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
+        Column(
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .padding(
+                        start = if (compactLane) 4.dp else 6.dp,
+                        end = 22.dp,
+                        top = if (largeText) 4.dp else 6.dp,
+                        bottom = if (largeText) 4.dp else 6.dp,
+                    ),
+        ) {
+            Text(
+                text = block.title,
+                style =
+                    if (compactLane) {
+                        EbbTypography.labelL
+                    } else if (largeText) {
+                        EbbTypography.titleM.copy(fontSize = 14.sp, lineHeight = 18.sp)
+                    } else {
+                        EbbTypography.titleM
+                    },
+                maxLines = when {
+                    allowTwoLineTitle -> 2
+                    largeText -> 2
+                    else -> 1
+                },
+                overflow = if (compactLane) TextOverflow.Clip else TextOverflow.Ellipsis,
+                softWrap = allowTwoLineTitle || !compactLane,
+            )
+            if (block.isCurrent && block.minutesLeftLabel != null) {
+                TimeLeftPill(
+                    label = block.minutesLeftLabel,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            if (showMetaRow) {
                 if (largeText) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -712,36 +754,37 @@ private fun StandardTaskRow(
                 }
             }
         }
-        TaskDoneRingSlot(block = block, onMarkDone = onMarkDone)
     }
 }
 
 @Composable
-private fun TaskDoneRingSlot(
+private fun TaskDoneRingOverlay(
     block: TodayScheduledBlock,
     onMarkDone: () -> Unit,
 ) {
-    Box(
-        modifier =
-            Modifier
-                .width(48.dp)
-                .fillMaxHeight()
-                .padding(end = 4.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (block.selected) {
-            EbbSymbol(
-                "check_circle",
-                fontSize = 22.sp,
-                filled = true,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        } else {
-            androidx.compose.material3.IconButton(
-                onClick = onMarkDone,
-                modifier = Modifier.size(48.dp),
-            ) {
-                TaskRing(done = block.done)
+    Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier =
+                Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 2.dp)
+                    .size(48.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (block.selected) {
+                EbbSymbol(
+                    "check_circle",
+                    fontSize = 20.sp,
+                    filled = true,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            } else {
+                androidx.compose.material3.IconButton(
+                    onClick = onMarkDone,
+                    modifier = Modifier.size(48.dp),
+                ) {
+                    TaskRing(done = block.done, modifier = Modifier.size(20.dp))
+                }
             }
         }
     }
@@ -813,9 +856,7 @@ private fun TaskRing(
         }
     Box(
         modifier =
-            modifier
-                .size(22.dp)
-                .border(2.dp, color, CircleShape),
+            modifier.then(Modifier.size(22.dp)).border(2.dp, color, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         if (done) {

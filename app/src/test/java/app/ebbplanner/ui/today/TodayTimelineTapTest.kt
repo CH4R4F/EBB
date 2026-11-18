@@ -171,7 +171,7 @@ class TodayTimelineTapTest {
                     68
             ).dp
         assertTrue(
-            planTimelineOverlaps(
+            buildTimelineOverlapPlan(
                 mapped.blocks,
                 TimelineLayoutMetrics(fontScale = 2f),
                 trackWidth,
@@ -311,7 +311,7 @@ class TodayTimelineTapTest {
                     68
             ).dp
         val plan =
-            planTimelineOverlaps(
+            buildTimelineOverlapPlan(
                 state.blocks,
                 TimelineLayoutMetrics(fontScale = fontScale),
                 trackWidth,
@@ -329,7 +329,7 @@ class TodayTimelineTapTest {
                 RuntimeEnvironment.getApplication().resources.configuration.screenWidthDp -
                     68
             ).dp
-        return planTimelineOverlaps(
+        return buildTimelineOverlapPlan(
             state.blocks,
             TimelineLayoutMetrics(fontScale = fontScale),
             trackWidth,

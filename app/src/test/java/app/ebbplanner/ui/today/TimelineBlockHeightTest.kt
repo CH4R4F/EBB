@@ -29,21 +29,23 @@ class TimelineBlockHeightTest {
         metrics: TimelineLayoutMetrics,
         startHour: Int,
     ) {
-        val layouts = layoutBlocksVertically(blocks, metrics, startHour)
+        val mapping = buildTimelineTimeMapping(blocks, metrics, startHour, 22)
+        val plan = planTimelineOverlaps(blocks, metrics, 360.dp, mapping)
         blocks.forEach { block ->
-            val layout = layouts[block.id]!!
+            val placement = plan.placements.first { it.first.id == block.id }.second
             val min = minBlockHeightDp(block, metrics)
-            assertTrue("${block.id} height ${layout.heightDp} < min $min", layout.heightDp >= min)
+            assertTrue("${block.id} height ${placement.heightDp} < min $min", placement.heightDp >= min)
+            assertEquals(mapping.y(block.startMinutes), placement.offsetYDp)
         }
         val sorted = blocks.sortedBy { it.startMinutes }
         for (i in sorted.indices) {
             for (j in i + 1 until sorted.size) {
-                val a = layouts[sorted[i].id]!!
-                val b = layouts[sorted[j].id]!!
-                val aBottom = a.topDp + a.heightDp
+                val a = plan.placements.first { it.first.id == sorted[i].id }.second
+                val b = plan.placements.first { it.first.id == sorted[j].id }.second
+                val aBottom = a.offsetYDp + a.heightDp
                 assertTrue(
                     "${sorted[i].id} draws into ${sorted[j].id}",
-                    aBottom <= b.topDp || blocksOverlapReal(sorted[i], sorted[j]),
+                    aBottom <= b.offsetYDp || blocksOverlapReal(sorted[i], sorted[j]),
                 )
             }
         }

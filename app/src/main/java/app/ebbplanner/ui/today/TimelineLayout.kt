@@ -2,7 +2,7 @@ package app.ebbplanner.ui.today
 
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import kotlin.math.min
+import kotlin.math.max
 
 data class TimelineLayoutMetrics(
     val fontScale: Float = 1f,
@@ -15,6 +15,7 @@ internal val timelineMinLaneWidthBase = 88.dp
 internal val timelineOverflowChipWidth = 44.dp
 internal val timelineFabScrollClearance = 96.dp
 private val overflowChipMinHeight = 32.dp
+private val timeLeftPillExtraDp = 22.dp
 
 fun timelineMinLaneWidth(metrics: TimelineLayoutMetrics): Dp {
     val scale = metrics.fontScale.coerceIn(1f, 2.5f)
@@ -31,6 +32,17 @@ fun minBlockHeightDp(
         large && !metrics.titleOnlyBlocks && block.hasMetaRow() -> 56.dp
         else -> if (block.short) 24.dp else 40.dp
     }
+}
+
+fun requiredDrawHeightDp(
+    block: TodayScheduledBlock,
+    metrics: TimelineLayoutMetrics,
+): Dp {
+    var floor = minBlockHeightDp(block, metrics)
+    if (block.isCurrent && block.minutesLeftLabel != null) {
+        floor += timeLeftPillExtraDp
+    }
+    return durationToHeight(block.durationMin).coerceAtLeast(floor)
 }
 
 fun scheduledEndMinutes(block: TodayScheduledBlock): Int = block.startMinutes + block.durationMin
@@ -54,6 +66,86 @@ fun hasRealTimeOverlap(blocks: List<TodayScheduledBlock>): Boolean {
         }
     }
     return false
+}
+
+class TimelineTimeMapping internal constructor(
+    private val breakpointsMinutes: IntArray,
+    private val yAtBreakpointsDp: FloatArray,
+) {
+    fun y(minutes: Int): Dp {
+        if (breakpointsMinutes.isEmpty()) return timelineOriginY
+        if (minutes <= breakpointsMinutes.first()) {
+            return timelineOriginY
+        }
+        if (minutes >= breakpointsMinutes.last()) {
+            return yAtBreakpointsDp.last().dp
+        }
+        var segment = 0
+        while (segment < breakpointsMinutes.size - 1 && minutes >= breakpointsMinutes[segment + 1]) {
+            segment++
+        }
+        val t0 = breakpointsMinutes[segment]
+        val t1 = breakpointsMinutes[segment + 1]
+        val y0 = yAtBreakpointsDp[segment]
+        val y1 = yAtBreakpointsDp[segment + 1]
+        val fraction = (minutes - t0).toFloat() / (t1 - t0).coerceAtLeast(1)
+        return (y0 + (y1 - y0) * fraction).dp
+    }
+
+    fun blockHeightDp(block: TodayScheduledBlock): Dp = y(scheduledEndMinutes(block)) - y(block.startMinutes)
+
+    fun maxContentBottomDp(): Dp = yAtBreakpointsDp.last().dp
+}
+
+fun buildTimelineOverlapPlan(
+    blocks: List<TodayScheduledBlock>,
+    metrics: TimelineLayoutMetrics,
+    trackWidth: Dp,
+    timelineStartHour: Int,
+    timelineEndHour: Int = 22,
+): TimelineOverlapPlan {
+    val mapping = buildTimelineTimeMapping(blocks, metrics, timelineStartHour, timelineEndHour)
+    return planTimelineOverlaps(blocks, metrics, trackWidth, mapping)
+}
+
+fun buildTimelineTimeMapping(
+    blocks: List<TodayScheduledBlock>,
+    metrics: TimelineLayoutMetrics,
+    timelineStartHour: Int,
+    timelineEndHour: Int,
+): TimelineTimeMapping {
+    val windowStart = timelineStartHour * 60
+    val windowEnd = timelineEndHour * 60
+    val points = sortedSetOf(windowStart, windowEnd)
+    blocks.forEach { block ->
+        points += block.startMinutes
+        points += scheduledEndMinutes(block)
+    }
+    for (hour in timelineStartHour..timelineEndHour) {
+        points += hour * 60
+    }
+    val breaks = points.toIntArray()
+    val yBreaks = FloatArray(breaks.size)
+    yBreaks[0] = timelineOriginY.value
+    val baseRate = timelineDpPerMinute.value
+    for (i in 0 until breaks.size - 1) {
+        val t0 = breaks[i]
+        val t1 = breaks[i + 1]
+        val dt = (t1 - t0).coerceAtLeast(1)
+        val mid = t0 + dt / 2
+        var rate = baseRate
+        blocks.forEach { block ->
+            val bs = block.startMinutes
+            val be = scheduledEndMinutes(block)
+            if (mid in bs until be) {
+                val required = requiredDrawHeightDp(block, metrics).value
+                val stretched = required / block.durationMin.toFloat()
+                rate = max(rate, stretched)
+            }
+        }
+        yBreaks[i + 1] = yBreaks[i] + rate * dt
+    }
+    return TimelineTimeMapping(breaks, yBreaks)
 }
 
 internal fun overlapComponents(blocks: List<TodayScheduledBlock>): List<List<TodayScheduledBlock>> {
@@ -118,34 +210,6 @@ fun applyOverlapMetadata(blocks: List<TodayScheduledBlock>): List<TodayScheduled
     }
 }
 
-data class BlockVerticalLayout(
-    val topDp: Dp,
-    val heightDp: Dp,
-)
-
-fun layoutBlocksVertically(
-    blocks: List<TodayScheduledBlock>,
-    metrics: TimelineLayoutMetrics,
-    timelineStartHour: Int,
-): Map<String, BlockVerticalLayout> {
-    val sorted = blocks.sortedBy { it.startMinutes }
-    val layouts = mutableMapOf<String, BlockVerticalLayout>()
-    for (block in sorted) {
-        var top = minutesToTimelineY(block.startMinutes, timelineStartHour)
-        val height =
-            durationToHeight(block.durationMin).coerceAtLeast(minBlockHeightDp(block, metrics))
-        for ((otherId, otherLayout) in layouts) {
-            val other = blocks.first { it.id == otherId }
-            if (!blocksOverlapReal(block, other)) {
-                val otherBottom = otherLayout.topDp + otherLayout.heightDp
-                if (otherBottom > top) top = otherBottom
-            }
-        }
-        layouts[block.id] = BlockVerticalLayout(top, height)
-    }
-    return layouts
-}
-
 data class TimelineBlockPlacement(
     val block: TodayScheduledBlock,
     val offsetXDp: Dp,
@@ -171,8 +235,9 @@ data class TimelineOverlapPlan(
 
 fun planTimelineBottomDp(
     plan: TimelineOverlapPlan,
+    mapping: TimelineTimeMapping,
 ): Dp {
-    var bottom = 0.dp
+    var bottom = mapping.maxContentBottomDp()
     plan.placements.forEach { (_, placement) ->
         val edge = placement.offsetYDp + placement.heightDp
         if (edge > bottom) bottom = edge
@@ -188,9 +253,8 @@ fun planTimelineOverlaps(
     blocks: List<TodayScheduledBlock>,
     metrics: TimelineLayoutMetrics,
     trackWidthDp: Dp,
-    timelineStartHour: Int,
+    mapping: TimelineTimeMapping,
 ): TimelineOverlapPlan {
-    val vertical = layoutBlocksVertically(blocks, metrics, timelineStartHour)
     val groups = overlapComponents(blocks)
     val placements = mutableListOf<Pair<TodayScheduledBlock, TimelineBlockPlacement>>()
     val overflow = mutableListOf<TimelineOverflowCluster>()
@@ -200,15 +264,16 @@ fun planTimelineOverlaps(
     groups.forEach { group ->
         if (group.size == 1) {
             val block = group.first()
-            val layout = vertical[block.id]!!
+            val top = mapping.y(block.startMinutes)
+            val height = mapping.blockHeightDp(block)
             placements +=
                 block to
                     TimelineBlockPlacement(
                         block = block,
                         offsetXDp = 0.dp,
-                        offsetYDp = layout.topDp,
+                        offsetYDp = top,
                         widthDp = trackWidthDp,
-                        heightDp = layout.heightDp,
+                        heightDp = height,
                     )
             return@forEach
         }
@@ -220,7 +285,7 @@ fun planTimelineOverlaps(
             if (needsChipColumn) {
                 (maxVisibleLanes - 1).coerceAtLeast(1)
             } else {
-                min(groupLaneCount, maxVisibleLanes)
+                kotlin.math.min(groupLaneCount, maxVisibleLanes)
             }
         val taskTrackWidth = if (needsChipColumn) trackWidthDp - timelineOverflowChipWidth else trackWidthDp
         val laneWidth = taskTrackWidth / taskLanes
@@ -228,16 +293,17 @@ fun planTimelineOverlaps(
         val hidden = mutableListOf<TodayScheduledBlock>()
         group.forEach { block ->
             val lane = lanes[block.id] ?: 0
-            val layout = vertical[block.id]!!
+            val top = mapping.y(block.startMinutes)
+            val height = mapping.blockHeightDp(block)
             if (lane < taskLanes) {
                 placements +=
                     block to
                         TimelineBlockPlacement(
                             block = block,
                             offsetXDp = laneWidth * lane,
-                            offsetYDp = layout.topDp,
+                            offsetYDp = top,
                             widthDp = laneWidth - 2.dp,
-                            heightDp = layout.heightDp,
+                            heightDp = height,
                         )
             } else {
                 hidden += block
@@ -245,9 +311,8 @@ fun planTimelineOverlaps(
         }
 
         if (hidden.isNotEmpty()) {
-            val groupLayouts = group.mapNotNull { vertical[it.id] }
-            val chipTop = groupLayouts.minOf { it.topDp }
-            val chipBottom = groupLayouts.maxOf { it.topDp + it.heightDp }
+            val chipTop = group.minOf { mapping.y(it.startMinutes) }
+            val chipBottom = group.maxOf { mapping.y(scheduledEndMinutes(it)) }
             val chipHeight = (chipBottom - chipTop).coerceAtLeast(overflowChipMinHeight)
             val sortedGroup = group.sortedBy { it.startMinutes }
             overflow +=

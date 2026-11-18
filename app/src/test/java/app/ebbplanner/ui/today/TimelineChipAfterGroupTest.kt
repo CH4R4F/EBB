@@ -112,7 +112,7 @@ class TimelineChipAfterGroupTest {
                 RuntimeEnvironment.getApplication().resources.configuration.screenWidthDp -
                     68
             ).dp
-        return planTimelineOverlaps(
+        return buildTimelineOverlapPlan(
             state.blocks,
             TimelineLayoutMetrics(fontScale = fontScale),
             trackWidth,

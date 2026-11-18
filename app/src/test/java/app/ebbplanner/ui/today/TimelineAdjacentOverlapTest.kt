@@ -52,7 +52,7 @@ class TimelineAdjacentOverlapTest {
         val mapped = TodayPresentationMapper.from(state, 10 * 60, fontScale)
         assertNull(mapped.overlapHint)
         val plan =
-            planTimelineOverlaps(
+            buildTimelineOverlapPlan(
                 mapped.blocks,
                 TimelineLayoutMetrics(fontScale = fontScale),
                 300.dp,

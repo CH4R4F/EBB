@@ -34,7 +34,7 @@ class TimelineLayoutTest {
         val groups = overlapComponents(blocks)
         assertEquals(2, groups.size)
         val metrics = TimelineLayoutMetrics(fontScale = 2f)
-        val plan = planTimelineOverlaps(blocks, metrics, 300.dp, 9)
+        val plan = buildTimelineOverlapPlan(blocks, metrics, 300.dp, 9)
         assertTrue(plan.overflow.isEmpty())
         assertEquals(2, plan.placements.size)
         plan.placements.forEach { (_, placement) ->
@@ -50,7 +50,7 @@ class TimelineLayoutTest {
                 block("vole", 10 * 60 + 10, 5),
             )
         assertFalse(hasRealTimeOverlap(blocks))
-        val plan = planTimelineOverlaps(blocks, TimelineLayoutMetrics(2f), 300.dp, 9)
+        val plan = buildTimelineOverlapPlan(blocks, TimelineLayoutMetrics(2f), 300.dp, 9)
         assertTrue(plan.overflow.isEmpty())
     }
 
@@ -60,11 +60,12 @@ class TimelineLayoutTest {
             (1..4).map { i ->
                 block("lane-$i", 10 * 60 + (i - 1) * 5, 30)
             }
-        val plan = planTimelineOverlaps(blocks, TimelineLayoutMetrics(1f), 300.dp, 9)
+        val metrics = TimelineLayoutMetrics(1f)
+        val mapping = buildTimelineTimeMapping(blocks, metrics, 9, 22)
+        val plan = planTimelineOverlaps(blocks, metrics, 300.dp, mapping)
         val cluster = plan.overflow.single()
-        val layouts = layoutBlocksVertically(blocks, TimelineLayoutMetrics(1f), 9)
-        val groupTop = blocks.minOf { layouts[it.id]!!.topDp }
-        val groupBottom = blocks.maxOf { layouts[it.id]!!.topDp + layouts[it.id]!!.heightDp }
+        val groupTop = blocks.minOf { mapping.y(it.startMinutes) }
+        val groupBottom = blocks.maxOf { mapping.y(scheduledEndMinutes(it)) }
         assertEquals(groupTop, cluster.offsetYDp)
         assertEquals(groupBottom, cluster.offsetYDp + cluster.heightDp)
     }
@@ -75,7 +76,7 @@ class TimelineLayoutTest {
             (0 until 5).map { i ->
                 block("lane-$i", 10 * 60 + i * 5, 30)
             }
-        val plan = planTimelineOverlaps(blocks, TimelineLayoutMetrics(1f), 300.dp, 9)
+        val plan = buildTimelineOverlapPlan(blocks, TimelineLayoutMetrics(1f), 300.dp, 9)
         val cluster = plan.overflow.single()
         assertEquals(3, cluster.hiddenBlocks.size)
         assertEquals(5, cluster.allGroupBlocks.size)
