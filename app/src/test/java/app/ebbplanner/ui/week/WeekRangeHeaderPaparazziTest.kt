@@ -7,65 +7,79 @@ import java.time.LocalDate
 import org.junit.Rule
 import org.junit.Test
 
-private val weekRangeNov =
+private val weekRangeSameMonth =
     formatWeekRangeLabel(
         LocalDate.of(2025, 11, 14),
         LocalDate.of(2025, 11, 20),
     )
 
+private val weekRangeCrossMonth =
+    formatWeekRangeLabel(
+        LocalDate.of(2025, 10, 31),
+        LocalDate.of(2025, 11, 6),
+    )
+
 class WeekRangeHeaderF100W411PaparazziTest {
     @get:Rule
-    val paparazzi =
-        Paparazzi(
-            deviceConfig = DeviceConfig.PIXEL_6.copy(fontScale = 1f),
-            renderingMode = SessionParams.RenderingMode.SHRINK,
-        )
+    val paparazzi = weekRangePaparazzi(DeviceConfig.PIXEL_6.copy(fontScale = 1f))
 
     @Test
-    fun week_range_f100_w411() = paparazzi.snapWeekRange("week_range_f100_w411")
+    fun week_range_sameMonth_f100_w411() = paparazzi.snapWeekRange("week_range_sameMonth_f100_w411", weekRangeSameMonth)
 }
 
 class WeekRangeHeaderF200W411PaparazziTest {
     @get:Rule
-    val paparazzi =
-        Paparazzi(
-            deviceConfig = DeviceConfig.PIXEL_6.copy(fontScale = 2f),
-            renderingMode = SessionParams.RenderingMode.SHRINK,
-        )
+    val paparazzi = weekRangePaparazzi(DeviceConfig.PIXEL_6.copy(fontScale = 2f))
 
     @Test
-    fun week_range_f200_w411() = paparazzi.snapWeekRange("week_range_f200_w411")
+    fun week_range_crossMonth_f200_w411() = paparazzi.snapWeekRange("week_range_crossMonth_f200_w411", weekRangeCrossMonth)
 }
 
 class WeekRangeHeaderF100W360PaparazziTest {
     @get:Rule
     val paparazzi =
-        Paparazzi(
-            deviceConfig = DeviceConfig.PIXEL_6.copy(screenWidth = 360, fontScale = 1f),
-            renderingMode = SessionParams.RenderingMode.SHRINK,
+        weekRangePaparazzi(
+            DeviceConfig.PIXEL_6.copy(
+                screenWidth = 360,
+                screenHeight = 800,
+                fontScale = 1f,
+            ),
         )
 
     @Test
-    fun week_range_f100_w360() = paparazzi.snapWeekRange("week_range_f100_w360")
+    fun week_range_sameMonth_f100_w360() = paparazzi.snapWeekRange("week_range_sameMonth_f100_w360", weekRangeSameMonth)
 }
 
 class WeekRangeHeaderF200W360PaparazziTest {
     @get:Rule
     val paparazzi =
-        Paparazzi(
-            deviceConfig = DeviceConfig.PIXEL_6.copy(screenWidth = 360, fontScale = 2f),
-            renderingMode = SessionParams.RenderingMode.SHRINK,
+        weekRangePaparazzi(
+            DeviceConfig.PIXEL_6.copy(
+                screenWidth = 360,
+                screenHeight = 800,
+                fontScale = 2f,
+            ),
         )
 
     @Test
-    fun week_range_f200_w360() = paparazzi.snapWeekRange("week_range_f200_w360")
+    fun week_range_crossMonth_f200_w360() = paparazzi.snapWeekRange("week_range_crossMonth_f200_w360", weekRangeCrossMonth)
 }
 
-private fun Paparazzi.snapWeekRange(name: String) {
+private fun weekRangePaparazzi(device: DeviceConfig): Paparazzi =
+    Paparazzi(
+        deviceConfig = device,
+        renderingMode = SessionParams.RenderingMode.NORMAL,
+        maxPercentDifference = 0.02,
+    )
+
+private fun Paparazzi.snapWeekRange(
+    name: String,
+    range: String,
+) {
     snapshot(name) {
         WeekAppPreview(
             darkTheme = true,
-            state = weekPortrait().copy(rangeLabel = weekRangeNov),
+            state = weekPortrait().copy(rangeLabel = range, mode = WeekVisualMode.Loading),
         )
     }
 }

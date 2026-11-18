@@ -19,7 +19,7 @@ data class WeekDayRow(
 )
 
 data class WeekPresentationState(
-    val rangeLabel: String = "16–22 Nov",
+    val rangeLabel: String = "16\u201322\u00A0Nov",
     val selectedDate: LocalDate = LocalDate.now(),
     val days: List<WeekDayRow> = emptyList(),
     val mode: WeekVisualMode = WeekVisualMode.Portrait,

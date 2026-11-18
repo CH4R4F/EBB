@@ -7,16 +7,22 @@ import java.time.LocalDate
 
 class WeekRangeFormatTest {
     @Test
-    fun sameMonth_usesNonBreakingSpaces() {
+    fun sameMonth_compactWithNbspBeforeMonth() {
         val label =
             formatWeekRangeLabel(
                 LocalDate.of(2025, 11, 14),
                 LocalDate.of(2025, 11, 20),
             )
-        assertTrue(label.contains('\u00A0'))
-        assertTrue(label.contains("14"))
-        assertTrue(label.contains("20"))
-        assertTrue(label.contains("Nov"))
-        assertEquals(-1, label.indexOf(" "))
+        assertEquals("14\u201320\u00A0Nov", label)
+    }
+
+    @Test
+    fun crossMonth_compactEnDash() {
+        val label =
+            formatWeekRangeLabel(
+                LocalDate.of(2025, 10, 31),
+                LocalDate.of(2025, 11, 6),
+            )
+        assertEquals("31\u00A0Oct\u20136\u00A0Nov", label)
     }
 }

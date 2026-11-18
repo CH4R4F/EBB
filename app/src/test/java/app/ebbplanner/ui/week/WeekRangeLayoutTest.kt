@@ -8,8 +8,10 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.junit4.createComposeRule
+import app.ebbplanner.ui.text.LocalTextOverflowReports
 import androidx.compose.ui.test.onNodeWithTag
 import app.ebbplanner.ui.theme.EbbTheme
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -26,36 +28,63 @@ class WeekRangeLayoutTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    private val range =
+    private val sameMonth =
         formatWeekRangeLabel(
             LocalDate.of(2025, 11, 14),
             LocalDate.of(2025, 11, 20),
         )
+    private val crossMonth =
+        formatWeekRangeLabel(
+            LocalDate.of(2025, 10, 31),
+            LocalDate.of(2025, 11, 6),
+        )
 
     @Test
     @Config(qualifiers = "w411dp-h891dp-normal-long-notround-any-420dpi-keyshidden-nonav")
-    fun weekRange_f100_411dp_fullyVisible() = assertRangeVisible(1f)
+    fun weekRange_sameMonth_f100_411_noOverflow() = assertRangeVisible(1f, sameMonth)
 
     @Test
     @Config(qualifiers = "w411dp-h891dp-normal-long-notround-any-420dpi-keyshidden-nonav")
-    fun weekRange_f200_411dp_fullyVisible() = assertRangeVisible(2f)
+    fun weekRange_sameMonth_f130_411_noOverflow() = assertRangeVisible(1.3f, sameMonth)
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp-normal-long-notround-any-420dpi-keyshidden-nonav")
+    fun weekRange_sameMonth_f200_411_noOverflow() = assertRangeVisible(2f, sameMonth)
 
     @Test
     @Config(qualifiers = "w360dp-h640dp-normal-long-notround-any-420dpi-keyshidden-nonav")
-    fun weekRange_f100_360dp_fullyVisible() = assertRangeVisible(1f)
+    fun weekRange_sameMonth_f100_360_noOverflow() = assertRangeVisible(1f, sameMonth)
 
     @Test
     @Config(qualifiers = "w360dp-h640dp-normal-long-notround-any-420dpi-keyshidden-nonav")
-    fun weekRange_f200_360dp_fullyVisible() = assertRangeVisible(2f)
+    fun weekRange_sameMonth_f130_360_noOverflow() = assertRangeVisible(1.3f, sameMonth)
 
-    private fun assertRangeVisible(fontScale: Float) {
+    @Test
+    @Config(qualifiers = "w360dp-h640dp-normal-long-notround-any-420dpi-keyshidden-nonav")
+    fun weekRange_sameMonth_f200_360_noOverflow() = assertRangeVisible(2f, sameMonth)
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp-normal-long-notround-any-420dpi-keyshidden-nonav")
+    fun weekRange_crossMonth_f100_411_noOverflow() = assertRangeVisible(1f, crossMonth)
+
+    @Test
+    @Config(qualifiers = "w360dp-h640dp-normal-long-notround-any-420dpi-keyshidden-nonav")
+    fun weekRange_crossMonth_f200_360_noOverflow() = assertRangeVisible(2f, crossMonth)
+
+    private fun assertRangeVisible(
+        fontScale: Float,
+        rangeLabel: String,
+    ) {
+        val overflow = mutableMapOf<String, Boolean>()
         composeRule.setContent {
-            WithFontScale(fontScale) {
-                EbbTheme {
-                    WeekScreenDesign(
-                        state = weekPortrait().copy(rangeLabel = range),
-                        showBottomNav = false,
-                    )
+            CompositionLocalProvider(LocalTextOverflowReports provides overflow) {
+                WithFontScale(fontScale) {
+                    EbbTheme {
+                        WeekScreenDesign(
+                            state = weekPortrait().copy(rangeLabel = rangeLabel),
+                            showBottomNav = false,
+                        )
+                    }
                 }
             }
         }
@@ -65,12 +94,11 @@ class WeekRangeLayoutTest {
         val barRect = bar.fetchSemanticsNode().boundsInRoot
         val rangeRect = rangeNode.fetchSemanticsNode().boundsInRoot
         assertContains(barRect, rangeRect)
+        assertTrue("range width ${rangeRect.width} > bar ${barRect.width}", rangeRect.width <= barRect.width + 1f)
+        assertEquals(false, overflow[WEEK_RANGE_LABEL_TAG])
         val text =
             rangeNode.fetchSemanticsNode().config.getOrNull(SemanticsProperties.Text)?.joinToString() ?: ""
-        assertTrue(text.contains("14"))
-        assertTrue(text.contains("20"))
         assertTrue(text.contains("Nov"))
-        assertTrue("range must not split the end day from month", text.contains("20") && text.contains("Nov"))
     }
 
     private fun assertContains(

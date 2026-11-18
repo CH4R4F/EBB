@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -49,6 +50,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import app.ebbplanner.ui.text.LocalTextOverflowReports
 import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
@@ -71,6 +73,20 @@ internal fun minutesToTimelineY(
 }
 
 internal fun durationToHeight(minutes: Int): Dp = timelineDpPerMinute * minutes
+
+internal const val TIMELINE_NOW_BADGE_TAG = "timeline_now_badge"
+
+internal fun nowBadgeOverlapsHourLabel(
+    nowY: Dp,
+    hourY: Dp,
+    largeText: Boolean,
+): Boolean {
+    val badgeTop = nowY - 10.dp
+    val badgeBottom = badgeTop + if (largeText) 30.dp else 22.dp
+    val labelTop = hourY - 2.dp
+    val labelBottom = hourY + 18.dp
+    return badgeBottom > labelTop && badgeTop < labelBottom
+}
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -132,10 +148,20 @@ fun TodayTimeline(
             )
         }
         val compactRail = state.compactHourRail || largeText
+        val nowY =
+            if (state.showNowLine && state.nowMinutes != null) {
+                timeMapping.y(state.nowMinutes)
+            } else {
+                null
+            }
         hours.forEachIndexed { index, hour ->
-            val y = timeMapping.y(state.timelineStartHour * 60 + index * 60)
+            val hourMin = state.timelineStartHour * 60 + index * 60
+            val y = timeMapping.y(hourMin)
+            val hideHourLabel = nowY != null && nowBadgeOverlapsHourLabel(nowY, y, largeText)
             val label =
-                if (compactRail) {
+                if (hideHourLabel) {
+                    null
+                } else if (compactRail) {
                     hour.toString()
                 } else {
                     ClockFormat.minutesToClock(hour * 60)
@@ -359,7 +385,7 @@ private fun PastZone(
 
 @Composable
 private fun HourRule(
-    label: String,
+    label: String?,
     y: Dp,
 ) {
     Box(
@@ -368,20 +394,22 @@ private fun HourRule(
                 .fillMaxWidth()
                 .offset(y = y),
     ) {
-        Text(
-            text = label,
-            style = EbbTypography.labelM,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier =
-                Modifier
-                    .width(timelineHourRail)
-                    .padding(end = EbbSpacing.s1)
-                    .align(Alignment.TopStart),
-            textAlign = TextAlign.End,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Ellipsis,
-        )
+        if (label != null) {
+            Text(
+                text = label,
+                style = EbbTypography.labelM,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier =
+                    Modifier
+                        .width(timelineHourRail)
+                        .padding(end = EbbSpacing.s1)
+                        .align(Alignment.TopStart),
+                textAlign = TextAlign.End,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
         Box(
             modifier =
                 Modifier
@@ -432,7 +460,7 @@ private fun NowLineTimeBadge(
 ) {
     val primary = MaterialTheme.colorScheme.primary
     val onPrimary = MaterialTheme.colorScheme.onPrimary
-    val surface = MaterialTheme.colorScheme.surface
+    val overflowReports = LocalTextOverflowReports.current
     Box(
         modifier =
             Modifier
@@ -445,28 +473,24 @@ private fun NowLineTimeBadge(
                 Modifier
                     .align(Alignment.TopStart)
                     .padding(start = 2.dp)
-                    .height(20.dp)
-                    .width(timelineHourRail - 4.dp),
+                    .wrapContentWidth()
+                    .heightIn(min = 18.dp),
             shape = EbbShapes.full,
-            color = surface,
+            color = primary,
             shadowElevation = 1.dp,
         ) {
-            Box(
+            Text(
+                label,
+                style = EbbTypography.labelS,
+                color = onPrimary,
+                maxLines = 1,
+                softWrap = false,
+                onTextLayout = { overflowReports?.put(TIMELINE_NOW_BADGE_TAG, it.hasVisualOverflow) },
                 modifier =
                     Modifier
-                        .fillMaxSize()
-                        .background(primary, EbbShapes.full)
-                        .padding(horizontal = 4.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    label,
-                    style = EbbTypography.labelM,
-                    color = onPrimary,
-                    maxLines = 1,
-                    softWrap = false,
-                )
-            }
+                        .testTag(TIMELINE_NOW_BADGE_TAG)
+                        .padding(horizontal = 6.dp, vertical = 3.dp),
+            )
         }
     }
 }
