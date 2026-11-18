@@ -1,2 +1,31 @@
+# GitHub Linguist — language bar should reflect the Kotlin Android app, not design mockups.
+
+# Design gallery: static HTML/CSS/JS exports, PNG screen comps, tokens, extras (~1.8k files).
+design/** linguist-vendored
+
+# Product spec, architecture notes, and README screenshot copies.
+docs/** linguist-documentation
+
+# Paparazzi golden images (not production UI source).
+app/src/test/snapshots/** linguist-vendored
+
+# --- Binary assets (sensible diffs & merge behavior) ---
+
 *.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
 *.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.keystore binary
+*.jks binary
+*.apk binary
+*.aar binary
+*.jar binary
+*.dex binary
+*.class binary
