@@ -11,6 +11,12 @@ internal object RoutineOccurrenceTriggers {
         db.execSQL("DROP INDEX IF EXISTS $INDEX_NAME")
     }
 
+    fun reinstall(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP TRIGGER IF EXISTS $TRIGGER_INSERT")
+        db.execSQL("DROP TRIGGER IF EXISTS $TRIGGER_UPDATE")
+        ensureInstalled(db)
+    }
+
     fun ensureInstalled(db: SupportSQLiteDatabase) {
         db.execSQL(
             """
@@ -18,11 +24,13 @@ internal object RoutineOccurrenceTriggers {
             BEFORE INSERT ON tasks
             WHEN NEW.deletedAt IS NULL
                 AND NEW.routineOccurrenceDate IS NOT NULL
+                AND NEW.routineOccurrenceDate <> ''
                 AND NEW.sourceRoutineId IS NOT NULL
                 AND EXISTS (
                     SELECT 1 FROM tasks
                     WHERE sourceRoutineId = NEW.sourceRoutineId
                       AND routineOccurrenceDate = NEW.routineOccurrenceDate
+                      AND routineOccurrenceDate <> ''
                       AND deletedAt IS NULL
                 )
             BEGIN
@@ -36,11 +44,13 @@ internal object RoutineOccurrenceTriggers {
             BEFORE UPDATE OF routineOccurrenceDate, deletedAt, sourceRoutineId ON tasks
             WHEN NEW.deletedAt IS NULL
                 AND NEW.routineOccurrenceDate IS NOT NULL
+                AND NEW.routineOccurrenceDate <> ''
                 AND NEW.sourceRoutineId IS NOT NULL
                 AND EXISTS (
                     SELECT 1 FROM tasks
                     WHERE sourceRoutineId = NEW.sourceRoutineId
                       AND routineOccurrenceDate = NEW.routineOccurrenceDate
+                      AND routineOccurrenceDate <> ''
                       AND deletedAt IS NULL
                       AND id != NEW.id
                 )

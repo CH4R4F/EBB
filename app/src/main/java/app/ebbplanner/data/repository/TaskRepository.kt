@@ -128,8 +128,23 @@ class TaskRepository
         }
 
         suspend fun updateTask(task: TaskEntity) {
-            taskDao.update(task)
-            reminderSync.syncTask(task.id)
+            val rows =
+                if (task.sourceRoutineId != null) {
+                    taskDao.updateRoutineTask(task)
+                } else {
+                    taskDao.update(task)
+                }
+            if (rows > 0) {
+                reminderSync.syncTask(task.id)
+            }
+        }
+
+        suspend fun restoreDeletedTask(id: String): Boolean {
+            val now = System.currentTimeMillis()
+            val rows = taskDao.undeleteRoutineTask(id, now)
+            if (rows <= 0) return false
+            taskDao.getById(id)?.let { reminderSync.syncTask(id) }
+            return true
         }
 
         suspend fun deleteTask(id: String) {
@@ -185,8 +200,9 @@ class TaskRepository
                             routineInstanceDetached = task.routineInstanceDetached || task.sourceRoutineId != null,
                             updatedAt = now,
                         )
-                    taskDao.update(updated)
-                    reminderSync.syncTask(task.id)
+                    if (applyTaskUpdate(task, updated)) {
+                        reminderSync.syncTask(task.id)
+                    }
                     shifted++
                     cursor += task.durationMin
                 }
@@ -202,8 +218,9 @@ class TaskRepository
                             routineInstanceDetached = task.routineInstanceDetached || task.sourceRoutineId != null,
                             updatedAt = now,
                         )
-                    taskDao.update(updated)
-                    reminderSync.syncTask(task.id)
+                    if (applyTaskUpdate(task, updated)) {
+                        reminderSync.syncTask(task.id)
+                    }
                     shifted++
                 }
                 return shifted
@@ -224,11 +241,25 @@ class TaskRepository
                         routineInstanceDetached = task.routineInstanceDetached || task.sourceRoutineId != null,
                         updatedAt = now,
                     )
-                taskDao.update(updated)
-                reminderSync.syncTask(task.id)
+                if (applyTaskUpdate(task, updated)) {
+                    reminderSync.syncTask(task.id)
+                }
                 shifted++
             }
             return shifted
+        }
+
+        private suspend fun applyTaskUpdate(
+            before: TaskEntity,
+            updated: TaskEntity,
+        ): Boolean {
+            val rows =
+                if (before.sourceRoutineId != null || updated.sourceRoutineId != null) {
+                    taskDao.updateRoutineTask(updated)
+                } else {
+                    taskDao.update(updated)
+                }
+            return rows > 0
         }
 
         suspend fun rescheduleTaskStart(
@@ -337,8 +368,15 @@ class TaskRepository
                     updated = updated.copy(routineInstanceDetached = true)
                 }
             }
-            taskDao.update(updated)
-            reminderSync.syncTask(id)
+            val rows =
+                if (task.sourceRoutineId != null || updated.sourceRoutineId != null) {
+                    taskDao.updateRoutineTask(updated)
+                } else {
+                    taskDao.update(updated)
+                }
+            if (rows > 0) {
+                reminderSync.syncTask(id)
+            }
         }
 
         private suspend fun touchTaskUpdated(

@@ -3,6 +3,7 @@ package app.ebbplanner.domain.routines
 import app.ebbplanner.data.local.dao.RoutineDao
 import app.ebbplanner.data.local.dao.RoutineSkipDao
 import app.ebbplanner.data.local.dao.TaskDao
+import app.ebbplanner.data.repository.updateRoutineTask
 import app.ebbplanner.data.local.entity.RoutineEntity
 import app.ebbplanner.data.local.entity.RoutineSkipEntity
 import app.ebbplanner.data.local.entity.TaskEntity
@@ -108,6 +109,24 @@ class RoutineInstanceGenerator
             }
         }
 
+        suspend fun persistRoutineAndSyncInstances(
+            upsertRoutine: suspend () -> Unit,
+            routine: RoutineEntity,
+            linkTaskId: String?,
+            linkOnSave: Boolean,
+        ) {
+            if (repairState.isRepairPending()) return
+            generationGate.withExclusive {
+                if (repairState.isRepairPending()) return@withExclusive
+                upsertRoutine()
+                if (linkTaskId != null && linkOnSave) {
+                    linkExistingTaskLocked(linkTaskId, routine)
+                } else {
+                    syncFutureInstancesLocked(routine)
+                }
+            }
+        }
+
         suspend fun linkExistingTask(
             taskId: String,
             routine: RoutineEntity,
@@ -159,7 +178,21 @@ class RoutineInstanceGenerator
                     routineInstanceDetached = task.routineInstanceDetached,
                     updatedAt = now,
                 )
-            taskDao.update(updated)
+            val rows = taskDao.updateRoutineTask(updated)
+            if (rows == 0) {
+                val holder = taskDao.getRoutineOccurrence(routine.id, occurrence)
+                taskDao.updateRoutineTask(
+                    task.copy(
+                        sourceRoutineId = routine.id,
+                        routineInstanceDetached = true,
+                        routineOccurrenceDate = null,
+                        updatedAt = now,
+                    ),
+                )
+                holder?.let { reminderSync.syncTask(it.id) }
+                syncFutureInstancesLocked(routine, skipLinkDay = occurrence)
+                return
+            }
             reminderSync.syncTask(taskId)
             syncFutureInstancesLocked(routine, skipLinkDay = occurrence)
         }
@@ -202,8 +235,9 @@ class RoutineInstanceGenerator
                                 date = existing.date ?: occurrence,
                                 updatedAt = System.currentTimeMillis(),
                             )
-                        taskDao.update(updated)
-                        reminderSync.syncTask(updated.id)
+                        if (taskDao.updateRoutineTask(updated) > 0) {
+                            reminderSync.syncTask(updated.id)
+                        }
                     }
                 }
                 day = day.plusDays(1)

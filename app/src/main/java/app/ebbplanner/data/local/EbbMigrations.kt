@@ -116,3 +116,10 @@ val MIGRATION_10_11 =
             RoutineOccurrenceTriggers.ensureInstalled(db)
         }
     }
+
+val MIGRATION_11_12 =
+    object : Migration(11, 12) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            RoutineOccurrenceTriggers.reinstall(db)
+        }
+    }

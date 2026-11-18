@@ -13,6 +13,7 @@ import app.ebbplanner.data.local.MIGRATION_8_9
 import app.ebbplanner.data.local.EbbDatabaseCallback
 import app.ebbplanner.data.local.MIGRATION_9_10
 import app.ebbplanner.data.local.MIGRATION_10_11
+import app.ebbplanner.data.local.MIGRATION_11_12
 import app.ebbplanner.data.local.dao.DayPlanDao
 import app.ebbplanner.data.local.dao.ReminderDao
 import app.ebbplanner.data.local.dao.RoutineDao
@@ -49,6 +50,7 @@ object DatabaseModule {
                 MIGRATION_8_9,
                 MIGRATION_9_10,
                 MIGRATION_10_11,
+                MIGRATION_11_12,
             )
             .addCallback(EbbDatabaseCallback())
             .build()

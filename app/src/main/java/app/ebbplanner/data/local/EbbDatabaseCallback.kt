@@ -6,10 +6,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 class EbbDatabaseCallback : RoomDatabase.Callback() {
     override fun onCreate(db: SupportSQLiteDatabase) {
         RoutineOccurrenceRepair.ensureMetaTable(db)
-        RoutineOccurrenceTriggers.ensureInstalled(db)
+        RoutineOccurrenceTriggers.reinstall(db)
     }
 
     override fun onOpen(db: SupportSQLiteDatabase) {
-        RoutineOccurrenceTriggers.ensureInstalled(db)
+        RoutineOccurrenceTriggers.reinstall(db)
     }
 }

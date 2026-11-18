@@ -775,18 +775,18 @@ private fun CalendarEventBlock(
                 overflow = TextOverflow.Ellipsis,
             )
             if (largeText) {
-                Text(
-                    timeRange,
-                    style = EbbTypography.bodyM.copy(fontSize = 11.sp, lineHeight = 14.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s1),
                 ) {
+                    Text(
+                        timeRange,
+                        style = EbbTypography.bodyM.copy(fontSize = 11.sp, lineHeight = 14.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                     Text(
                         durationLabel,
                         style = EbbTypography.bodyM.copy(fontSize = 11.sp),

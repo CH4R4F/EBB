@@ -119,12 +119,36 @@ interface TaskDao {
     suspend fun insertAll(tasks: List<TaskEntity>)
 
     @Update
-    suspend fun update(task: TaskEntity)
+    suspend fun update(task: TaskEntity): Int
 
     @Query("UPDATE tasks SET deletedAt = :deletedAt, updatedAt = :updatedAt WHERE id = :id")
     suspend fun softDelete(
         id: String,
         deletedAt: Long,
         updatedAt: Long,
+    ): Int
+
+    @Query(
+        """
+        UPDATE tasks SET deletedAt = NULL, updatedAt = :updatedAt
+        WHERE id = :id AND deletedAt IS NOT NULL
+        """,
     )
+    suspend fun undeleteTask(
+        id: String,
+        updatedAt: Long,
+    ): Int
+
+    @Query(
+        """
+        UPDATE tasks
+        SET deletedAt = NULL, routineInstanceDetached = 1,
+            routineOccurrenceDate = NULL, updatedAt = :updatedAt
+        WHERE id = :id AND deletedAt IS NOT NULL
+        """,
+    )
+    suspend fun undeleteTaskClearingOccurrenceKey(
+        id: String,
+        updatedAt: Long,
+    ): Int
 }

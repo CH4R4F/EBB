@@ -140,12 +140,12 @@ class RoutineEditorViewModel
                         createdAt = existing?.createdAt ?: now,
                         updatedAt = now,
                     )
-                routineRepository.upsert(entity)
-                if (linkTaskId != null && draft.isNew) {
-                    routineInstanceGenerator.linkExistingTask(linkTaskId, entity)
-                } else {
-                    routineInstanceGenerator.syncFutureInstances(entity)
-                }
+                routineInstanceGenerator.persistRoutineAndSyncInstances(
+                    upsertRoutine = { routineRepository.upsert(entity) },
+                    routine = entity,
+                    linkTaskId = linkTaskId,
+                    linkOnSave = draft.isNew,
+                )
                 onSaved()
             }
         }
