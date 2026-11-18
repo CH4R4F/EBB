@@ -70,9 +70,9 @@ class TimelinePillTapTest {
             }
         }
         composeRule.waitForIdle()
-        val pill = composeRule.onNodeWithTag(TIMELINE_TIME_LEFT_PILL_TAG, useUnmergedTree = true)
+        val pill = composeRule.onNodeWithTag(timelineTimeLeftPillTag("running"), useUnmergedTree = true)
         pill.performTouchInput {
-            for (fraction in listOf(0.1f, 0.5f, 0.9f)) {
+            for (fraction in listOf(0.1f, 0.5f, 0.9f, 0.99f)) {
                 val x = left + (right - left) * fraction
                 val y = top + (bottom - top) * 0.5f
                 click(Offset(x, y))

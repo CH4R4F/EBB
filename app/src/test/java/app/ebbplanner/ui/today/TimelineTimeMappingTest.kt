@@ -55,7 +55,7 @@ class TimelineTimeMappingTest {
         val mapping = buildTimelineTimeMapping(listOf(block), metrics, 9, 22)
         val height = mapping.blockHeightDp(block)
         assertTrue(height >= requiredDrawHeightDp(block, metrics))
-        assertTrue(height >= minBlockHeightDp(block, metrics) + 22.dp)
+        assertTrue(height >= minBlockHeightDp(block, metrics) + pillHeightDp(metrics))
     }
 
     private fun assertSequentialFiveMinuteRun(metrics: TimelineLayoutMetrics) {

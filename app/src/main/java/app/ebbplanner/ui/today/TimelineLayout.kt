@@ -15,7 +15,6 @@ internal val timelineMinLaneWidthBase = 88.dp
 internal val timelineOverflowChipWidth = 44.dp
 internal val timelineFabScrollClearance = 96.dp
 private val overflowChipMinHeight = 32.dp
-private val timeLeftPillExtraDp = 22.dp
 
 fun timelineMinLaneWidth(metrics: TimelineLayoutMetrics): Dp {
     val scale = metrics.fontScale.coerceIn(1f, 2.5f)
@@ -34,16 +33,6 @@ fun minBlockHeightDp(
     }
 }
 
-fun requiredDrawHeightDp(
-    block: TodayScheduledBlock,
-    metrics: TimelineLayoutMetrics,
-): Dp {
-    var floor = minBlockHeightDp(block, metrics)
-    if (block.isCurrent && block.minutesLeftLabel != null) {
-        floor += timeLeftPillExtraDp
-    }
-    return durationToHeight(block.durationMin).coerceAtLeast(floor)
-}
 
 fun scheduledEndMinutes(block: TodayScheduledBlock): Int = block.startMinutes + block.durationMin
 
@@ -138,7 +127,12 @@ fun buildTimelineTimeMapping(
             val bs = block.startMinutes
             val be = scheduledEndMinutes(block)
             if (mid in bs until be) {
-                val required = requiredDrawHeightDp(block, metrics).value
+                val required =
+                    requiredDrawHeightDp(
+                        block,
+                        metrics,
+                        timelineMinLaneWidth(metrics),
+                    ).value
                 val stretched = required / block.durationMin.toFloat()
                 rate = max(rate, stretched)
             }
