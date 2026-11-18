@@ -29,6 +29,8 @@ class RoutineInstanceGenerator
         private val repairState: RoutineRepairState,
         private val deferredWorkPreferences: RoutineDeferredWorkPreferences,
     ) {
+        private var applyingDeferredQueue = false
+
         suspend fun ensureRollingWindow(daysAhead: Int = DEFAULT_WINDOW_DAYS) {
             if (repairState.isRepairPending()) return
             generationGate.withExclusive {
@@ -136,6 +138,7 @@ class RoutineInstanceGenerator
                     }
                     return@withExclusive
                 }
+                drainDeferredQueueBeforeGenerationLocked()
                 if (linkTaskId != null && linkOnSave) {
                     linkExistingTaskLocked(linkTaskId, routine)
                 } else {
@@ -145,7 +148,23 @@ class RoutineInstanceGenerator
             return deferred
         }
 
+        /** No-op while [applyDeferredRoutineWorkLocked] is already running (avoids recursion). */
+        private suspend fun drainDeferredQueueBeforeGenerationLocked() {
+            if (repairState.isRepairPending() || applyingDeferredQueue) return
+            applyDeferredRoutineWorkLocked()
+        }
+
         suspend fun applyDeferredRoutineWorkLocked() {
+            if (applyingDeferredQueue) return
+            applyingDeferredQueue = true
+            try {
+                applyDeferredRoutineWorkBodyLocked()
+            } finally {
+                applyingDeferredQueue = false
+            }
+        }
+
+        private suspend fun applyDeferredRoutineWorkBodyLocked() {
             val links = deferredWorkPreferences.snapshotPendingLinks()
             links.forEach { (routineId, taskId) ->
                 val routine =
@@ -175,6 +194,7 @@ class RoutineInstanceGenerator
             if (repairState.isRepairPending()) return
             generationGate.withExclusive {
                 if (repairState.isRepairPending()) return@withExclusive
+                drainDeferredQueueBeforeGenerationLocked()
                 linkExistingTaskLocked(taskId, routine)
             }
         }
@@ -183,6 +203,7 @@ class RoutineInstanceGenerator
             taskId: String,
             routine: RoutineEntity,
         ) {
+            drainDeferredQueueBeforeGenerationLocked()
             val occurrence = applyLinkToTaskOnlyLocked(taskId, routine) ?: return
             syncFutureInstancesLocked(routine, skipLinkDay = occurrence, runRollingWindowAfter = true)
         }
@@ -253,6 +274,7 @@ class RoutineInstanceGenerator
             if (repairState.isRepairPending()) return
             generationGate.withExclusive {
                 if (repairState.isRepairPending()) return@withExclusive
+                drainDeferredQueueBeforeGenerationLocked()
                 syncFutureInstancesLocked(routine, skipLinkDay)
             }
         }
@@ -262,6 +284,7 @@ class RoutineInstanceGenerator
             skipLinkDay: String? = null,
             runRollingWindowAfter: Boolean = true,
         ) {
+            drainDeferredQueueBeforeGenerationLocked()
             pruneNonApplyingInstances(routine)
             val today = LocalDate.now()
             val end = today.plusDays(DEFAULT_WINDOW_DAYS.toLong() - 1)
