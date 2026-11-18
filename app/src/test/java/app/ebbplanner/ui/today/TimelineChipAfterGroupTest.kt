@@ -107,11 +107,9 @@ class TimelineChipAfterGroupTest {
         state: TodayPresentationState,
         fontScale: Float,
     ): TimelineOverflowCluster {
-        val trackWidth =
-            (
-                RuntimeEnvironment.getApplication().resources.configuration.screenWidthDp -
-                    68
-            ).dp
+        val screenW =
+            RuntimeEnvironment.getApplication().resources.configuration.screenWidthDp.dp
+        val trackWidth = timelineTrackWidthDp(screenW, TimelineLayoutMetrics(fontScale = fontScale), false)
         return buildTimelineOverlapPlan(
             state.blocks,
             TimelineLayoutMetrics(fontScale = fontScale),

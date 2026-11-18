@@ -45,10 +45,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -135,7 +133,6 @@ private fun WeekTopBar(
     onNextWeek: () -> Unit,
     onThisWeek: () -> Unit = {},
 ) {
-    val largeText = LocalConfiguration.current.fontScale >= 1.75f
     val thisWeekLabel = stringResource(R.string.week_this_week)
     Column(
         modifier =
@@ -148,18 +145,13 @@ private fun WeekTopBar(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onPreviousWeek) { EbbSymbol("chevron_left", fontSize = 22.sp) }
             androidx.compose.foundation.layout.Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = onNextWeek) { EbbSymbol("chevron_right", fontSize = 22.sp) }
             IconButton(
                 onClick = onThisWeek,
                 modifier =
                     Modifier
                         .testTag(WEEK_THIS_WEEK_BUTTON_TAG)
-                        .clearAndSetSemantics {
-                            contentDescription = thisWeekLabel
-                            role = Role.Button
-                        },
+                        .semantics { contentDescription = thisWeekLabel },
             ) {
                 EbbSymbol(
                     "today",
@@ -169,17 +161,19 @@ private fun WeekTopBar(
             }
             WeekOverflowMenu(onThisWeek = onThisWeek)
         }
-        WeekRangeText(
-            range = range,
-            modifier = Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 2.dp),
-            style =
-                if (largeText) {
-                    EbbTypography.bodyM.copy(fontSize = 14.sp, lineHeight = 18.sp)
-                } else {
-                    EbbTypography.headlineM
-                },
-            maxLines = 2,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onPreviousWeek) { EbbSymbol("chevron_left", fontSize = 22.sp) }
+            WeekRangeText(
+                range = range,
+                modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+                style = EbbTypography.headlineM,
+                maxLines = 2,
+            )
+            IconButton(onClick = onNextWeek) { EbbSymbol("chevron_right", fontSize = 22.sp) }
+        }
     }
 }
 

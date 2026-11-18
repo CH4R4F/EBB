@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -60,8 +61,12 @@ import app.ebbplanner.ui.time.ClockFormat
 
 internal val timelineDpPerMinute = 72.dp / 60f
 internal val timelineOriginY = 36.dp
-internal val timelineHourRail = 56.dp
 internal val timelineMinLaneWidth = 96.dp
+
+internal fun timelineHourRailForTests(
+    metrics: TimelineLayoutMetrics,
+    compactHourLabels: Boolean = false,
+): Dp = timelineHourRailWidthDp(metrics, compactHourLabels)
 
 internal fun minutesToTimelineY(
     minutes: Int,
@@ -75,18 +80,6 @@ internal fun minutesToTimelineY(
 internal fun durationToHeight(minutes: Int): Dp = timelineDpPerMinute * minutes
 
 internal const val TIMELINE_NOW_BADGE_TAG = "timeline_now_badge"
-
-internal fun nowBadgeOverlapsHourLabel(
-    nowY: Dp,
-    hourY: Dp,
-    largeText: Boolean,
-): Boolean {
-    val badgeTop = nowY - 10.dp
-    val badgeBottom = badgeTop + if (largeText) 30.dp else 22.dp
-    val labelTop = hourY - 2.dp
-    val labelBottom = hourY + 18.dp
-    return badgeBottom > labelTop && badgeTop < labelBottom
-}
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -113,9 +106,12 @@ fun TodayTimeline(
             applyOverlapMetadata(state.blocks.filter { !it.isLifted })
         }
     val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
-    val trackStart = timelineHourRail + 4.dp
+    val compactRail = state.compactHourRail || largeText
+    val hourRail = timelineHourRailWidthDp(layoutMetrics, compactRail)
+    val badgeHeight = nowBadgeHeightDp(layoutMetrics)
+    val trackStart = hourRail + 4.dp
     val trackEnd = 8.dp
-    val trackWidth = (screenWidthDp - trackStart - trackEnd).coerceAtLeast(120.dp)
+    val trackWidth = timelineTrackWidthDp(screenWidthDp, layoutMetrics, compactRail, trackEnd)
     val timeMapping =
         remember(visibleBlocks, layoutMetrics, state.timelineStartHour, state.timelineEndHour) {
             buildTimelineTimeMapping(
@@ -144,10 +140,10 @@ fun TodayTimeline(
             val pastHeight = timeMapping.y(state.nowMinutes)
             PastZone(
                 height = pastHeight,
+                hourRail = hourRail,
                 modifier = Modifier.align(Alignment.TopStart),
             )
         }
-        val compactRail = state.compactHourRail || largeText
         val nowY =
             if (state.showNowLine && state.nowMinutes != null) {
                 timeMapping.y(state.nowMinutes)
@@ -157,7 +153,7 @@ fun TodayTimeline(
         hours.forEachIndexed { index, hour ->
             val hourMin = state.timelineStartHour * 60 + index * 60
             val y = timeMapping.y(hourMin)
-            val hideHourLabel = nowY != null && nowBadgeOverlapsHourLabel(nowY, y, largeText)
+            val hideHourLabel = nowY != null && nowBadgeOverlapsHourLabel(nowY, y, badgeHeight)
             val label =
                 if (hideHourLabel) {
                     null
@@ -169,6 +165,7 @@ fun TodayTimeline(
             HourRule(
                 label = label,
                 y = y,
+                hourRail = hourRail,
             )
         }
 
@@ -182,7 +179,7 @@ fun TodayTimeline(
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
-                        .padding(start = timelineHourRail + 4.dp, end = 8.dp)
+                        .padding(start = trackStart, end = trackEnd)
                         .offset(y = y)
                         .fillMaxWidth()
                         .height(h.coerceAtLeast(if (largeText) 44.dp else 32.dp)),
@@ -204,7 +201,7 @@ fun TodayTimeline(
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
-                        .padding(start = timelineHourRail + 4.dp, end = 8.dp)
+                        .padding(start = trackStart, end = trackEnd)
                         .offset(y = y)
                         .fillMaxWidth()
                         .height(eventHeight),
@@ -213,7 +210,7 @@ fun TodayTimeline(
 
         if (state.showNowLine && state.nowMinutes != null) {
             val y = timeMapping.y(state.nowMinutes)
-            NowLineStrike(y = y)
+            NowLineStrike(y = y, hourRail = hourRail)
         }
 
         overlapPlan.placements.forEach { (block, placement) ->
@@ -295,7 +292,7 @@ fun TodayTimeline(
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
-                        .padding(start = timelineHourRail + 28.dp, end = 4.dp)
+                        .padding(start = hourRail + 24.dp, end = 4.dp)
                         .offset(y = y)
                         .fillMaxWidth()
                         .height(h)
@@ -308,6 +305,8 @@ fun TodayTimeline(
             NowLineTimeBadge(
                 label = formatClock(state.nowMinutes),
                 y = timeMapping.y(state.nowMinutes),
+                hourRail = hourRail,
+                badgeHeight = badgeHeight,
             )
         }
 
@@ -371,13 +370,14 @@ fun TodayTimeline(
 @Composable
 private fun PastZone(
     height: Dp,
+    hourRail: Dp,
     modifier: Modifier = Modifier,
 ) {
     Box(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(start = timelineHourRail)
+                .padding(start = hourRail)
                 .height(height)
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
     )
@@ -387,6 +387,7 @@ private fun PastZone(
 private fun HourRule(
     label: String?,
     y: Dp,
+    hourRail: Dp,
 ) {
     Box(
         modifier =
@@ -401,7 +402,7 @@ private fun HourRule(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier =
                     Modifier
-                        .width(timelineHourRail)
+                        .width(hourRail)
                         .padding(end = EbbSpacing.s1)
                         .align(Alignment.TopStart),
                 textAlign = TextAlign.End,
@@ -414,7 +415,7 @@ private fun HourRule(
             modifier =
                 Modifier
                     .align(Alignment.TopStart)
-                    .padding(start = timelineHourRail, end = 8.dp)
+                    .padding(start = hourRail, end = 8.dp)
                     .fillMaxWidth()
                     .height(1.dp)
                     .offset(y = 8.dp)
@@ -424,7 +425,10 @@ private fun HourRule(
 }
 
 @Composable
-private fun NowLineStrike(y: Dp) {
+private fun NowLineStrike(
+    y: Dp,
+    hourRail: Dp,
+) {
     val primary = MaterialTheme.colorScheme.primary
     Box(
         modifier =
@@ -445,7 +449,7 @@ private fun NowLineStrike(y: Dp) {
             modifier =
                 Modifier
                     .align(Alignment.TopStart)
-                    .padding(start = timelineHourRail - 4.dp)
+                    .padding(start = hourRail - 4.dp)
                     .offset(y = (-3).dp)
                     .size(8.dp)
                     .background(primary, CircleShape),
@@ -457,6 +461,8 @@ private fun NowLineStrike(y: Dp) {
 private fun NowLineTimeBadge(
     label: String,
     y: Dp,
+    hourRail: Dp,
+    badgeHeight: Dp,
 ) {
     val primary = MaterialTheme.colorScheme.primary
     val onPrimary = MaterialTheme.colorScheme.onPrimary
@@ -465,7 +471,7 @@ private fun NowLineTimeBadge(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .offset(y = y - 10.dp)
+                .offset(y = y - badgeHeight / 2)
                 .zIndex(6f),
     ) {
         Surface(
@@ -473,8 +479,9 @@ private fun NowLineTimeBadge(
                 Modifier
                     .align(Alignment.TopStart)
                     .padding(start = 2.dp)
+                    .widthIn(max = hourRail - 4.dp)
                     .wrapContentWidth()
-                    .heightIn(min = 18.dp),
+                    .heightIn(min = badgeHeight),
             shape = EbbShapes.full,
             color = primary,
             shadowElevation = 1.dp,

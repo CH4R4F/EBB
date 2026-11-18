@@ -106,7 +106,7 @@ class TimelineContentTapTest {
             }
         }
         composeRule.waitForIdle()
-        val trackWidth = (411 - 68).dp
+        val trackWidth = timelineTrackWidthDp(411.dp, TimelineLayoutMetrics(fontScale), compactHourLabels = false)
         val visible =
             buildTimelineOverlapPlan(
                 state.blocks,

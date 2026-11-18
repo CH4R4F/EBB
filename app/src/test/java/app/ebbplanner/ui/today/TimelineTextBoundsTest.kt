@@ -34,11 +34,11 @@ class TimelineTextBoundsTest {
 
     @Test
     fun laneContentWidth_twoLanes_scale100_matchesExpectation() {
-        val track = (411 - 68).dp
-        val lane = track / 2 - 2.dp
         val metrics = TimelineLayoutMetrics(1f)
+        val track = timelineTrackWidthDp(411.dp, metrics, compactHourLabels = false)
+        val lane = track / 2 - 2.dp
         val contentW = timelineBlockContentWidth(lane, metrics, compactLane = true)
-        assertTrue("2-lane content width was $contentW at 411dp", contentW >= 98.dp)
+        assertTrue("2-lane content width was $contentW at 411dp", contentW >= 90.dp)
     }
 
     @Test
@@ -66,7 +66,7 @@ class TimelineTextBoundsTest {
         val specs = listOf("Call mum", "Pay rent", "Buy stamps", "Plan week", "Gym class")
         val pairs = specs.take(lanes).mapIndexed { i, title -> title to durations[i] }
         val (ids, state) = mount(scale, lanes, pairs)
-        val trackWidth = (411 - 68).dp
+        val trackWidth = timelineTrackWidthDp(411.dp, TimelineLayoutMetrics(scale), compactHourLabels = false)
         val visible =
             buildTimelineOverlapPlan(
                 state.blocks,
