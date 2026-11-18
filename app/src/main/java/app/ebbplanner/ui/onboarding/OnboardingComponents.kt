@@ -380,35 +380,37 @@ fun DayShapeTimeCard(
             ),
     ) {
         Column(modifier = Modifier.padding(EbbSpacing.s4)) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                EbbSymbol(
-                    name = symbolName,
-                    fontSize = 20.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                val largeText = androidx.compose.ui.platform.LocalConfiguration.current.fontScale >= 1.75f
+            val largeText = androidx.compose.ui.platform.LocalConfiguration.current.fontScale >= 1.75f
+            Column(verticalArrangement = Arrangement.spacedBy(EbbSpacing.s2)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (!largeText) {
+                        EbbSymbol(
+                            name = symbolName,
+                            fontSize = 20.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Text(
+                        text = label,
+                        style = if (largeText) EbbTypography.labelM else EbbTypography.labelL,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
+                }
                 Text(
-                    text = label,
-                    style = if (largeText) EbbTypography.labelM else EbbTypography.labelL,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    softWrap = true,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
+                    text = timeLabel,
+                    style = if (largeText) EbbTypography.titleM else EbbTypography.display,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
             }
-            val largeText = androidx.compose.ui.platform.LocalConfiguration.current.fontScale >= 1.75f
-            Text(
-                text = timeLabel,
-                style = if (largeText) EbbTypography.headlineM else EbbTypography.display,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = EbbSpacing.s2),
-                maxLines = 1,
-                softWrap = false,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-            )
         }
     }
 }

@@ -105,7 +105,7 @@ fun TodayTimeline(
         remember(visibleBlocks, layoutMetrics, trackWidth, state.timelineStartHour) {
             planTimelineOverlaps(visibleBlocks, layoutMetrics, trackWidth, state.timelineStartHour)
         }
-    val planBottom = planTimelineBottomDp(overlapPlan, state.timelineStartHour, layoutMetrics) + 12.dp
+    val planBottom = planTimelineBottomDp(overlapPlan) + 12.dp + timelineFabScrollClearance
     val trackHeight = maxOf(baselineHeight, planBottom)
 
     Box(
@@ -175,24 +175,7 @@ fun TodayTimeline(
             )
         }
 
-        overlapPlan.overflow.forEach { cluster ->
-            val y = minutesToTimelineY(cluster.startMinutes, state.timelineStartHour)
-            TimelineOverflowChip(
-                label = "+${cluster.hiddenBlocks.size}",
-                modifier =
-                    Modifier
-                        .align(Alignment.TopStart)
-                        .padding(start = trackStart, end = trackEnd)
-                        .offset(x = cluster.offsetXDp, y = y)
-                        .width(cluster.widthDp)
-                        .height(cluster.heightDp)
-                        .zIndex(1f)
-                        .testTag(timelineOverflowChipTag(cluster.groupKey)),
-                onClick = { overflowSheetBlocks = cluster.allGroupBlocks },
-            )
-        }
         overlapPlan.placements.forEach { (block, placement) ->
-            val y = minutesToTimelineY(block.startMinutes, state.timelineStartHour)
             val compactLane = placement.widthDp < 100.dp
             ScheduledTaskBlock(
                 block = block,
@@ -208,11 +191,26 @@ fun TodayTimeline(
                     Modifier
                         .align(Alignment.TopStart)
                         .padding(start = trackStart, end = trackEnd)
-                        .offset(x = placement.offsetXDp, y = y)
+                        .offset(x = placement.offsetXDp, y = placement.offsetYDp)
                         .width(placement.widthDp)
                         .height(placement.heightDp)
                         .zIndex(2f)
                         .alpha(if (block.isGhost) 0.45f else 1f),
+            )
+        }
+        overlapPlan.overflow.forEach { cluster ->
+            TimelineOverflowChip(
+                label = "+${cluster.hiddenBlocks.size}",
+                modifier =
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .padding(start = trackStart, end = trackEnd)
+                        .offset(x = cluster.offsetXDp, y = cluster.offsetYDp)
+                        .width(cluster.widthDp)
+                        .height(cluster.heightDp)
+                        .zIndex(5f)
+                        .testTag(timelineOverflowChipTag(cluster.groupKey)),
+                onClick = { overflowSheetBlocks = cluster.allGroupBlocks },
             )
         }
 
@@ -417,7 +415,13 @@ private fun TimelineOverflowChip(
         color = MaterialTheme.colorScheme.secondaryContainer,
     ) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(label, style = EbbTypography.labelL, maxLines = 1, softWrap = false)
+            Text(
+                label,
+                style = EbbTypography.labelM,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Clip,
+            )
         }
     }
 }
@@ -488,15 +492,6 @@ private fun ScheduledTaskBlock(
                         onMarkDone = onMarkDone,
                     )
                 }
-                if (block.isCurrent && block.minutesLeftLabel != null && !compactLane) {
-                    TimeLeftPill(
-                        label = block.minutesLeftLabel,
-                        modifier =
-                            Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(end = 6.dp, bottom = 4.dp),
-                    )
-                }
             }
         }
     }
@@ -531,27 +526,27 @@ private fun ShortTaskRow(
                 modifier = Modifier.padding(start = 8.dp),
             )
         }
-        Text(
-            text = block.title,
-            style =
-                if (largeText) {
-                    EbbTypography.titleM.copy(fontSize = 14.sp, lineHeight = 18.sp)
-                } else {
-                    EbbTypography.titleM
-                },
-            maxLines = if (largeText) 2 else 1,
-            overflow = if (compactLane) TextOverflow.Clip else TextOverflow.Ellipsis,
-            softWrap = !compactLane,
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .padding(horizontal = if (compactLane) 4.dp else 6.dp),
-        )
-        if (block.isCurrent && block.minutesLeftLabel != null && compactLane) {
-            TimeLeftPill(
-                label = block.minutesLeftLabel,
-                modifier = Modifier.padding(end = 2.dp),
+        Column(modifier = Modifier.weight(1f).padding(horizontal = if (compactLane) 4.dp else 6.dp)) {
+            Text(
+                text = block.title,
+                style =
+                    if (compactLane) {
+                        EbbTypography.labelL
+                    } else if (largeText) {
+                        EbbTypography.titleM.copy(fontSize = 14.sp, lineHeight = 18.sp)
+                    } else {
+                        EbbTypography.titleM
+                    },
+                maxLines = if (largeText) 2 else 1,
+                overflow = if (compactLane) TextOverflow.Clip else TextOverflow.Ellipsis,
+                softWrap = false,
             )
+            if (block.isCurrent && block.minutesLeftLabel != null) {
+                TimeLeftPill(
+                    label = block.minutesLeftLabel,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
         }
         if (!titleOnly) {
             val trailing = block.metaDuration ?: block.metaTimeRange
@@ -565,22 +560,7 @@ private fun ShortTaskRow(
                 )
             }
         }
-        if (block.selected) {
-            EbbSymbol(
-                "check_circle",
-                fontSize = 22.sp,
-                filled = true,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(end = 8.dp),
-            )
-        } else {
-            androidx.compose.material3.IconButton(
-                onClick = onMarkDone,
-                modifier = Modifier.padding(end = 0.dp).size(40.dp),
-            ) {
-                TaskRing(done = block.done)
-            }
-        }
+        TaskDoneRingSlot(block = block, onMarkDone = onMarkDone)
     }
 }
 
@@ -636,7 +616,7 @@ private fun StandardTaskRow(
                 overflow = if (compactLane) TextOverflow.Clip else TextOverflow.Ellipsis,
                 softWrap = !compactLane,
             )
-            if (block.isCurrent && block.minutesLeftLabel != null && compactLane) {
+            if (block.isCurrent && block.minutesLeftLabel != null) {
                 TimeLeftPill(
                     label = block.minutesLeftLabel,
                     modifier = Modifier.padding(top = 2.dp),
@@ -732,18 +712,34 @@ private fun StandardTaskRow(
                 }
             }
         }
+        TaskDoneRingSlot(block = block, onMarkDone = onMarkDone)
+    }
+}
+
+@Composable
+private fun TaskDoneRingSlot(
+    block: TodayScheduledBlock,
+    onMarkDone: () -> Unit,
+) {
+    Box(
+        modifier =
+            Modifier
+                .width(48.dp)
+                .fillMaxHeight()
+                .padding(end = 4.dp),
+        contentAlignment = Alignment.Center,
+    ) {
         if (block.selected) {
             EbbSymbol(
                 "check_circle",
                 fontSize = 22.sp,
                 filled = true,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(end = 8.dp),
             )
         } else {
             androidx.compose.material3.IconButton(
                 onClick = onMarkDone,
-                modifier = Modifier.padding(end = 0.dp).size(40.dp),
+                modifier = Modifier.size(48.dp),
             ) {
                 TaskRing(done = block.done)
             }
@@ -760,6 +756,7 @@ private fun TimeLeftPill(
     Box(
         modifier =
             modifier
+                .testTag(timelineTimeLeftPillTag)
                 .background(primary, EbbShapes.full)
                 .padding(horizontal = 8.dp, vertical = 2.dp),
     ) {
@@ -769,9 +766,13 @@ private fun TimeLeftPill(
             color = MaterialTheme.colorScheme.onPrimary,
             maxLines = 1,
             softWrap = false,
+            overflow = TextOverflow.Clip,
         )
     }
 }
+
+internal const val TIMELINE_TIME_LEFT_PILL_TAG = "timeline_time_left_pill"
+private val timelineTimeLeftPillTag = TIMELINE_TIME_LEFT_PILL_TAG
 
 @Composable
 private fun EnergyBars(level: Int) {

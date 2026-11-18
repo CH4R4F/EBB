@@ -139,12 +139,12 @@ private fun WeekTopBar(
         IconButton(onClick = onPreviousWeek) { EbbSymbol("chevron_left", fontSize = 22.sp) }
         Text(
             range,
-            style = if (largeText) EbbTypography.titleM else EbbTypography.headlineM,
+            style = if (largeText) EbbTypography.labelL else EbbTypography.headlineM,
             modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
-            maxLines = 2,
+            maxLines = if (largeText) 2 else 1,
             softWrap = true,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
         )
         IconButton(onClick = onNextWeek) { EbbSymbol("chevron_right", fontSize = 22.sp) }
         TextButton(onClick = onThisWeek) {

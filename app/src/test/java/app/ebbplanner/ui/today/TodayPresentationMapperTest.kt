@@ -83,6 +83,23 @@ class TodayPresentationMapperTest {
     }
 
     @Test
+    fun overlapHint_ignoresDoneTasks() {
+        val today = LocalDate.now()
+        val state =
+            TodayUiState(
+                date = today,
+                scheduledTasks =
+                    listOf(
+                        taskAt(today, "10:00", 60, "a"),
+                        taskAt(today, "10:30", 60, "b").copy(status = TaskEntity.STATUS_DONE),
+                    ),
+                isLoading = false,
+            )
+        val mapped = TodayPresentationMapper.from(state, 10 * 60)
+        assertNull(mapped.overlapHint)
+    }
+
+    @Test
     fun from_anytimeChipsIncludeIds() {
         val today = LocalDate.now()
         val task =

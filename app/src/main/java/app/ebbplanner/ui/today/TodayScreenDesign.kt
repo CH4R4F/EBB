@@ -124,6 +124,7 @@ fun TodayScreenDesign(
                                 onTaskLongPress = onTaskLongPress,
                                 onMarkTaskDone = onMarkTaskDone,
                             )
+                            Spacer(modifier = Modifier.height(timelineFabScrollClearance))
                         }
                     }
                 }

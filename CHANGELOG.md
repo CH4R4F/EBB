@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Today timeline (overlap)** — real scheduled-time grouping only (Kilo/Lima, Uno/Vole no false pill); cap drawn height when min dp would cross a non-overlapping neighbour; reserved `+N` column (never over visible blocks) with whole-group sheet; per-group lane caps; draw height from dp; non-overlapping tasks stay full width.
+- **Today timeline (overlap)** — `+N` chip anchored at group start with height capped to group extent (reserved column, drawn after tasks); vertical push when min-height blocks would collide; overlap pill/helper ignore done tasks; FAB scroll clearance; time-left pill clear of done ring; readable min heights at 2.0.
 - **Overlap helper** — Apply disabled when `analyzeOverlap` finds no real overlap; pill matches helper.
 - **Narrow timeline lanes** — title-first compact layout, hide icon; time-left pill under title when lane &lt; 100dp.
 - **Settings & chrome** — zero window insets on Settings `Scaffold`/`TopAppBar`; removed duplicate Today ⋮ (settings gear only).

@@ -55,6 +55,21 @@ class TimelineLayoutTest {
     }
 
     @Test
+    fun chipAnchorsAtGroupStart_heightWithinGroupExtent() {
+        val blocks =
+            (1..4).map { i ->
+                block("lane-$i", 10 * 60 + (i - 1) * 5, 30)
+            }
+        val plan = planTimelineOverlaps(blocks, TimelineLayoutMetrics(1f), 300.dp, 9)
+        val cluster = plan.overflow.single()
+        val layouts = layoutBlocksVertically(blocks, TimelineLayoutMetrics(1f), 9)
+        val groupTop = blocks.minOf { layouts[it.id]!!.topDp }
+        val groupBottom = blocks.maxOf { layouts[it.id]!!.topDp + layouts[it.id]!!.heightDp }
+        assertEquals(groupTop, cluster.offsetYDp)
+        assertEquals(groupBottom, cluster.offsetYDp + cluster.heightDp)
+    }
+
+    @Test
     fun overflowChipCount_matchesHiddenOnly() {
         val blocks =
             (0 until 5).map { i ->
