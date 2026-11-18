@@ -40,7 +40,7 @@ class EbbDatabaseOpenSanityTest {
                 .allowMainThreadQueries()
                 .build()
         db.openHelper.writableDatabase.use { sqlite ->
-            check(sqlite.version == 11)
+            check(sqlite.version == 12)
             sqlite.query(
                 "SELECT name FROM sqlite_master WHERE type = 'trigger' AND name = 'routine_occ_unique_ins'",
             ).use { check(it.moveToFirst()) }

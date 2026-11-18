@@ -115,10 +115,9 @@ class RoutineInstanceGenerator
             linkTaskId: String?,
             linkOnSave: Boolean,
         ) {
-            if (repairState.isRepairPending()) return
             generationGate.withExclusive {
-                if (repairState.isRepairPending()) return@withExclusive
                 upsertRoutine()
+                if (repairState.isRepairPending()) return@withExclusive
                 if (linkTaskId != null && linkOnSave) {
                     linkExistingTaskLocked(linkTaskId, routine)
                 } else {
