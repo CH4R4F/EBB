@@ -64,6 +64,25 @@ class TodayPresentationMapperTest {
     }
 
     @Test
+    fun overlapLaneCount_isPerGroup_notDayWide() {
+        val today = LocalDate.now()
+        val state =
+            TodayUiState(
+                date = today,
+                scheduledTasks =
+                    listOf(
+                        taskAt(today, "09:00", 30, "solo"),
+                        taskAt(today, "10:00", 30, "a"),
+                        taskAt(today, "10:05", 30, "b"),
+                    ),
+                isLoading = false,
+            )
+        val mapped = TodayPresentationMapper.from(state, 10 * 60)
+        val solo = mapped.blocks.first { it.id == "solo" }
+        assertEquals(1, solo.overlapLaneCount)
+    }
+
+    @Test
     fun from_anytimeChipsIncludeIds() {
         val today = LocalDate.now()
         val task =

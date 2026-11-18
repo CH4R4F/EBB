@@ -793,13 +793,16 @@ private fun OverlapTimelineCard(
         }
     Surface(Modifier.fillMaxWidth().height(150.dp), shape = EbbShapes.md, color = MaterialTheme.colorScheme.surface) {
         Row(Modifier.padding(12.dp)) {
-            Column(Modifier.width(44.dp).height(railHeight), verticalArrangement = Arrangement.SpaceBetween) {
+            val largeText = androidx.compose.ui.platform.LocalConfiguration.current.fontScale >= 1.75f
+            val railWidth = if (largeText) 52.dp else 44.dp
+            Column(Modifier.width(railWidth).height(railHeight), verticalArrangement = Arrangement.SpaceBetween) {
                 railLabels.forEach { label ->
                     Text(
                         label,
-                        style = EbbTypography.labelM,
+                        style = if (largeText) EbbTypography.labelS else EbbTypography.labelM,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
+                        softWrap = false,
                     )
                 }
             }

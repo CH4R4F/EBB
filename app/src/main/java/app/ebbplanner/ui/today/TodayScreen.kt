@@ -69,6 +69,7 @@ fun TodayScreenContent(
     state: TodayUiState,
     modifier: Modifier = Modifier,
 ) {
-    val presentation = TodayPresentationMapper.from(state)
+    val fontScale = androidx.compose.ui.platform.LocalConfiguration.current.fontScale
+    val presentation = TodayPresentationMapper.from(state, fontScale = fontScale)
     TodayScreenDesign(state = presentation, modifier = modifier, showBottomNav = false)
 }

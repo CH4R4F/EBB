@@ -13,7 +13,9 @@ object TodayPresentationMapper {
     fun from(
         state: TodayUiState,
         nowMinutes: Int = defaultNowMinutes(),
+        fontScale: Float = 1f,
     ): TodayPresentationState {
+        val layoutMetrics = TimelineLayoutMetrics(fontScale = fontScale, titleOnlyBlocks = false)
         if (state.isLoading) {
             return TodayPresentationState(
                 dateLabel = state.dateLabel.ifBlank { state.date.format(dateFormatter) },
@@ -29,11 +31,15 @@ object TodayPresentationMapper {
                 timeLeftLabel = formatTimeLeft(state.bedMinutes, nowMinutes),
             )
         }
-        val blocks = assignOverlapLanes(scheduled.mapNotNull { task -> task.toBlock(nowMinutes) })
+        val blocks =
+            applyOverlapMetadata(
+                scheduled.mapNotNull { task -> task.toBlock(nowMinutes) },
+                layoutMetrics,
+            )
         val minutesLeft = (state.bedMinutes - nowMinutes).coerceAtLeast(0)
         val plannedRemaining = scheduled.filter { it.status != TaskEntity.STATUS_DONE }.sumOf { it.durationMin }
         val overfull = isToday(state.date) && plannedRemaining > minutesLeft
-        val overlap = detectOverlap(blocks)
+        val overlap = blocks.any { it.overlapLaneCount > 1 }
         val events = state.calendarEvents.map { it.toPresentation() }
         val timeline = computeTimelineWindow(blocks, events)
         return TodayPresentationState(
@@ -84,50 +90,6 @@ object TodayPresentationMapper {
         val endHour =
             latest?.let { maxOf(TIMELINE_MIN_END_HOUR, (it + 59) / 60) } ?: TIMELINE_MIN_END_HOUR
         return startHour.coerceAtLeast(0) to endHour.coerceAtMost(24).coerceAtLeast(startHour + 1)
-    }
-
-    private fun assignOverlapLanes(blocks: List<TodayScheduledBlock>): List<TodayScheduledBlock> {
-        if (blocks.isEmpty()) return blocks
-        val sorted = blocks.sortedBy { it.startMinutes }
-        val laneEnds = mutableListOf<Int>()
-        val laneById = mutableMapOf<String, Int>()
-        sorted.forEach { block ->
-            val end = effectiveTimelineEndMinutes(block)
-            var lane = laneEnds.indexOfFirst { it <= block.startMinutes }
-            if (lane < 0) {
-                lane = laneEnds.size
-                laneEnds.add(end)
-            } else {
-                laneEnds[lane] = end
-            }
-            laneById[block.id] = lane
-        }
-        val maxLanes = laneEnds.size.coerceAtLeast(1)
-        return blocks.map { block ->
-            val overlaps =
-                blocks.any { other ->
-                    other.id != block.id &&
-                        block.startMinutes < effectiveTimelineEndMinutes(other) &&
-                        other.startMinutes < effectiveTimelineEndMinutes(block)
-                }
-            block.copy(
-                overlapLane = laneById[block.id] ?: 0,
-                overlapLaneCount = if (overlaps) maxLanes.coerceAtLeast(2) else 1,
-            )
-        }
-    }
-
-    private fun detectOverlap(blocks: List<TodayScheduledBlock>): Boolean {
-        for (i in blocks.indices) {
-            val a = blocks[i]
-            val aEnd = a.startMinutes + a.durationMin
-            for (j in i + 1 until blocks.size) {
-                val b = blocks[j]
-                val bEnd = b.startMinutes + b.durationMin
-                if (a.startMinutes < bEnd && b.startMinutes < aEnd) return true
-            }
-        }
-        return false
     }
 
     private fun TaskEntity.toBlock(nowMinutes: Int): TodayScheduledBlock? {

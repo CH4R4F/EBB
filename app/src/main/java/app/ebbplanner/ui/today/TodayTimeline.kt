@@ -18,13 +18,17 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -77,17 +81,25 @@ fun TodayTimeline(
     onTaskLongPress: (String) -> Unit = {},
     onMarkTaskDone: (String) -> Unit = {},
 ) {
+    val fontScale = LocalConfiguration.current.fontScale
+    val layoutMetrics =
+        remember(fontScale, state.titleOnlyBlocks) {
+            TimelineLayoutMetrics(fontScale = fontScale, titleOnlyBlocks = state.titleOnlyBlocks)
+        }
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val largeText = LocalConfiguration.current.fontScale >= 1.75f
+    val largeText = layoutMetrics.largeText
+    var overflowSheetBlocks by remember { mutableStateOf<List<TodayScheduledBlock>?>(null) }
+    val overflowSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val hours = (state.timelineStartHour until state.timelineEndHour).toList()
     val totalMinutes = (state.timelineEndHour - state.timelineStartHour) * 60
     val baselineHeight = timelineOriginY + durationToHeight(totalMinutes)
     val contentBottom =
         state.blocks.maxOfOrNull { block ->
-            minutesToTimelineY(block.startMinutes, state.timelineStartHour) +
-                durationToHeight(block.durationMin)
+            val h = durationToHeight(block.durationMin).coerceAtLeast(minBlockHeightDp(block, layoutMetrics))
+            minutesToTimelineY(block.startMinutes, state.timelineStartHour) + h
         } ?: baselineHeight
     val trackHeight = maxOf(baselineHeight, contentBottom) + 12.dp
+    val visibleBlocks = remember(state.blocks, layoutMetrics) { applyOverlapMetadata(state.blocks.filter { !it.isLifted }, layoutMetrics) }
 
     Box(
         modifier =
@@ -160,50 +172,47 @@ fun TodayTimeline(
         val trackStart = timelineHourRail + 4.dp
         val trackEnd = 8.dp
         val trackWidth = (screenWidthDp - trackStart - trackEnd).coerceAtLeast(120.dp)
-        val visibleBlocks = state.blocks.filter { !it.isLifted }
-        val laneCount = visibleBlocks.maxOfOrNull { it.overlapLaneCount }?.coerceAtLeast(1) ?: 1
-        val minLane = if (largeText) 108.dp else timelineMinLaneWidth
-        val laneWidth = (trackWidth / laneCount).coerceAtLeast(minLane)
-        val trackContentWidth = laneWidth * laneCount
-        val scrollTracks = trackContentWidth > trackWidth
-        val trackModifier =
-            Modifier
-                .align(Alignment.TopStart)
-                .padding(start = trackStart, end = trackEnd)
-                .fillMaxWidth()
-                .then(if (scrollTracks) Modifier.horizontalScroll(rememberScrollState()) else Modifier)
-        Box(trackModifier) {
-            Box(Modifier.width(trackContentWidth.coerceAtLeast(trackWidth))) {
-                visibleBlocks.forEach { block ->
-                    val y = minutesToTimelineY(block.startMinutes, state.timelineStartHour)
-                    val minBlockHeight =
-                        when {
-                            block.short -> if (largeText) 36.dp else 24.dp
-                            largeText && !state.titleOnlyBlocks && block.hasMetaRow() -> 56.dp
-                            else -> if (block.short) 24.dp else 40.dp
-                        }
-                    val h = durationToHeight(block.durationMin).coerceAtLeast(minBlockHeight)
-                    val laneIndex = block.overlapLane.coerceIn(0, laneCount - 1)
-                    val laneOffset = laneWidth * laneIndex
-                    val titleOnly = state.titleOnlyBlocks || laneWidth < 100.dp
-                    ScheduledTaskBlock(
-                        block = block,
-                        dark = dark,
-                        titleOnly = titleOnly,
-                        largeText = largeText,
-                        onClick = { onTaskClick(block.id) },
-                        onLongClick = { onTaskLongPress(block.id) },
-                        onMarkDone = { onMarkTaskDone(block.id) },
-                        modifier =
-                            Modifier
-                                .align(Alignment.TopStart)
-                                .offset(x = laneOffset, y = y)
-                                .width(laneWidth - 2.dp)
-                                .height(h.coerceAtLeast(if (largeText && block.short) 36.dp else if (block.short) 24.dp else 40.dp))
-                                .alpha(if (block.isGhost) 0.45f else 1f),
-                    )
-                }
+        val overlapPlan =
+            remember(visibleBlocks, layoutMetrics, trackWidth, state.timelineStartHour) {
+                planTimelineOverlaps(visibleBlocks, layoutMetrics, trackWidth, state.timelineStartHour)
             }
+        overlapPlan.placements.forEach { (block, placement) ->
+            val y = minutesToTimelineY(block.startMinutes, state.timelineStartHour)
+            val laneNarrow = placement.widthDp < 100.dp
+            val titleOnly = state.titleOnlyBlocks || laneNarrow
+            ScheduledTaskBlock(
+                block = block,
+                dark = dark,
+                titleOnly = titleOnly,
+                largeText = largeText,
+                onClick = { onTaskClick(block.id) },
+                onLongClick = { onTaskLongPress(block.id) },
+                onMarkDone = { onMarkTaskDone(block.id) },
+                tallBlock = placement.heightDp >= durationToHeight(60),
+                modifier =
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .padding(start = trackStart, end = trackEnd)
+                        .offset(x = placement.offsetXDp, y = y)
+                        .width(placement.widthDp)
+                        .height(placement.heightDp)
+                        .alpha(if (block.isGhost) 0.45f else 1f),
+            )
+        }
+        overlapPlan.overflow.forEach { cluster ->
+            val y = minutesToTimelineY(cluster.startMinutes, state.timelineStartHour)
+            TimelineOverflowChip(
+                label = "+${cluster.hiddenBlocks.size}",
+                modifier =
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .padding(start = trackStart, end = trackEnd)
+                        .offset(x = cluster.offsetXDp, y = y)
+                        .width(cluster.widthDp)
+                        .height(cluster.heightDp)
+                        .testTag(timelineOverflowChipTag(cluster.groupKey)),
+                onClick = { overflowSheetBlocks = cluster.hiddenBlocks },
+            )
         }
 
         state.blocks.filter { it.isLifted }.forEach { block ->
@@ -253,6 +262,35 @@ fun TodayTimeline(
         if (state.showNowLine && state.nowMinutes != null) {
             val y = minutesToTimelineY(state.nowMinutes, state.timelineStartHour)
             NowLine(label = formatClock(state.nowMinutes), y = y)
+        }
+    }
+    overflowSheetBlocks?.let { hidden ->
+        ModalBottomSheet(
+            onDismissRequest = { overflowSheetBlocks = null },
+            sheetState = overflowSheetState,
+        ) {
+            Column(Modifier.padding(EbbSpacing.s4)) {
+                Text("Overlapping tasks", style = EbbTypography.titleM)
+                hidden.forEach { block ->
+                    Surface(
+                        onClick = {
+                            overflowSheetBlocks = null
+                            onTaskClick(block.id)
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        shape = EbbShapes.md,
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    ) {
+                        Text(
+                            block.title,
+                            style = EbbTypography.bodyL,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -361,6 +399,28 @@ private fun NowLine(
     androidx.compose.material3.ExperimentalMaterial3Api::class,
     androidx.compose.foundation.ExperimentalFoundationApi::class,
 )
+@Composable
+private fun TimelineOverflowChip(
+    label: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = EbbShapes.sm,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+    ) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(label, style = EbbTypography.labelL, maxLines = 1, softWrap = false)
+        }
+    }
+}
+
+@OptIn(
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.foundation.ExperimentalFoundationApi::class,
+)
 @Suppress("LongParameterList")
 @Composable
 private fun ScheduledTaskBlock(
@@ -368,6 +428,7 @@ private fun ScheduledTaskBlock(
     dark: Boolean,
     titleOnly: Boolean,
     largeText: Boolean = false,
+    tallBlock: Boolean = false,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = {},
     onMarkDone: () -> Unit = {},
@@ -406,6 +467,7 @@ private fun ScheduledTaskBlock(
                         accent = accent,
                         titleOnly = titleOnly,
                         largeText = largeText,
+                        tallBlock = tallBlock,
                         onMarkDone = onMarkDone,
                     )
                 } else {
@@ -414,6 +476,7 @@ private fun ScheduledTaskBlock(
                         accent = accent,
                         titleOnly = titleOnly,
                         largeText = largeText,
+                        tallBlock = tallBlock,
                         onMarkDone = onMarkDone,
                     )
                 }
@@ -437,11 +500,12 @@ private fun ShortTaskRow(
     accent: Color,
     titleOnly: Boolean,
     largeText: Boolean = false,
+    tallBlock: Boolean = false,
     onMarkDone: () -> Unit = {},
 ) {
     Row(
         modifier = Modifier.fillMaxSize(),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = if (tallBlock) Alignment.Top else Alignment.CenterVertically,
     ) {
         Box(
             modifier =
@@ -508,11 +572,12 @@ private fun StandardTaskRow(
     accent: Color,
     titleOnly: Boolean,
     largeText: Boolean = false,
+    tallBlock: Boolean = false,
     onMarkDone: () -> Unit = {},
 ) {
     Row(
         modifier = Modifier.fillMaxSize(),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = if (tallBlock) Alignment.Top else Alignment.CenterVertically,
     ) {
         Box(
             modifier =
@@ -867,10 +932,6 @@ private fun CalendarEventBlock(
         }
     }
 }
-
-private fun TodayScheduledBlock.hasMetaRow(): Boolean =
-    metaTimeRange != null || metaDuration != null || energyLevel != null || checklist != null ||
-        hasReminder || pinned
 
 private fun formatClock(minutes: Int): String = ClockFormat.minutesToClock(minutes)
 

@@ -217,8 +217,10 @@ class WeekViewModel
             start: LocalDate,
             end: LocalDate,
         ): String {
-            val startLabel = start.format(rangeFormatter)
-            val endLabel = end.format(rangeFormatter)
-            return "$startLabel – $endLabel"
+            return if (start.month == end.month && start.year == end.year) {
+                "${start.dayOfMonth}–${end.format(rangeFormatter)}"
+            } else {
+                "${start.format(rangeFormatter)} – ${end.format(rangeFormatter)}"
+            }
         }
     }

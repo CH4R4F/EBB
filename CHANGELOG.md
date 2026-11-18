@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Today timeline (overlap)** — removed horizontal scroll; per-overlap-group lane caps with font-scaled minimum width; overflow tasks open via tappable `+N` sheet; track uses full timeline height; draw-time overlap uses dp-accurate min heights so lane assignment matches painted blocks (Kilo/Lima at 2.0); non-overlapping groups keep full width.
 - **Settings & chrome** — zero window insets on Settings `Scaffold`/`TopAppBar`; removed duplicate Today ⋮ (settings gear only).
-- **Timeline taps** — time-left pill no longer steals clicks; overlap lanes use drawn block heights; minimum lane width with horizontal scroll; UI test for block taps.
+- **Timeline taps** — time-left pill no longer steals clicks; bottom-edge / overflow reachability UI tests and Paparazzi at 1.0 and 2.0.
 - **Font scale 2.0** — week day labels, hour rail, make-it-fit meters, onboarding wake/bed/breather chips; extra Paparazzi shots.
 - **Week** — header `softWrap=false`; empty days no longer show duplicate “Open”; load label hidden when day is open.
 - **Inbox** — empty message when search has no matches.
@@ -20,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Insets** — tab Scaffolds use `contentWindowInsets = WindowInsets(0)` so MainShell does not double-apply system bar padding.
 - **Task sheets** — duration chips and color/icon picker use FlowRow; icons render via `EbbSymbol` (not raw names).
 - **Day tools** — Shift and Overlap previews use real task times; overlap hatch tracks actual overlap window.
-- **Large text** — ellipsis and min heights on week header, focus labels, task detail actions, onboarding week-start row; Paparazzi font scale 2.0 QA shots.
+- **Large text** — week header compact range + two-line header at 2.0; onboarding wake time, notification actions (FlowRow), Skip min-width; overlap tool time rail; tall timeline block titles top-aligned; Paparazzi font scale 2.0 QA shots.
 - **Inbox** — working search toggle/query and “Quick ≤15 min” filter; removed inert sort/menu actions.
 - **Onboarding** — “Not now” on reminders persisted; removed dead Try-it Schedule control.
 - **Today** — quick capture footer matches save target; duplicate estimate chip guarded; anytime “+ add” stays visible; overlapping timeline tasks lay out side by side.

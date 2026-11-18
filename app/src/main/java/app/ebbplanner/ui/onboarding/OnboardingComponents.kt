@@ -4,6 +4,9 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -96,8 +99,13 @@ fun OnboardingTopBar(
         }
         Spacer(modifier = Modifier.weight(1f))
         if (showSkip && onSkip != null) {
-            TextButton(onClick = onSkip) {
-                Text(stringResource(R.string.onboarding_skip))
+            TextButton(onClick = onSkip, modifier = Modifier.defaultMinSize(minWidth = 56.dp)) {
+                Text(
+                    stringResource(R.string.onboarding_skip),
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Visible,
+                )
             }
         }
     }
@@ -229,6 +237,7 @@ fun OnboardingTextButton(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun OnboardingNotificationPreview(modifier: Modifier = Modifier) {
     Surface(
@@ -262,24 +271,28 @@ fun OnboardingNotificationPreview(modifier: Modifier = Modifier) {
                 style = EbbTypography.titleM,
                 modifier = Modifier.padding(top = EbbSpacing.s2),
             )
-            Row(
+            androidx.compose.foundation.layout.FlowRow(
                 modifier = Modifier.padding(top = EbbSpacing.s2),
-                horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s4),
+                horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s3),
+                verticalArrangement = Arrangement.spacedBy(EbbSpacing.s1),
             ) {
                 Text(
                     stringResource(R.string.onboarding_notifications_preview_action_focus),
                     style = EbbTypography.labelL,
                     color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
                 )
                 Text(
                     stringResource(R.string.onboarding_notifications_preview_action_snooze),
                     style = EbbTypography.labelL,
                     color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
                 )
                 Text(
                     stringResource(R.string.onboarding_notifications_preview_action_done),
                     style = EbbTypography.labelL,
                     color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
                 )
             }
         }
@@ -385,9 +398,10 @@ fun DayShapeTimeCard(
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
             }
+            val largeText = androidx.compose.ui.platform.LocalConfiguration.current.fontScale >= 1.75f
             Text(
                 text = timeLabel,
-                style = EbbTypography.display,
+                style = if (largeText) EbbTypography.headlineM else EbbTypography.display,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = EbbSpacing.s2),
                 maxLines = 1,
