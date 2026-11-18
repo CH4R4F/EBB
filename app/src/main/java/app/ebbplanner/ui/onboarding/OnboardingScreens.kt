@@ -317,19 +317,24 @@ fun OnboardingPreferencesScreen(
             style = EbbTypography.titleM,
             modifier = Modifier.padding(top = EbbSpacing.s6),
         )
-        Row(
-            modifier = Modifier.padding(top = EbbSpacing.s2),
+        androidx.compose.foundation.layout.FlowRow(
+            modifier = Modifier.padding(top = EbbSpacing.s2).fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
+            verticalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
         ) {
             listOf(0, 5, 10, 15).forEach { minutes ->
                 val selected = state.breatherMinutes == minutes
                 FilterChip(
                     selected = selected,
                     onClick = { onBreatherSelect(minutes) },
-                    modifier = Modifier.height(EbbSpacing.touchBig),
+                    modifier = Modifier.heightIn(min = EbbSpacing.touchBig),
                     shape = RoundedCornerShape(12.dp),
                     label = {
-                        Text(if (minutes == 0) "0" else "$minutes min")
+                        Text(
+                            if (minutes == 0) "0" else "$minutes min",
+                            maxLines = 1,
+                            softWrap = false,
+                        )
                     },
                     leadingIcon =
                         if (selected && minutes != 0) {

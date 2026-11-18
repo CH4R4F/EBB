@@ -86,7 +86,7 @@ fun TodayScreenDesign(
                     onNextDay = onNextDay,
                     onSearch = null,
                     onSettings = onSettings,
-                    onMore = onSettings,
+                    onMore = {},
                 )
                 when {
                     state.bannerMessage != null ->

@@ -134,10 +134,18 @@ class InboxViewModel
                         )
                     },
                 visualMode =
-                    if (filtered.isEmpty() && filterIndex > 0) {
-                        InboxVisualMode.FilteredEmpty
-                    } else {
-                        InboxVisualMode.Normal
+                    when {
+                        filtered.isEmpty() && query.isNotBlank() -> InboxVisualMode.FilteredEmpty
+                        filtered.isEmpty() && filterIndex > 0 -> InboxVisualMode.FilteredEmpty
+                        else -> InboxVisualMode.Normal
+                    },
+                emptyMessage =
+                    when {
+                        filtered.isEmpty() && query.isNotBlank() ->
+                            context.getString(R.string.inbox_search_empty_message)
+                        filtered.isEmpty() && filterIndex > 0 ->
+                            context.getString(R.string.inbox_filter_empty_message)
+                        else -> null
                     },
                 searchQuery = query,
                 searchVisible = searchVisible,

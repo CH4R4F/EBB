@@ -380,6 +380,9 @@ fun DayShapeTimeCard(
                     text = label,
                     style = EbbTypography.labelL,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
             }
             Text(
@@ -387,6 +390,9 @@ fun DayShapeTimeCard(
                 style = EbbTypography.display,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = EbbSpacing.s2),
+                maxLines = 1,
+                softWrap = false,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
         }
     }

@@ -44,6 +44,26 @@ class TodayPresentationMapperTest {
     }
 
     @Test
+    fun assignOverlapLanes_usesDrawnHeightForShortAdjacentBlocks() {
+        val today = LocalDate.now()
+        val state =
+            TodayUiState(
+                date = today,
+                scheduledTasks =
+                    listOf(
+                        taskAt(today, "10:00", 5, "short-a"),
+                        taskAt(today, "10:03", 5, "short-b"),
+                    ),
+                isLoading = false,
+            )
+        val mapped = TodayPresentationMapper.from(state, 10 * 60)
+        val a = mapped.blocks.first { it.id == "short-a" }
+        val b = mapped.blocks.first { it.id == "short-b" }
+        assertEquals(0, a.overlapLane)
+        assertEquals(1, b.overlapLane)
+    }
+
+    @Test
     fun from_anytimeChipsIncludeIds() {
         val today = LocalDate.now()
         val task =

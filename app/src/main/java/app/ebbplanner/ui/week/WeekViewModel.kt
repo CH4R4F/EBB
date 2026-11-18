@@ -103,7 +103,7 @@ class WeekViewModel
                                     val plannedMinutes = dayTasks.sumOf { it.durationMin }
                                     val load =
                                         when {
-                                            taskCount == 0 -> context.getString(R.string.week_load_open) to 0f
+                                            taskCount == 0 -> "" to 0f
                                             plannedMinutes >= 360 -> {
                                                 context.getString(R.string.week_load_full) to 1f
                                             }

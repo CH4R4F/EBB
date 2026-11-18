@@ -31,6 +31,7 @@ data class ShiftDayUiState(
     val fromNow: Boolean = false,
     val previewBefore: List<ShiftPreviewBlock> = emptyList(),
     val previewAfter: List<ShiftPreviewBlock> = emptyList(),
+    val canShift: Boolean = false,
 )
 
 @HiltViewModel
@@ -87,6 +88,7 @@ class ShiftDayViewModel
                     fromNow = startFromNow,
                     previewBefore = before,
                     previewAfter = after,
+                    canShift = before.isNotEmpty(),
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ShiftDayUiState())
 

@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Settings & chrome** — zero window insets on Settings `Scaffold`/`TopAppBar`; removed duplicate Today ⋮ (settings gear only).
+- **Timeline taps** — time-left pill no longer steals clicks; overlap lanes use drawn block heights; minimum lane width with horizontal scroll; UI test for block taps.
+- **Font scale 2.0** — week day labels, hour rail, make-it-fit meters, onboarding wake/bed/breather chips; extra Paparazzi shots.
+- **Week** — header `softWrap=false`; empty days no longer show duplicate “Open”; load label hidden when day is open.
+- **Inbox** — empty message when search has no matches.
+- **Shift** — empty state when nothing to move; primary action disabled.
+- **Focus** — setup shows minutes remaining in the current block, not full task length.
 - **Week view** — changing week start re-anchors to the current week; navigation keeps the selected week offset (`WeekAnchor`, `WeekViewModel`).
 - **Insets** — tab Scaffolds use `contentWindowInsets = WindowInsets(0)` so MainShell does not double-apply system bar padding.
 - **Task sheets** — duration chips and color/icon picker use FlowRow; icons render via `EbbSymbol` (not raw names).

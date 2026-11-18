@@ -3,6 +3,7 @@ package app.ebbplanner.ui.settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -42,8 +43,10 @@ fun SettingsScreen(
     var weekPickerOpen by remember { mutableStateOf(false) }
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(0),
         topBar = {
             TopAppBar(
+                windowInsets = WindowInsets(0),
                 title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onClose) {

@@ -106,9 +106,6 @@ fun TodayTopBar(
             IconButton(onClick = onSettings, modifier = Modifier.size(48.dp)) {
                 EbbSymbol("settings", fontSize = 22.sp)
             }
-            IconButton(onClick = onMore, modifier = Modifier.size(48.dp)) {
-                EbbSymbol("more_vert", fontSize = 22.sp)
-            }
         }
     }
 }

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -140,11 +141,17 @@ private fun WeekTopBar(
             style = EbbTypography.headlineM,
             modifier = Modifier.weight(1f),
             maxLines = 1,
+            softWrap = false,
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
         )
         IconButton(onClick = onNextWeek) { EbbSymbol("chevron_right", fontSize = 22.sp) }
         TextButton(onClick = onThisWeek) {
-            Text(stringResource(R.string.week_this_week), style = EbbTypography.labelL)
+            Text(
+                stringResource(R.string.week_this_week),
+                style = EbbTypography.labelL,
+                maxLines = 1,
+                softWrap = false,
+            )
         }
         WeekOverflowMenu(onThisWeek = onThisWeek)
     }
@@ -234,12 +241,23 @@ private fun WeekDayCard(
             modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = Modifier.width(40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(day.weekday, style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(
+                modifier = Modifier.widthIn(min = 44.dp, max = 52.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    day.weekday,
+                    style = EbbTypography.labelM,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
                 Text(
                     day.dayNumber,
                     style = EbbTypography.titleM,
                     color = if (day.today) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
                 )
             }
             Column(modifier = Modifier.weight(1f).padding(start = EbbSpacing.s3)) {
@@ -247,8 +265,12 @@ private fun WeekDayCard(
                     day.summary,
                     style = EbbTypography.bodyM,
                     color = if (day.open) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
-                WeekLoadRow(day)
+                if (!day.open) {
+                    WeekLoadRow(day)
+                }
             }
         }
     }
@@ -282,12 +304,17 @@ private fun WeekLoadRow(day: WeekDayRow) {
                         .background(barColor, EbbShapes.full),
             )
         }
-        Text(
-            day.loadLabel,
-            style = EbbTypography.labelM,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(52.dp),
-        )
+        if (day.loadLabel.isNotBlank()) {
+            Text(
+                day.loadLabel,
+                style = EbbTypography.labelM,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.widthIn(min = 48.dp, max = 72.dp),
+                maxLines = 1,
+                softWrap = false,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            )
+        }
         if (day.eventCount > 0) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),

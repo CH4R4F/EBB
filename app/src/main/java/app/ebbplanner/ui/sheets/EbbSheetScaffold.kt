@@ -49,6 +49,7 @@ fun EbbSheetScaffold(
     cancelLabel: String = "Cancel",
     onDoneClick: () -> Unit = {},
     onCancelClick: () -> Unit = {},
+    doneEnabled: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -118,6 +119,7 @@ fun EbbSheetScaffold(
                         cancelLabel = cancelLabel,
                         onDoneClick = onDoneClick,
                         onCancelClick = onCancelClick,
+                        doneEnabled = doneEnabled,
                     )
                 }
             }
@@ -139,6 +141,7 @@ fun SheetActions(
     cancelLabel: String = "Cancel",
     onDoneClick: () -> Unit = {},
     onCancelClick: () -> Unit = {},
+    doneEnabled: Boolean = true,
 ) {
     HorizontalDivider()
     Row(
@@ -155,10 +158,19 @@ fun SheetActions(
                     .clickable(onClick = onCancelClick)
                     .padding(horizontal = EbbSpacing.s3, vertical = 10.dp),
         )
+        val doneColor =
+            if (doneEnabled) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+            }
         Surface(
             shape = EbbShapes.full,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 8.dp).clickable(onClick = onDoneClick),
+            color = doneColor,
+            modifier =
+                Modifier
+                    .padding(start = 8.dp)
+                    .then(if (doneEnabled) Modifier.clickable(onClick = onDoneClick) else Modifier),
         ) {
             Row(
                 Modifier.padding(horizontal = 24.dp, vertical = 12.dp),

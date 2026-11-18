@@ -191,7 +191,12 @@ class FocusRunViewModel
                     startLocalTime != null -> {
                         val startMin = ClockFormat.parseMinutes(startLocalTime) ?: clock.nowMinutes()
                         val endMin = startMin + blockDuration
-                        "${blockDuration} min · ends ${ClockFormat.minutesToClock(endMin)}"
+                        val remaining = (endMin - clock.nowMinutes()).coerceAtLeast(0)
+                        if (remaining > 0) {
+                            "$remaining min left · ends ${ClockFormat.minutesToClock(endMin)}"
+                        } else {
+                            "Ends ${ClockFormat.minutesToClock(endMin)}"
+                        }
                     }
                     else -> "${blockDuration} min"
                 }

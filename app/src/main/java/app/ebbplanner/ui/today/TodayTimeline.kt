@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -52,7 +54,8 @@ import app.ebbplanner.ui.time.ClockFormat
 
 internal val timelineDpPerMinute = 72.dp / 60f
 internal val timelineOriginY = 36.dp
-internal val timelineHourRail = 48.dp
+internal val timelineHourRail = 56.dp
+internal val timelineMinLaneWidth = 96.dp
 
 internal fun minutesToTimelineY(
     minutes: Int,
@@ -100,10 +103,17 @@ fun TodayTimeline(
                 modifier = Modifier.align(Alignment.TopStart),
             )
         }
+        val compactRail = state.compactHourRail || largeText
         hours.forEachIndexed { index, hour ->
             val y = timelineOriginY + durationToHeight(index * 60)
+            val label =
+                if (compactRail) {
+                    hour.toString()
+                } else {
+                    ClockFormat.minutesToClock(hour * 60)
+                }
             HourRule(
-                label = if (state.compactHourRail) "$hour" else "%02d:00".format(hour),
+                label = label,
                 y = y,
             )
         }
@@ -150,34 +160,50 @@ fun TodayTimeline(
         val trackStart = timelineHourRail + 4.dp
         val trackEnd = 8.dp
         val trackWidth = (screenWidthDp - trackStart - trackEnd).coerceAtLeast(120.dp)
-        state.blocks.filter { !it.isLifted }.forEach { block ->
-            val y = minutesToTimelineY(block.startMinutes, state.timelineStartHour)
-            val minBlockHeight =
-                when {
-                    block.short -> if (largeText) 36.dp else 24.dp
-                    largeText && !state.titleOnlyBlocks && block.hasMetaRow() -> 56.dp
-                    else -> if (block.short) 24.dp else 40.dp
+        val visibleBlocks = state.blocks.filter { !it.isLifted }
+        val laneCount = visibleBlocks.maxOfOrNull { it.overlapLaneCount }?.coerceAtLeast(1) ?: 1
+        val minLane = if (largeText) 108.dp else timelineMinLaneWidth
+        val laneWidth = (trackWidth / laneCount).coerceAtLeast(minLane)
+        val trackContentWidth = laneWidth * laneCount
+        val scrollTracks = trackContentWidth > trackWidth
+        val trackModifier =
+            Modifier
+                .align(Alignment.TopStart)
+                .padding(start = trackStart, end = trackEnd)
+                .fillMaxWidth()
+                .then(if (scrollTracks) Modifier.horizontalScroll(rememberScrollState()) else Modifier)
+        Box(trackModifier) {
+            Box(Modifier.width(trackContentWidth.coerceAtLeast(trackWidth))) {
+                visibleBlocks.forEach { block ->
+                    val y = minutesToTimelineY(block.startMinutes, state.timelineStartHour)
+                    val minBlockHeight =
+                        when {
+                            block.short -> if (largeText) 36.dp else 24.dp
+                            largeText && !state.titleOnlyBlocks && block.hasMetaRow() -> 56.dp
+                            else -> if (block.short) 24.dp else 40.dp
+                        }
+                    val h = durationToHeight(block.durationMin).coerceAtLeast(minBlockHeight)
+                    val laneIndex = block.overlapLane.coerceIn(0, laneCount - 1)
+                    val laneOffset = laneWidth * laneIndex
+                    val titleOnly = state.titleOnlyBlocks || laneWidth < 100.dp
+                    ScheduledTaskBlock(
+                        block = block,
+                        dark = dark,
+                        titleOnly = titleOnly,
+                        largeText = largeText,
+                        onClick = { onTaskClick(block.id) },
+                        onLongClick = { onTaskLongPress(block.id) },
+                        onMarkDone = { onMarkTaskDone(block.id) },
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopStart)
+                                .offset(x = laneOffset, y = y)
+                                .width(laneWidth - 2.dp)
+                                .height(h.coerceAtLeast(if (largeText && block.short) 36.dp else if (block.short) 24.dp else 40.dp))
+                                .alpha(if (block.isGhost) 0.45f else 1f),
+                    )
                 }
-            val h = durationToHeight(block.durationMin).coerceAtLeast(minBlockHeight)
-            val laneCount = block.overlapLaneCount.coerceAtLeast(1)
-            val laneWidth = trackWidth / laneCount
-            val laneOffset = trackStart + laneWidth * block.overlapLane.coerceIn(0, laneCount - 1)
-            ScheduledTaskBlock(
-                block = block,
-                dark = dark,
-                titleOnly = state.titleOnlyBlocks,
-                largeText = largeText,
-                onClick = { onTaskClick(block.id) },
-                onLongClick = { onTaskLongPress(block.id) },
-                onMarkDone = { onMarkTaskDone(block.id) },
-                modifier =
-                    Modifier
-                        .align(Alignment.TopStart)
-                        .offset(x = laneOffset, y = y)
-                        .width(laneWidth - 2.dp)
-                        .height(h.coerceAtLeast(if (largeText && block.short) 36.dp else if (block.short) 24.dp else 40.dp))
-                        .alpha(if (block.isGhost) 0.45f else 1f),
-            )
+            }
         }
 
         state.blocks.filter { it.isLifted }.forEach { block ->
@@ -267,6 +293,9 @@ private fun HourRule(
                     .padding(end = EbbSpacing.s1)
                     .align(Alignment.TopStart),
             textAlign = TextAlign.End,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
         )
         Box(
             modifier =
@@ -361,6 +390,7 @@ private fun ScheduledTaskBlock(
             modifier =
                 Modifier
                     .fillMaxSize()
+                    .testTag(timelineTaskTestTag(block.id))
                     .combinedClickable(
                         onClick = onClick,
                         onLongClick = onLongClick,
@@ -369,32 +399,34 @@ private fun ScheduledTaskBlock(
             color = fill,
             shadowElevation = if (elevated) 8.dp else 0.dp,
         ) {
-            if (block.short) {
-                ShortTaskRow(
-                    block = block,
-                    accent = accent,
-                    titleOnly = titleOnly,
-                    largeText = largeText,
-                    onMarkDone = onMarkDone,
-                )
-            } else {
-                StandardTaskRow(
-                    block = block,
-                    accent = accent,
-                    titleOnly = titleOnly,
-                    largeText = largeText,
-                    onMarkDone = onMarkDone,
-                )
+            Box(Modifier.fillMaxSize()) {
+                if (block.short) {
+                    ShortTaskRow(
+                        block = block,
+                        accent = accent,
+                        titleOnly = titleOnly,
+                        largeText = largeText,
+                        onMarkDone = onMarkDone,
+                    )
+                } else {
+                    StandardTaskRow(
+                        block = block,
+                        accent = accent,
+                        titleOnly = titleOnly,
+                        largeText = largeText,
+                        onMarkDone = onMarkDone,
+                    )
+                }
+                if (block.isCurrent && block.minutesLeftLabel != null) {
+                    TimeLeftPill(
+                        label = block.minutesLeftLabel,
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(end = 6.dp, bottom = 4.dp),
+                    )
+                }
             }
-        }
-        if (block.isCurrent && block.minutesLeftLabel != null) {
-            TimeLeftPill(
-                label = block.minutesLeftLabel,
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 6.dp, bottom = 4.dp),
-            )
         }
     }
 }
@@ -524,7 +556,8 @@ private fun StandardTaskRow(
                                 it,
                                 style = EbbTypography.bodyM.copy(fontSize = 12.sp, lineHeight = 16.sp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 2,
+                                maxLines = 1,
+                                softWrap = false,
                                 overflow = TextOverflow.Ellipsis,
                             )
                         }
@@ -626,16 +659,18 @@ private fun TimeLeftPill(
     modifier: Modifier = Modifier,
 ) {
     val primary = MaterialTheme.colorScheme.primary
-    Surface(
-        modifier = modifier,
-        shape = EbbShapes.full,
-        color = primary,
+    Box(
+        modifier =
+            modifier
+                .background(primary, EbbShapes.full)
+                .padding(horizontal = 8.dp, vertical = 2.dp),
     ) {
         Text(
             label,
             style = EbbTypography.labelM,
             color = MaterialTheme.colorScheme.onPrimary,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+            maxLines = 1,
+            softWrap = false,
         )
     }
 }

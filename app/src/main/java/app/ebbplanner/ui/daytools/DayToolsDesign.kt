@@ -40,7 +40,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
+import app.ebbplanner.R
 import app.ebbplanner.domain.day.DayGapScheduler
 import app.ebbplanner.domain.day.MakeItFitPlan
 import app.ebbplanner.domain.day.OverlapResolutionType
@@ -80,6 +82,7 @@ fun ShiftTheRestDesign(
     customMinutes: Int = 15,
     previewBefore: List<ShiftPreviewBlock> = emptyList(),
     previewAfter: List<ShiftPreviewBlock> = emptyList(),
+    canShift: Boolean = true,
     onChipSelected: (Int) -> Unit = {},
     onCustomMinutesChanged: (Int) -> Unit = {},
     onApplyShift: () -> Unit = {},
@@ -97,7 +100,16 @@ fun ShiftTheRestDesign(
         modifier = modifier,
         onDoneClick = onApplyShift,
         onCancelClick = onCancel,
+        doneEnabled = canShift,
     ) {
+        if (!canShift) {
+            Text(
+                stringResource(R.string.shift_empty_message),
+                style = EbbTypography.bodyM,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = EbbSpacing.s3),
+            )
+        }
         ShiftAmountChips(selected = chipIndex, onSelected = onChipSelected)
         if (chipIndex == 5) {
             androidx.compose.material3.OutlinedTextField(
@@ -108,12 +120,14 @@ fun ShiftTheRestDesign(
                 singleLine = true,
             )
         }
-        Row(
-            Modifier.fillMaxWidth().padding(top = EbbSpacing.s3),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            ShiftPreviewColumn("Now", afterShift = false, blocks = previewBefore)
-            ShiftPreviewColumn("After +$shiftMinutes min", afterShift = true, blocks = previewAfter)
+        if (canShift) {
+            Row(
+                Modifier.fillMaxWidth().padding(top = EbbSpacing.s3),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                ShiftPreviewColumn("Now", afterShift = false, blocks = previewBefore)
+                ShiftPreviewColumn("After +$shiftMinutes min", afterShift = true, blocks = previewAfter)
+            }
         }
         Row(
             Modifier.padding(top = 12.dp, bottom = 16.dp),
@@ -887,15 +901,31 @@ private fun FitMeterRow(
     barLabel: String,
     barColor: Color = MaterialTheme.colorScheme.primary,
 ) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(80.dp))
+    Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                label,
+                style = EbbTypography.labelM,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                softWrap = false,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            )
+            Text(
+                barLabel,
+                style = EbbTypography.labelL,
+                maxLines = 1,
+                softWrap = false,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            )
+        }
         LinearProgressIndicator(
             progress = { fraction },
-            modifier = Modifier.weight(1f).height(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp).height(16.dp),
             color = barColor,
             trackColor = MaterialTheme.colorScheme.surfaceVariant,
         )
-        Text(barLabel, style = EbbTypography.labelL, modifier = Modifier.width(40.dp), textAlign = TextAlign.End)
     }
 }
 

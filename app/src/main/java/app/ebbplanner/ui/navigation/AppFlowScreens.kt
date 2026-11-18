@@ -53,6 +53,7 @@ fun ShiftDayScreen(
             customMinutes = ui.customMinutes,
             previewBefore = ui.previewBefore,
             previewAfter = ui.previewAfter,
+            canShift = ui.canShift,
             backgroundState = ui.background,
             onChipSelected = viewModel::selectChip,
             onCustomMinutesChanged = viewModel::setCustomMinutes,

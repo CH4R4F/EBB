@@ -220,7 +220,9 @@ private fun TitleRow(
         Text(
             state.title,
             style = EbbTypography.headlineM,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            maxLines = 4,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
         )
     }
 }

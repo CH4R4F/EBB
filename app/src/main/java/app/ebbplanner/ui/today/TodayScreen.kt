@@ -13,6 +13,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 const val TODAY_DATE_HEADER_TAG = "today_date_header"
 const val TODAY_TIMELINE_TAG = "today_timeline"
+const val TIMELINE_TASK_TAG_PREFIX = "timeline_task_"
+
+fun timelineTaskTestTag(taskId: String): String = TIMELINE_TASK_TAG_PREFIX + taskId
 
 @Suppress("LongParameterList")
 @Composable

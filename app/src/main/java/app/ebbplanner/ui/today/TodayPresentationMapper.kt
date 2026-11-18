@@ -92,7 +92,7 @@ object TodayPresentationMapper {
         val laneEnds = mutableListOf<Int>()
         val laneById = mutableMapOf<String, Int>()
         sorted.forEach { block ->
-            val end = block.startMinutes + block.durationMin
+            val end = effectiveTimelineEndMinutes(block)
             var lane = laneEnds.indexOfFirst { it <= block.startMinutes }
             if (lane < 0) {
                 lane = laneEnds.size
@@ -107,8 +107,8 @@ object TodayPresentationMapper {
             val overlaps =
                 blocks.any { other ->
                     other.id != block.id &&
-                        block.startMinutes < other.startMinutes + other.durationMin &&
-                        other.startMinutes < block.startMinutes + block.durationMin
+                        block.startMinutes < effectiveTimelineEndMinutes(other) &&
+                        other.startMinutes < effectiveTimelineEndMinutes(block)
                 }
             block.copy(
                 overlapLane = laneById[block.id] ?: 0,
