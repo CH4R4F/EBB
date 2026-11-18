@@ -41,6 +41,8 @@ fun pillHeightDp(metrics: TimelineLayoutMetrics): Dp =
 
 fun pillGapDp(): Dp = 2.dp
 
+fun pillBottomInsetDp(): Dp = 4.dp
+
 fun blockVerticalPaddingDp(
     metrics: TimelineLayoutMetrics,
     short: Boolean,
@@ -94,7 +96,7 @@ fun planBlockContent(
     val vPad = blockVerticalPaddingDp(metrics, block.short)
     val pillH =
         if (block.isCurrent && block.minutesLeftLabel != null) {
-            pillHeightDp(metrics) + pillGapDp()
+            pillHeightDp(metrics) + pillGapDp() + pillBottomInsetDp()
         } else {
             0.dp
         }
@@ -156,7 +158,7 @@ fun requiredDrawHeightDp(
         )
     var floor = blockVerticalPaddingDp(metrics, block.short) + titleLineHeightDp(metrics, compact)
     if (plan.pillLabel != null) {
-        floor += pillHeightDp(metrics) + pillGapDp()
+        floor += pillHeightDp(metrics) + pillGapDp() + pillBottomInsetDp()
     }
     if (plan.showMetaRow) {
         floor += metaRowHeightDp(metrics)

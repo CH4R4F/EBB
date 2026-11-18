@@ -216,11 +216,5 @@ class WeekViewModel
         private fun formatWeekRange(
             start: LocalDate,
             end: LocalDate,
-        ): String {
-            return if (start.month == end.month && start.year == end.year) {
-                "${start.dayOfMonth}–${end.dayOfMonth} ${end.format(DateTimeFormatter.ofPattern("MMM", Locale.getDefault()))}"
-            } else {
-                "${start.format(rangeFormatter)} – ${end.format(rangeFormatter)}"
-            }
-        }
+        ): String = formatWeekRangeLabel(start, end)
     }

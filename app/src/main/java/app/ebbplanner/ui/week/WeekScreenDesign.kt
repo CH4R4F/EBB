@@ -43,6 +43,10 @@ import androidx.compose.ui.res.stringResource
 import app.ebbplanner.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -127,41 +131,84 @@ private fun WeekTopBar(
     onNextWeek: () -> Unit,
     onThisWeek: () -> Unit = {},
 ) {
-    Row(
+    val config = LocalConfiguration.current
+    val stackRange = config.fontScale >= 1.3f
+    val thisWeekLabel = stringResource(R.string.week_this_week)
+    Column(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(56.dp)
-                .padding(horizontal = EbbSpacing.s1),
-        verticalAlignment = Alignment.CenterVertically,
+                .testTag(WEEK_TOP_BAR_TAG)
+                .padding(horizontal = EbbSpacing.s1, vertical = if (stackRange) 4.dp else 0.dp),
     ) {
-        val largeText = androidx.compose.ui.platform.LocalConfiguration.current.fontScale >= 1.75f
-        IconButton(onClick = onPreviousWeek) { EbbSymbol("chevron_left", fontSize = 22.sp) }
-        Text(
-            range,
-            style =
-                if (largeText) {
-                    EbbTypography.bodyM.copy(fontSize = 12.sp, lineHeight = 14.sp)
-                } else {
-                    EbbTypography.headlineM
-                },
-            modifier = Modifier.weight(1f).padding(horizontal = 2.dp),
-            maxLines = if (largeText) 2 else 1,
-            softWrap = true,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
-        )
-        IconButton(onClick = onNextWeek) { EbbSymbol("chevron_right", fontSize = 22.sp) }
-        TextButton(onClick = onThisWeek) {
-            Text(
-                stringResource(R.string.week_this_week),
-                style = EbbTypography.labelL,
-                maxLines = 1,
-                softWrap = false,
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .then(if (stackRange) Modifier else Modifier.height(56.dp)),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onPreviousWeek) { EbbSymbol("chevron_left", fontSize = 22.sp) }
+            if (!stackRange) {
+                WeekRangeText(
+                    range = range,
+                    modifier = Modifier.weight(1f).padding(horizontal = 2.dp),
+                    style = EbbTypography.headlineM,
+                    maxLines = 1,
+                )
+            } else {
+                androidx.compose.foundation.layout.Spacer(modifier = Modifier.weight(1f))
+            }
+            IconButton(onClick = onNextWeek) { EbbSymbol("chevron_right", fontSize = 22.sp) }
+            if (stackRange) {
+                IconButton(
+                    onClick = onThisWeek,
+                    modifier =
+                        Modifier.semantics {
+                            contentDescription = thisWeekLabel
+                        },
+                ) {
+                    EbbSymbol("today", fontSize = 22.sp)
+                }
+            } else {
+                TextButton(onClick = onThisWeek) {
+                    Text(
+                        thisWeekLabel,
+                        style = EbbTypography.labelL,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                }
+            }
+            WeekOverflowMenu(onThisWeek = onThisWeek)
+        }
+        if (stackRange) {
+            WeekRangeText(
+                range = range,
+                modifier = Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 4.dp),
+                style = EbbTypography.bodyM.copy(fontSize = 14.sp, lineHeight = 18.sp),
+                maxLines = 2,
             )
         }
-        WeekOverflowMenu(onThisWeek = onThisWeek)
     }
+}
+
+@Composable
+private fun WeekRangeText(
+    range: String,
+    style: androidx.compose.ui.text.TextStyle,
+    maxLines: Int,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        range,
+        style = style,
+        modifier = modifier.testTag(WEEK_RANGE_LABEL_TAG),
+        maxLines = maxLines,
+        softWrap = true,
+        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        overflow = TextOverflow.Clip,
+    )
 }
 
 @Composable

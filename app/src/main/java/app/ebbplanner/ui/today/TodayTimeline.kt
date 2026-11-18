@@ -187,7 +187,7 @@ fun TodayTimeline(
 
         if (state.showNowLine && state.nowMinutes != null) {
             val y = timeMapping.y(state.nowMinutes)
-            NowLine(label = formatClock(state.nowMinutes), y = y)
+            NowLineStrike(y = y)
         }
 
         overlapPlan.placements.forEach { (block, placement) ->
@@ -222,13 +222,8 @@ fun TodayTimeline(
                         .width(placement.widthDp)
                         .height(placement.heightDp)
                         .zIndex(2f)
-                        .alpha(
-                            when {
-                                block.isGhost -> 0.45f
-                                block.done -> 0.55f
-                                else -> 1f
-                            },
-                        ),
+                        .then(if (block.isGhost) Modifier.alpha(0.45f) else Modifier),
+                contentDimmed = block.done,
             )
         }
         overlapPlan.overflow.forEach { cluster ->
@@ -280,6 +275,13 @@ fun TodayTimeline(
                         .height(h)
                         .zIndex(3f),
                 elevated = true,
+            )
+        }
+
+        if (state.showNowLine && state.nowMinutes != null) {
+            NowLineTimeBadge(
+                label = formatClock(state.nowMinutes),
+                y = timeMapping.y(state.nowMinutes),
             )
         }
 
@@ -394,12 +396,8 @@ private fun HourRule(
 }
 
 @Composable
-private fun NowLine(
-    label: String,
-    y: Dp,
-) {
+private fun NowLineStrike(y: Dp) {
     val primary = MaterialTheme.colorScheme.primary
-    val onPrimary = MaterialTheme.colorScheme.onPrimary
     Box(
         modifier =
             Modifier
@@ -424,18 +422,51 @@ private fun NowLine(
                     .size(8.dp)
                     .background(primary, CircleShape),
         )
-        Box(
+    }
+}
+
+@Composable
+private fun NowLineTimeBadge(
+    label: String,
+    y: Dp,
+) {
+    val primary = MaterialTheme.colorScheme.primary
+    val onPrimary = MaterialTheme.colorScheme.onPrimary
+    val surface = MaterialTheme.colorScheme.surface
+    Box(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .offset(y = y - 10.dp)
+                .zIndex(6f),
+    ) {
+        Surface(
             modifier =
                 Modifier
                     .align(Alignment.TopStart)
-                    .padding(start = 4.dp)
-                    .offset(y = (-10).dp)
+                    .padding(start = 2.dp)
                     .height(20.dp)
-                    .background(primary, EbbShapes.full)
-                    .padding(horizontal = 6.dp),
-            contentAlignment = Alignment.Center,
+                    .width(timelineHourRail - 4.dp),
+            shape = EbbShapes.full,
+            color = surface,
+            shadowElevation = 1.dp,
         ) {
-            Text(label, style = EbbTypography.labelM, color = onPrimary)
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(primary, EbbShapes.full)
+                        .padding(horizontal = 4.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    label,
+                    style = EbbTypography.labelM,
+                    color = onPrimary,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+            }
         }
     }
 }
@@ -495,8 +526,9 @@ private fun ScheduledTaskBlock(
     onMarkDone: () -> Unit = {},
     modifier: Modifier = Modifier,
     elevated: Boolean = false,
+    contentDimmed: Boolean = false,
 ) {
-    val accent = EbbTaskColors.strong(block.colorKey)
+    val accent = EbbTaskColors.strong(block.colorKey).let { if (contentDimmed) it.copy(alpha = 0.55f) else it }
     val fill = EbbTaskColors.tint(block.colorKey, dark)
     val shape = if (block.short) EbbShapes.sm else EbbShapes.md
     val blockModifier =
@@ -527,6 +559,7 @@ private fun ScheduledTaskBlock(
                     onClick = onClick,
                     onLongClick = onLongClick,
                     onMarkDone = onMarkDone,
+                    contentDimmed = contentDimmed,
                 )
             } else {
                 StandardTaskRow(
@@ -541,6 +574,7 @@ private fun ScheduledTaskBlock(
                     onClick = onClick,
                     onLongClick = onLongClick,
                     onMarkDone = onMarkDone,
+                    contentDimmed = contentDimmed,
                 )
             }
         }
@@ -560,7 +594,9 @@ private fun ShortTaskRow(
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = {},
     onMarkDone: () -> Unit = {},
+    contentDimmed: Boolean = false,
 ) {
+    val textAlpha = if (contentDimmed) 0.55f else 1f
     TaskBlockRowShell(
         block = block,
         accent = accent,
@@ -572,6 +608,7 @@ private fun ShortTaskRow(
         onClick = onClick,
         onLongClick = onLongClick,
         onMarkDone = onMarkDone,
+        contentTextAlpha = textAlpha,
     ) {
         contentPlan.pillLabel?.let {
             TimeLeftPill(
@@ -587,7 +624,7 @@ private fun ShortTaskRow(
                 Text(
                     it,
                     style = EbbTypography.labelM,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = textAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.testTag(timelineTaskDurationTag(block.id)),
@@ -610,7 +647,9 @@ private fun StandardTaskRow(
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = {},
     onMarkDone: () -> Unit = {},
+    contentDimmed: Boolean = false,
 ) {
+    val textAlpha = if (contentDimmed) 0.55f else 1f
     TaskBlockRowShell(
         block = block,
         accent = accent,
@@ -623,6 +662,7 @@ private fun StandardTaskRow(
         onLongClick = onLongClick,
         onMarkDone = onMarkDone,
         standardVerticalPadding = true,
+        contentTextAlpha = textAlpha,
     ) {
         contentPlan.pillLabel?.let {
             TimeLeftPill(
@@ -642,7 +682,7 @@ private fun StandardTaskRow(
                             Text(
                                 it,
                                 style = EbbTypography.bodyM.copy(fontSize = 12.sp, lineHeight = 16.sp),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = textAlpha),
                                 maxLines = 1,
                                 softWrap = false,
                                 overflow = TextOverflow.Ellipsis,
@@ -656,7 +696,7 @@ private fun StandardTaskRow(
                                 Text(
                                     it,
                                     style = EbbTypography.bodyM.copy(fontSize = 12.sp),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = textAlpha),
                                     maxLines = 1,
                                     modifier = Modifier.testTag(timelineTaskDurationTag(block.id)),
                                 )
@@ -666,7 +706,7 @@ private fun StandardTaskRow(
                                 EbbSymbol(
                                     "notifications",
                                     fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = textAlpha),
                                 )
                             }
                             if (block.pinned) {
@@ -684,7 +724,7 @@ private fun StandardTaskRow(
                         Text(
                             it,
                             style = EbbTypography.bodyM,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = textAlpha),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false),
@@ -694,7 +734,7 @@ private fun StandardTaskRow(
                         Text(
                             it,
                             style = EbbTypography.bodyM,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = textAlpha),
                             maxLines = 1,
                             modifier = Modifier.testTag(timelineTaskDurationTag(block.id)),
                         )
@@ -705,19 +745,19 @@ private fun StandardTaskRow(
                             horizontalArrangement = Arrangement.spacedBy(2.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            EbbSymbol("checklist", fontSize = 14.sp)
-                            Text(it, style = EbbTypography.labelM, maxLines = 1)
+                            EbbSymbol("checklist", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = textAlpha))
+                            Text(it, style = EbbTypography.labelM, maxLines = 1, color = MaterialTheme.colorScheme.onSurface.copy(alpha = textAlpha))
                         }
                     }
                     if (block.hasReminder) {
                         EbbSymbol(
                             "notifications",
                             fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = textAlpha),
                         )
                     }
                     if (block.pinned) {
-                        EbbSymbol("keep", fontSize = 14.sp, filled = true)
+                        EbbSymbol("keep", fontSize = 14.sp, filled = true, color = MaterialTheme.colorScheme.onSurface.copy(alpha = textAlpha))
                     }
                 }
                 }
@@ -739,8 +779,11 @@ private fun TaskBlockRowShell(
     onLongClick: () -> Unit,
     onMarkDone: () -> Unit,
     standardVerticalPadding: Boolean = false,
+    contentTextAlpha: Float = 1f,
     belowTitle: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
+    val onSurface = MaterialTheme.colorScheme.onSurface.copy(alpha = contentTextAlpha)
+    val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentTextAlpha)
     Row(
         modifier = Modifier.fillMaxSize(),
         verticalAlignment = if (tallBlock) Alignment.Top else Alignment.CenterVertically,
@@ -768,7 +811,7 @@ private fun TaskBlockRowShell(
             EbbSymbol(
                 block.iconKey,
                 fontSize = if (largeText) 16.sp else 18.sp,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = onSurface,
                 modifier = Modifier.padding(start = 8.dp),
             )
         }
@@ -780,7 +823,13 @@ private fun TaskBlockRowShell(
                         start = if (compactLane) 4.dp else 6.dp,
                         end = 4.dp,
                         top = if (standardVerticalPadding && largeText) 4.dp else if (standardVerticalPadding) 6.dp else 0.dp,
-                        bottom = if (standardVerticalPadding && largeText) 4.dp else if (standardVerticalPadding) 6.dp else 0.dp,
+                        bottom =
+                            when {
+                                contentPlan.pillLabel != null -> pillBottomInsetDp()
+                                standardVerticalPadding && largeText -> 4.dp
+                                standardVerticalPadding -> 6.dp
+                                else -> 0.dp
+                            },
                     ),
         ) {
             Text(
@@ -794,6 +843,7 @@ private fun TaskBlockRowShell(
                     } else {
                         EbbTypography.titleM
                     },
+                color = onSurface,
                 maxLines = contentPlan.titleMaxLines,
                 overflow = TextOverflow.Ellipsis,
                 softWrap = contentPlan.titleMaxLines > 1,
