@@ -24,16 +24,32 @@ val ebbVersionPatch = ebbVersionProperties.getProperty("VERSION_PATCH").toInt()
 val ebbVersionName = "$ebbVersionMajor.$ebbVersionMinor.$ebbVersionPatch"
 val ebbVersionCode = ebbVersionMajor * 10_000 + ebbVersionMinor * 100 + ebbVersionPatch
 
+fun releaseSigningEnv(name: String) = providers.environmentVariable(name)
+
 android {
     namespace = ebbNamespace
     compileSdk = 35
 
     signingConfigs {
-        getByName("debug") {
-            storeFile = file("debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+        create("release") {
+            val storePath =
+                releaseSigningEnv("EBB_KEYSTORE_FILE")
+                    .orElse(providers.gradleProperty("ebb.keystore.file"))
+            val storePassword = releaseSigningEnv("EBB_KEYSTORE_PASSWORD")
+            val keyAlias = releaseSigningEnv("EBB_KEY_ALIAS")
+            val keyPassword = releaseSigningEnv("EBB_KEY_PASSWORD")
+            if (storePath.isPresent) {
+                storeFile = file(storePath.get())
+            }
+            if (storePassword.isPresent) {
+                this.storePassword = storePassword.get()
+            }
+            if (keyAlias.isPresent) {
+                this.keyAlias = keyAlias.get()
+            }
+            if (keyPassword.isPresent) {
+                this.keyPassword = keyPassword.get()
+            }
         }
     }
 
@@ -50,14 +66,19 @@ android {
 
     buildTypes {
         debug {
-            signingConfig = signingConfigs.getByName("debug")
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            resValue("string", "app_name", "Ebb Debug")
         }
         release {
-            isMinifyEnabled = false
+            isDebuggable = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

@@ -134,8 +134,8 @@ flowchart TB
 
 | Track | How to get it |
 |-------|----------------|
-| **Latest dev build** | [debug-latest](https://github.com/CH4R4F/EBB/releases/tag/debug-latest) prerelease (every push to `main`) |
-| **Versioned release** | Tagged `v*.*.*` builds on [GitHub Releases](https://github.com/CH4R4F/EBB/releases) (`ebb-vX.Y.Z-debug.apk` today; Play signing later) |
+| **Latest dev build** | [debug-latest](https://github.com/CH4R4F/EBB/releases/tag/debug-latest) — `app.ebbplanner.debug` (**Ebb Debug**), every push to `main` |
+| **Versioned release** | Tagged `v*.*.*` on [GitHub Releases](https://github.com/CH4R4F/EBB/releases) — `ebb-vX.Y.Z.apk` (release-signed, minified `app.ebbplanner`) |
 
 Version numbers live in [`version.properties`](version.properties). See [`docs/RELEASING.md`](docs/RELEASING.md) for bumping, changelog, and tagging. [CHANGELOG.md](CHANGELOG.md) lists user-visible changes.
 

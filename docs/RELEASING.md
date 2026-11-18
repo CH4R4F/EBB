@@ -12,54 +12,93 @@ VERSION_MINOR=1
 VERSION_PATCH=0
 ```
 
-Gradle derives:
-
 | Field | Formula |
 |-------|---------|
 | `versionName` | `MAJOR.MINOR.PATCH` |
 | `versionCode` | `MAJOR * 10000 + MINOR * 100 + PATCH` |
 
-Example: `0.1.0` → `versionName` `0.1.0`, `versionCode` **100**.
+Example: `0.1.0` → `versionName` `0.1.0`, `versionCode` **100**. **Settings** shows `BuildConfig.VERSION_NAME`.
 
-The in-app **Settings** screen shows `BuildConfig.VERSION_NAME`.
+## Debug vs release installs
+
+| Variant | Application ID | Notes |
+|---------|----------------|-------|
+| **Debug** (CI `debug-latest`) | `app.ebbplanner.debug` | Label **Ebb Debug**, `-debug` version suffix; uses the default debug certificate (per-developer locally). |
+| **Release** (tagged GitHub Release) | `app.ebbplanner` | R8 minify, not debuggable; signed with the **upload/release keystore** below. |
+
+Debug APKs **cannot** install over a release build (different package name). Existing debug installs keep working as the separate debug app.
+
+## Release signing keystore (required for tags)
+
+**Never commit** a keystore or passwords to the repository. Back up the keystore offline — if it is lost, users must uninstall before installing a build signed with a new key.
+
+### 1. Create the keystore
+
+```bash
+keytool -genkeypair -v \
+  -keystore ebb-upload.jks \
+  -alias ebb-upload \
+  -keyalg RSA -keysize 2048 -validity 10000 \
+  -storetype JKS
+```
+
+Use a strong store password and key password; record the alias (`ebb-upload` in this example).
+
+### 2. Base64-encode for GitHub Actions
+
+```bash
+base64 -w 0 ebb-upload.jks > ebb-upload.jks.base64
+# macOS: base64 -i ebb-upload.jks -o ebb-upload.jks.base64
+```
+
+### 3. GitHub Actions secrets
+
+In the repository: **Settings → Secrets and variables → Actions → New repository secret**
+
+| Secret name | Value |
+|-------------|--------|
+| `EBB_KEYSTORE_BASE64` | Full contents of `ebb-upload.jks.base64` (one line) |
+| `EBB_KEYSTORE_PASSWORD` | Keystore store password |
+| `EBB_KEY_ALIAS` | Key alias (e.g. `ebb-upload`) |
+| `EBB_KEY_PASSWORD` | Key password |
+
+The [**Release** workflow](../.github/workflows/release.yml) decodes the keystore to a temp file, sets `EBB_KEYSTORE_FILE`, and runs `./gradlew assembleRelease`. The job fails immediately with a clear message if any secret is missing.
+
+### 4. Local release build (optional)
+
+```bash
+export EBB_KEYSTORE_FILE=/path/to/ebb-upload.jks
+export EBB_KEYSTORE_PASSWORD='…'
+export EBB_KEY_ALIAS='ebb-upload'
+export EBB_KEY_PASSWORD='…'
+./gradlew assembleRelease
+```
+
+Without those variables, `assembleRelease` fails with a configuration error (no debug-key fallback).
 
 ## Release checklist
 
-1. **Confirm QA** has signed off on the commit you are releasing.
-2. **Bump** `version.properties` (and `versionCode` implication if needed).
-3. **Update** [`CHANGELOG.md`](../CHANGELOG.md):
-   - Move everything under `[Unreleased]` into a new `## [X.Y.Z] - YYYY-MM-DD` section.
-   - Leave a fresh `[Unreleased]` section at the top.
-   - Fix comparison links at the bottom of the file.
-4. **Commit** on `main` (e.g. `chore(release): prepare v0.1.0`).
-5. **Tag** and push (only when ready — do not tag WIP builds):
+1. QA sign-off on the commit.
+2. Bump `version.properties` if needed.
+3. Update [`CHANGELOG.md`](../CHANGELOG.md) (`[Unreleased]` → dated `## [X.Y.Z]`).
+4. Commit on `main`.
+5. Tag and push when ready:
 
    ```bash
    git tag -a v0.1.0 -m "Ebb 0.1.0"
    git push origin v0.1.0
    ```
 
-6. The [**Release** workflow](.github/workflows/release.yml) runs on tag push:
-   - Fails if the tag (without `v`) does not match `version.properties`.
-   - Runs `assembleDebug` (debug-signed APK for now).
-   - Uploads `ebb-vX.Y.Z-debug.apk` to a **non-prerelease** GitHub Release.
-   - Release notes from the matching `CHANGELOG` section, or GitHub-generated notes if missing.
+6. [**Release** workflow](../.github/workflows/release.yml):
+   - Verifies tag ↔ `version.properties`
+   - Requires signing secrets
+   - Publishes `ebb-vX.Y.Z.apk` (release, minified, upload-signed)
 
 ## CI vs releases
 
 | Trigger | Workflow | Output |
 |---------|----------|--------|
-| Push to `main` | [android.yml](.github/workflows/android.yml) | `assembleDebug`, `debug-latest` + `ebb-debug-<sha>` **pre-releases** |
-| Tag `v*.*.*` | [release.yml](.github/workflows/release.yml) | Versioned **release** with debug APK (until release signing) |
+| Push to `main` | [android.yml](../.github/workflows/android.yml) | `assembleDebug` → `app.ebbplanner.debug`; `debug-latest` + `ebb-debug-<sha>` pre-releases |
+| Tag `v*.*.*` | [release.yml](../.github/workflows/release.yml) | `assembleRelease` → `ebb-vX.Y.Z.apk` on GitHub Releases |
 
-No unit tests run on CI per project policy.
-
-## Future: Play Store signing
-
-Release builds are **debug-signed** today. Before Play Console upload:
-
-1. Create a release keystore and store credentials in GitHub Actions **secrets** (e.g. `EBB_RELEASE_KEYSTORE`, passwords, alias).
-2. Extend `release.yml` to build a signed `release` variant (or `bundleRelease`).
-3. Document secret names here once configured.
-
-Do **not** commit keystore files or passwords to the repository.
+CI does not run unit tests per project policy.

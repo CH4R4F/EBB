@@ -34,7 +34,6 @@ import app.ebbplanner.ui.time.ClockFormat
 @Composable
 fun RoutineEditorScreen(
     onClose: (showDeferredSaveMessage: Boolean) -> Unit,
-    onSaveFailed: () -> Unit = {},
     viewModel: RoutineEditorViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -106,10 +105,7 @@ fun RoutineEditorScreen(
         }
         TextButton(
             onClick = {
-                viewModel.save(
-                    onSaved = { deferred -> onClose(deferred) },
-                    onSaveFailed = onSaveFailed,
-                )
+                viewModel.save { deferred -> onClose(deferred) }
             },
             enabled = !state.saveInFlight,
             modifier = Modifier.padding(top = EbbSpacing.s4),

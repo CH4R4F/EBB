@@ -11,6 +11,7 @@ import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.preferences.RoutineDeferredWorkPreferences
 import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.reminders.TaskReminderSync
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.util.UUID
@@ -147,6 +148,7 @@ class RoutineInstanceGenerator
                         syncFutureInstancesLocked(routine)
                     }
                 } catch (t: Throwable) {
+                    if (t is CancellationException) throw t
                     Log.e(TAG, "Routine save could not apply link/sync; queueing for retry", t)
                     if (linkTaskId != null && linkOnSave) {
                         deferredWorkPreferences.enqueuePendingLink(routine.id, linkTaskId)
@@ -177,7 +179,9 @@ class RoutineInstanceGenerator
 
         private suspend fun applyDeferredRoutineWorkBodyLocked() {
             val links = deferredWorkPreferences.snapshotPendingLinks()
-            links.forEach { (routineId, taskId) ->
+            links.forEach { pending ->
+                val routineId = pending.routineId
+                val taskId = pending.taskId
                 try {
                     val routine =
                         routineDao.getById(routineId) ?: run {
@@ -187,7 +191,23 @@ class RoutineInstanceGenerator
                     applyLinkToTaskOnlyLocked(taskId, routine)
                     deferredWorkPreferences.removePendingLink(routineId, taskId)
                 } catch (t: Throwable) {
-                    Log.e(TAG, "Deferred link failed (kept queued): routine=$routineId task=$taskId", t)
+                    if (t is CancellationException) throw t
+                    val attempts =
+                        deferredWorkPreferences.incrementLinkFailureAttempts(routineId, taskId)
+                    if (attempts >= RoutineDeferredWorkPreferences.MAX_DEFERRED_FAILURE_ATTEMPTS) {
+                        Log.e(
+                            TAG,
+                            "Abandoning deferred link after $attempts failures: routine=$routineId task=$taskId",
+                            t,
+                        )
+                        abandonDeferredLinkLocked(routineId, taskId)
+                    } else {
+                        Log.e(
+                            TAG,
+                            "Deferred link failed (attempt $attempts/${RoutineDeferredWorkPreferences.MAX_DEFERRED_FAILURE_ATTEMPTS}): routine=$routineId task=$taskId",
+                            t,
+                        )
+                    }
                 }
             }
             val syncIds = deferredWorkPreferences.snapshotPendingSyncRoutineIds()
@@ -201,9 +221,43 @@ class RoutineInstanceGenerator
                     syncFutureInstancesLocked(routine, skipLinkDay = null, runRollingWindowAfter = false)
                     deferredWorkPreferences.removePendingSync(routineId)
                 } catch (t: Throwable) {
-                    Log.e(TAG, "Deferred sync failed (kept queued): routine=$routineId", t)
+                    if (t is CancellationException) throw t
+                    val attempts = deferredWorkPreferences.incrementSyncFailureAttempts(routineId)
+                    if (attempts >= RoutineDeferredWorkPreferences.MAX_DEFERRED_FAILURE_ATTEMPTS) {
+                        Log.e(
+                            TAG,
+                            "Abandoning deferred sync after $attempts failures: routine=$routineId",
+                            t,
+                        )
+                        deferredWorkPreferences.removePendingSync(routineId)
+                    } else {
+                        Log.e(
+                            TAG,
+                            "Deferred sync failed (attempt $attempts/${RoutineDeferredWorkPreferences.MAX_DEFERRED_FAILURE_ATTEMPTS}): routine=$routineId",
+                            t,
+                        )
+                    }
                 }
             }
+        }
+
+        private suspend fun abandonDeferredLinkLocked(
+            routineId: String,
+            taskId: String,
+        ) {
+            deferredWorkPreferences.removePendingLink(routineId, taskId)
+            val task = taskDao.getById(taskId) ?: return
+            if (task.sourceRoutineId != routineId) return
+            val now = System.currentTimeMillis()
+            taskDao.updateRoutineTask(
+                task.copy(
+                    sourceRoutineId = null,
+                    routineOccurrenceDate = null,
+                    routineInstanceDetached = true,
+                    updatedAt = now,
+                ),
+            )
+            reminderSync.cancelTask(taskId)
         }
 
         suspend fun linkExistingTask(

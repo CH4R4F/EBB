@@ -8,10 +8,13 @@ import app.ebbplanner.data.repository.RoutineRepository
 import app.ebbplanner.data.repository.TaskRepository
 import app.ebbplanner.domain.routines.RoutineInstanceGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.UUID
 import javax.inject.Inject
 
@@ -112,10 +115,7 @@ class RoutineEditorViewModel
             _state.value = _state.value.copy(durationMin = minutes)
         }
 
-        fun save(
-            onSaved: (deferredInstanceWork: Boolean) -> Unit,
-            onSaveFailed: () -> Unit = {},
-        ) {
+        fun save(onSaved: (deferredInstanceWork: Boolean) -> Unit) {
             viewModelScope.launch {
                 val draft = _state.value
                 if (draft.saveInFlight) return@launch
@@ -154,21 +154,30 @@ class RoutineEditorViewModel
                     )
                 try {
                     val deferred =
-                        routineInstanceGenerator.persistRoutineAndSyncInstances(
-                            upsertRoutine = { routineRepository.upsert(entity) },
-                            routine = entity,
-                            linkTaskId = linkTaskId,
-                            linkOnSave = linkTaskId != null && existing == null,
-                        )
-                    _state.value = _state.value.copy(saveInFlight = false)
+                        withContext(NonCancellable) {
+                            routineInstanceGenerator.persistRoutineAndSyncInstances(
+                                upsertRoutine = { routineRepository.upsert(entity) },
+                                routine = entity,
+                                linkTaskId = linkTaskId,
+                                linkOnSave = linkTaskId != null && existing == null,
+                            )
+                        }
+                    _state.value = _state.value.copy(saveInFlight = false, saveError = null)
                     onSaved(deferred)
+                } catch (e: CancellationException) {
+                    _state.value = _state.value.copy(saveInFlight = false)
+                    throw e
                 } catch (t: Throwable) {
-                    _state.value =
-                        _state.value.copy(
-                            saveInFlight = false,
-                            saveError = "Could not save routine. Try again.",
-                        )
-                    onSaveFailed()
+                    if (routineRepository.getRoutine(stableId) != null) {
+                        _state.value = _state.value.copy(saveInFlight = false, saveError = null)
+                        onSaved(false)
+                    } else {
+                        _state.value =
+                            _state.value.copy(
+                                saveInFlight = false,
+                                saveError = "Could not save routine. Try again.",
+                            )
+                    }
                 }
             }
         }

@@ -3,6 +3,7 @@ package app.ebbplanner.data.preferences
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.test.runTest
+import app.ebbplanner.data.preferences.PendingRoutineLink
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -32,7 +33,7 @@ class RoutineDeferredWorkPreferencesTest {
 
             val remaining = preferences.snapshotPendingLinks()
             assertEquals(1, remaining.size)
-            assertEquals("r2" to "t2", remaining.single())
+            assertEquals(PendingRoutineLink("r2", "t2", 0), remaining.single())
         }
 
     @Test

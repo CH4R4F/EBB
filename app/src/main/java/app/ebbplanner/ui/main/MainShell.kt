@@ -62,7 +62,6 @@ fun MainShell(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val routineDeferredSaveMessage = stringResource(R.string.routine_saved_deferred_days)
-    val routineSaveFailedMessage = stringResource(R.string.routine_save_failed)
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -132,14 +131,6 @@ fun MainShell(
                                     withDismissAction = true,
                                 )
                             }
-                        }
-                    },
-                    onSaveFailed = {
-                        scope.launch {
-                            snackbarHostState.showSnackbar(
-                                message = routineSaveFailedMessage,
-                                withDismissAction = true,
-                            )
                         }
                     },
                 )
