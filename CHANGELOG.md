@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-18
+
 ### Fixed
 
 - **Today timeline (overlap)** — `+N` chip anchored at group start with height capped to group extent (reserved column, drawn after tasks); vertical push when min-height blocks would collide; overlap pill/helper ignore done tasks; FAB scroll clearance; time-left pill clear of done ring; readable min heights at 2.0.
@@ -50,5 +52,6 @@ First public preview of Ebb — an ADHD-friendly day planner for Android.
 - **Reminders** — notifications for planned tasks, rescheduled after reboot.
 - **Settings** — Material You, default reminders, wake/bed summary, and app version.
 
-[Unreleased]: https://github.com/CH4R4F/EBB/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/CH4R4F/EBB/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/CH4R4F/EBB/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/CH4R4F/EBB/releases/tag/v0.1.0
