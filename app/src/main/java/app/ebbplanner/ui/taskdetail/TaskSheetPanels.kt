@@ -5,14 +5,19 @@ package app.ebbplanner.ui.taskdetail
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -30,9 +35,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
+import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTaskColors
 import app.ebbplanner.ui.theme.EbbTypography
 import androidx.compose.ui.res.stringResource
@@ -127,6 +134,7 @@ private fun ReminderSheetPanel(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DurationSheetPanel(
     selectedMin: Int,
@@ -135,22 +143,26 @@ private fun DurationSheetPanel(
     var selected by remember(selectedMin) { mutableIntStateOf(selectedMin) }
     Column(Modifier.padding(EbbSpacing.s4)) {
         Text("How long might it take?", style = EbbTypography.titleL)
-        Row(Modifier.fillMaxWidth().padding(vertical = EbbSpacing.s3), horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2)) {
+        FlowRow(
+            Modifier.fillMaxWidth().padding(vertical = EbbSpacing.s3),
+            horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
+            verticalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
+        ) {
             durationPresets.forEach { min ->
-                Text(
-                    "$min m",
-                    modifier =
-                        Modifier
-                            .clickable { selected = min }
-                            .padding(8.dp),
-                    style = EbbTypography.labelL,
-                    color =
-                        if (min == selected) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
-                )
+                val isSel = min == selected
+                Surface(
+                    onClick = { selected = min },
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isSel) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                    border = if (isSel) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                ) {
+                    Text(
+                        "$min min",
+                        style = EbbTypography.labelL,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        maxLines = 1,
+                    )
+                }
             }
         }
         TextButton(onClick = { onSave(selected) }, modifier = Modifier.align(Alignment.End)) {
@@ -311,6 +323,7 @@ private fun ScheduleChoice(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ColorIconSheetPanel(
     colorKey: String,
@@ -339,19 +352,40 @@ private fun ColorIconSheetPanel(
                 }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             iconOptions.forEach { key ->
-                Text(
-                    key,
-                    modifier = Modifier.clickable { icon = key }.padding(8.dp),
-                    style = EbbTypography.labelM,
+                val isSel = icon == key
+                Surface(
+                    onClick = { icon = key },
+                    shape = EbbShapes.md,
                     color =
-                        if (icon == key) {
-                            MaterialTheme.colorScheme.primary
+                        if (isSel) {
+                            MaterialTheme.colorScheme.primaryContainer
                         } else {
-                            MaterialTheme.colorScheme.onSurface
+                            MaterialTheme.colorScheme.surface
                         },
-                )
+                    border =
+                        if (isSel) {
+                            BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                        } else {
+                            BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                        },
+                ) {
+                    EbbSymbol(
+                        key,
+                        fontSize = 24.sp,
+                        modifier = Modifier.padding(12.dp),
+                        color =
+                            if (isSel) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                    )
+                }
             }
         }
         TextButton(onClick = { onSave(color, icon) }, modifier = Modifier.align(Alignment.End)) {

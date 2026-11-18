@@ -1,5 +1,8 @@
 package app.ebbplanner.ui.today
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -23,7 +26,6 @@ class QuickCaptureSheetTest {
 
     @Test
     fun quickCapture_hasSingleFieldAndAddButton() {
-        var saved: String? = null
         composeRule.setContent {
             EbbTheme {
                 QuickCaptureSheetContent(
@@ -38,6 +40,11 @@ class QuickCaptureSheetTest {
         }
         composeRule.onAllNodesWithTag(QUICK_CAPTURE_TEXT_FIELD_TAG).assertCountEquals(1)
         composeRule.onAllNodesWithTag(QUICK_CAPTURE_ADD_BUTTON_TAG).assertCountEquals(1)
+    }
+
+    @Test
+    fun quickCapture_addInvokesCallbackWithCurrentText() {
+        var saved: String? = null
         composeRule.setContent {
             EbbTheme {
                 QuickCaptureSheetContent(
@@ -58,7 +65,7 @@ class QuickCaptureSheetTest {
 
     @Test
     fun quickCapture_interactive_savesFromField() {
-        var draft = ""
+        var draft by mutableStateOf("")
         var saved = ""
         composeRule.setContent {
             EbbTheme {
@@ -72,7 +79,7 @@ class QuickCaptureSheetTest {
                 )
             }
         }
-        composeRule.onNodeWithTag(QUICK_CAPTURE_TEXT_FIELD_TAG).performTextInput("One task only")
+        composeRule.onNodeWithTag(QUICK_CAPTURE_TEXT_FIELD_TAG, useUnmergedTree = true).performTextInput("One task only")
         composeRule.onNodeWithTag(QUICK_CAPTURE_ADD_BUTTON_TAG).performClick()
         composeRule.runOnIdle {
             assert(saved == "One task only")

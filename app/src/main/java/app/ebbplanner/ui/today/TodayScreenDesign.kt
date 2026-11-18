@@ -3,6 +3,7 @@
 package app.ebbplanner.ui.today
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -49,6 +50,7 @@ fun TodayScreenDesign(
     val dimmed = state.visualMode == TodayVisualMode.Drag
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(0),
         bottomBar = {
             if (showBottomNav) {
                 TodayBottomNavPreview()

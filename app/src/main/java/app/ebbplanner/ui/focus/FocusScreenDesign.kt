@@ -150,8 +150,15 @@ private fun FocusTopBar(
 ) {
     Row(modifier = Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onClose) { EbbSymbol("close_fullscreen", fontSize = 22.sp) }
-        Text(label, modifier = Modifier.weight(1f), textAlign = TextAlign.Center, style = EbbTypography.labelL)
-        IconButton(onClick = onMenu) { EbbSymbol("more_vert", fontSize = 22.sp) }
+        Text(
+            label,
+            modifier = Modifier.weight(1f),
+            textAlign = TextAlign.Center,
+            style = EbbTypography.labelL,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        )
+        Spacer(modifier = Modifier.size(48.dp))
     }
 }
 

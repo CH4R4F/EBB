@@ -29,7 +29,7 @@ object TodayPresentationMapper {
                 timeLeftLabel = formatTimeLeft(state.bedMinutes, nowMinutes),
             )
         }
-        val blocks = scheduled.mapNotNull { task -> task.toBlock(nowMinutes) }
+        val blocks = assignOverlapLanes(scheduled.mapNotNull { task -> task.toBlock(nowMinutes) })
         val minutesLeft = (state.bedMinutes - nowMinutes).coerceAtLeast(0)
         val plannedRemaining = scheduled.filter { it.status != TaskEntity.STATUS_DONE }.sumOf { it.durationMin }
         val overfull = isToday(state.date) && plannedRemaining > minutesLeft
@@ -84,6 +84,37 @@ object TodayPresentationMapper {
         val endHour =
             latest?.let { maxOf(TIMELINE_MIN_END_HOUR, (it + 59) / 60) } ?: TIMELINE_MIN_END_HOUR
         return startHour.coerceAtLeast(0) to endHour.coerceAtMost(24).coerceAtLeast(startHour + 1)
+    }
+
+    private fun assignOverlapLanes(blocks: List<TodayScheduledBlock>): List<TodayScheduledBlock> {
+        if (blocks.isEmpty()) return blocks
+        val sorted = blocks.sortedBy { it.startMinutes }
+        val laneEnds = mutableListOf<Int>()
+        val laneById = mutableMapOf<String, Int>()
+        sorted.forEach { block ->
+            val end = block.startMinutes + block.durationMin
+            var lane = laneEnds.indexOfFirst { it <= block.startMinutes }
+            if (lane < 0) {
+                lane = laneEnds.size
+                laneEnds.add(end)
+            } else {
+                laneEnds[lane] = end
+            }
+            laneById[block.id] = lane
+        }
+        val maxLanes = laneEnds.size.coerceAtLeast(1)
+        return blocks.map { block ->
+            val overlaps =
+                blocks.any { other ->
+                    other.id != block.id &&
+                        block.startMinutes < other.startMinutes + other.durationMin &&
+                        other.startMinutes < block.startMinutes + block.durationMin
+                }
+            block.copy(
+                overlapLane = laneById[block.id] ?: 0,
+                overlapLaneCount = if (overlaps) maxLanes.coerceAtLeast(2) else 1,
+            )
+        }
     }
 
     private fun detectOverlap(blocks: List<TodayScheduledBlock>): Boolean {

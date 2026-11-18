@@ -12,6 +12,7 @@ import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.data.repository.TaskRepository
 import app.ebbplanner.domain.capture.QuickCaptureParser
 import app.ebbplanner.domain.routines.RoutineInstanceGenerator
+import app.ebbplanner.domain.time.WeekAnchor
 import app.ebbplanner.domain.time.WeekStart
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -24,10 +25,8 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 import javax.inject.Inject
 
@@ -47,7 +46,8 @@ class WeekViewModel
             }
         }
         private val weekStartDay = MutableStateFlow(UserPreferencesRepository.WEEK_START_USE_LOCALE)
-        private val weekStart = MutableStateFlow(startOfWeek(LocalDate.now(), weekStartDay.value))
+        private val weekPageOffset = MutableStateFlow(0)
+        private val weekStart = MutableStateFlow(WeekAnchor.weekStartForPage(LocalDate.now(), weekStartDay.value, 0))
         private val loading = MutableStateFlow(true)
         private val captureDate = MutableStateFlow(LocalDate.now())
 
@@ -58,9 +58,18 @@ class WeekViewModel
             viewModelScope.launch {
                 userPreferencesRepository.weekStartDay.collect { stored ->
                     weekStartDay.value = stored
-                    weekStart.value = startOfWeek(weekStart.value, stored)
+                    applyWeekAnchor()
                 }
             }
+        }
+
+        private fun applyWeekAnchor() {
+            weekStart.value =
+                WeekAnchor.weekStartForPage(
+                    LocalDate.now(),
+                    weekStartDay.value,
+                    weekPageOffset.value,
+                )
         }
 
         @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -135,15 +144,18 @@ class WeekViewModel
                 )
 
         fun previousWeek() {
-            weekStart.update { it.minusWeeks(1) }
+            weekPageOffset.update { it - 1 }
+            applyWeekAnchor()
         }
 
         fun nextWeek() {
-            weekStart.update { it.plusWeeks(1) }
+            weekPageOffset.update { it + 1 }
+            applyWeekAnchor()
         }
 
         fun jumpToThisWeek() {
-            weekStart.value = startOfWeek(LocalDate.now(), weekStartDay.value)
+            weekPageOffset.value = 0
+            applyWeekAnchor()
             captureDate.value = LocalDate.now()
         }
 
@@ -199,11 +211,6 @@ class WeekViewModel
                 eventCount == 0 -> tasksPart
                 else -> context.getString(R.string.week_day_summary, tasksPart, eventsPart)
             }
-        }
-
-        private fun startOfWeek(date: LocalDate, storedWeekStart: Int): LocalDate {
-            val first: DayOfWeek = WeekStart.resolveDayOfWeek(storedWeekStart)
-            return date.with(TemporalAdjusters.previousOrSame(first))
         }
 
         private fun formatWeekRange(

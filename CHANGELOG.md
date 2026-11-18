@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Week view** — changing week start re-anchors to the current week; navigation keeps the selected week offset (`WeekAnchor`, `WeekViewModel`).
+- **Insets** — tab Scaffolds use `contentWindowInsets = WindowInsets(0)` so MainShell does not double-apply system bar padding.
+- **Task sheets** — duration chips and color/icon picker use FlowRow; icons render via `EbbSymbol` (not raw names).
+- **Day tools** — Shift and Overlap previews use real task times; overlap hatch tracks actual overlap window.
+- **Large text** — ellipsis and min heights on week header, focus labels, task detail actions, onboarding week-start row; Paparazzi font scale 2.0 QA shots.
+- **Inbox** — working search toggle/query and “Quick ≤15 min” filter; removed inert sort/menu actions.
+- **Onboarding** — “Not now” on reminders persisted; removed dead Try-it Schedule control.
+- **Today** — quick capture footer matches save target; duplicate estimate chip guarded; anytime “+ add” stays visible; overlapping timeline tasks lay out side by side.
 - **Quick capture** — single interactive sheet (one field, one Add); working estimate chip; ModalBottomSheet drag handle only.
 - **Navigation** — removed duplicate bottom bars on Inbox, Week, and Routines (MainShell owns the real bar).
 - **Week start** — persisted DataStore preference with onboarding picker and Settings row; Week view respects it.

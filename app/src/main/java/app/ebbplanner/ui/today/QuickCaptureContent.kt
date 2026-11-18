@@ -148,8 +148,7 @@ fun QuickCaptureSheetContent(
                                 strokeWidth = if (fieldFocused) 2.dp.toPx() else 1.dp.toPx(),
                             )
                         }
-                        .padding(EbbSpacing.s3)
-                        .testTag(QUICK_CAPTURE_TEXT_FIELD_TAG),
+                        .padding(EbbSpacing.s3),
             ) {
                 if (interactive) {
                     BasicTextField(
@@ -158,7 +157,7 @@ fun QuickCaptureSheetContent(
                         textStyle = EbbTypography.bodyL.copy(color = MaterialTheme.colorScheme.onSurface),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { onAdd() }),
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().testTag(QUICK_CAPTURE_TEXT_FIELD_TAG),
                         decorationBox = { inner ->
                             if (text.isEmpty()) {
                                 Text(

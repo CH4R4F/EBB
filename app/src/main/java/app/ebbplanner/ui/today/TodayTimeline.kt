@@ -146,6 +146,10 @@ fun TodayTimeline(
             )
         }
 
+        val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
+        val trackStart = timelineHourRail + 4.dp
+        val trackEnd = 8.dp
+        val trackWidth = (screenWidthDp - trackStart - trackEnd).coerceAtLeast(120.dp)
         state.blocks.filter { !it.isLifted }.forEach { block ->
             val y = minutesToTimelineY(block.startMinutes, state.timelineStartHour)
             val minBlockHeight =
@@ -155,6 +159,9 @@ fun TodayTimeline(
                     else -> if (block.short) 24.dp else 40.dp
                 }
             val h = durationToHeight(block.durationMin).coerceAtLeast(minBlockHeight)
+            val laneCount = block.overlapLaneCount.coerceAtLeast(1)
+            val laneWidth = trackWidth / laneCount
+            val laneOffset = trackStart + laneWidth * block.overlapLane.coerceIn(0, laneCount - 1)
             ScheduledTaskBlock(
                 block = block,
                 dark = dark,
@@ -166,9 +173,8 @@ fun TodayTimeline(
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
-                        .padding(start = timelineHourRail + 4.dp, end = 8.dp)
-                        .offset(y = y)
-                        .fillMaxWidth()
+                        .offset(x = laneOffset, y = y)
+                        .width(laneWidth - 2.dp)
                         .height(h.coerceAtLeast(if (largeText && block.short) 36.dp else if (block.short) 24.dp else 40.dp))
                         .alpha(if (block.isGhost) 0.45f else 1f),
             )

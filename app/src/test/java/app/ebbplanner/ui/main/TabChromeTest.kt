@@ -29,40 +29,36 @@ class TabChromeTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun tabDesigns_omitBottomNavByDefault() {
-        val navLabel = "Today"
+    fun inboxDesign_omitsBottomNavByDefault() {
         composeRule.setContent {
-            EbbTheme {
-                EbbBottomNavigation(selected = MainTab.Today)
-            }
+            EbbTheme { InboxScreenDesign(state = InboxPresentationState()) }
         }
-        val alone = composeRule.onAllNodesWithText(navLabel, substring = true).fetchSemanticsNodes().size
+        composeRule.onAllNodesWithText("Today", substring = true).assertCountEquals(0)
+    }
 
+    @Test
+    fun weekDesign_omitsBottomNavByDefault() {
         composeRule.setContent {
-            EbbTheme {
-                InboxScreenDesign(state = InboxPresentationState())
-            }
+            EbbTheme { WeekScreenDesign(state = WeekPresentationState(mode = WeekVisualMode.Empty)) }
         }
-        val withInbox =
-            composeRule.onAllNodesWithText(navLabel, substring = true).fetchSemanticsNodes().size
-        assert(withInbox == alone)
+        composeRule.onAllNodesWithText("Today", substring = true).assertCountEquals(0)
+    }
 
-        composeRule.setContent {
-            EbbTheme {
-                WeekScreenDesign(state = WeekPresentationState(mode = WeekVisualMode.Empty))
-            }
-        }
-        val withWeek =
-            composeRule.onAllNodesWithText(navLabel, substring = true).fetchSemanticsNodes().size
-        assert(withWeek == alone)
-
+    @Test
+    fun routinesDesign_omitsBottomNavByDefault() {
         composeRule.setContent {
             EbbTheme {
                 RoutinesScreenDesign(state = RoutinesPresentationState(mode = RoutinesVisualMode.Empty))
             }
         }
-        val withRoutines =
-            composeRule.onAllNodesWithText(navLabel, substring = true).fetchSemanticsNodes().size
-        assert(withRoutines == alone)
+        composeRule.onAllNodesWithText("Today", substring = true).assertCountEquals(0)
+    }
+
+    @Test
+    fun bottomNavPreview_showsTodayTab() {
+        composeRule.setContent {
+            EbbTheme { EbbBottomNavigation(selected = MainTab.Today) }
+        }
+        composeRule.onAllNodesWithText("Today", substring = true).assertCountEquals(1)
     }
 }

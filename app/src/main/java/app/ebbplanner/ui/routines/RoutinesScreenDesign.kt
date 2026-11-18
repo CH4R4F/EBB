@@ -3,6 +3,7 @@
 package app.ebbplanner.ui.routines
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -46,6 +47,7 @@ fun RoutinesScreenDesign(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(0),
         bottomBar = {
             if (showBottomNav) {
                 EbbBottomNavigation(selected = MainTab.Routines)
@@ -99,8 +101,6 @@ private fun RoutinesTopBar() {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text("Routines", style = EbbTypography.headlineM, modifier = Modifier.weight(1f))
-        IconButton(onClick = {}) { EbbSymbol("search", fontSize = 22.sp) }
-        IconButton(onClick = {}) { EbbSymbol("more_vert", fontSize = 22.sp) }
     }
 }
 

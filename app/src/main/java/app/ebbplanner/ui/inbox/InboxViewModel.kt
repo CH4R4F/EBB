@@ -11,15 +11,17 @@ import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.data.repository.TaskRepository
 import app.ebbplanner.domain.capture.QuickCaptureParser
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
@@ -30,18 +32,36 @@ class InboxViewModel
         private val taskRepository: TaskRepository,
         private val userPreferencesRepository: UserPreferencesRepository,
     ) : ViewModel() {
-        val tasks: StateFlow<List<TaskEntity>> =
-            taskRepository.observeInboxTasks()
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+        private val searchQuery = MutableStateFlow("")
+        private val selectedFilter = MutableStateFlow(0)
+        private val searchVisible = MutableStateFlow(false)
 
         val presentation: StateFlow<InboxPresentationState> =
-            taskRepository.observeInboxTasks()
-                .map { list -> inboxPresentationFromTasks(list) }
-                .stateIn(
-                    viewModelScope,
-                    SharingStarted.WhileSubscribed(5_000),
-                    InboxPresentationState(visualMode = InboxVisualMode.Loading, tasks = emptyList()),
-                )
+            combine(
+                taskRepository.observeInboxTasks(),
+                searchQuery,
+                selectedFilter,
+                searchVisible,
+            ) { tasks, query, filterIndex, searchOn ->
+                inboxPresentationFromTasks(tasks, query, filterIndex, searchOn)
+            }.stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5_000),
+                InboxPresentationState(visualMode = InboxVisualMode.Loading, tasks = emptyList()),
+            )
+
+        fun setSearchQuery(query: String) {
+            searchQuery.value = query
+        }
+
+        fun setFilterIndex(index: Int) {
+            selectedFilter.value = index
+        }
+
+        fun toggleSearch() {
+            searchVisible.update { !it }
+            if (!searchVisible.value) searchQuery.value = ""
+        }
 
         fun captureToInbox(raw: String) {
             if (raw.isBlank()) return
@@ -59,7 +79,7 @@ class InboxViewModel
                 val remindersOn = userPreferencesRepository.remindersDefault.first()
                 taskRepository.addQuickCapture(
                     title = parsed.title,
-                    date = if (placement == TaskEntity.PLACEMENT_INBOX) date else date,
+                    date = date,
                     placement = placement,
                     startLocalTime = start,
                     durationMin = parsed.durationMin ?: TaskEntity.DEFAULT_DURATION_MIN,
@@ -73,29 +93,56 @@ class InboxViewModel
             }
         }
 
-        private fun inboxPresentationFromTasks(tasks: List<TaskEntity>): InboxPresentationState {
+        private fun inboxPresentationFromTasks(
+            tasks: List<TaskEntity>,
+            query: String,
+            filterIndex: Int,
+            searchVisible: Boolean,
+        ): InboxPresentationState {
+            val filtered =
+                tasks
+                    .filter { task -> query.isBlank() || task.title.contains(query, ignoreCase = true) }
+                    .filter { task ->
+                        when (filterIndex) {
+                            1 -> task.durationMin <= 15
+                            else -> true
+                        }
+                    }
             if (tasks.isEmpty()) {
                 return InboxPresentationState(
                     subtitle = context.resources.getQuantityString(R.plurals.inbox_thought_count, 0, 0),
                     tasks = emptyList(),
                     visualMode = InboxVisualMode.Empty,
                     emptyMessage = context.getString(R.string.inbox_empty_message),
+                    searchQuery = query,
+                    searchVisible = searchVisible,
+                    selectedFilter = filterIndex,
                 )
             }
-            val subtitle = context.resources.getQuantityString(R.plurals.inbox_thought_count, tasks.size, tasks.size)
+            val subtitle = context.resources.getQuantityString(R.plurals.inbox_thought_count, filtered.size, filtered.size)
             return InboxPresentationState(
                 subtitle = subtitle,
                 tasks =
-                    tasks.map {
+                    filtered.map {
                         InboxTaskRow(
                             id = it.id,
                             title = it.title,
                             estimate = "${it.durationMin} min",
                             colorKey = it.colorKey,
                             iconKey = it.iconKey ?: "task",
+                            durationMin = it.durationMin,
                         )
                     },
-                visualMode = InboxVisualMode.Normal,
+                visualMode =
+                    if (filtered.isEmpty() && filterIndex > 0) {
+                        InboxVisualMode.FilteredEmpty
+                    } else {
+                        InboxVisualMode.Normal
+                    },
+                searchQuery = query,
+                searchVisible = searchVisible,
+                selectedFilter = filterIndex,
+                filters = listOf("All", "Quick ≤15 min"),
             )
         }
     }

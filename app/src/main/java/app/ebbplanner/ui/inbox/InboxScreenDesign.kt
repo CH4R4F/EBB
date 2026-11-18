@@ -3,6 +3,7 @@
 package app.ebbplanner.ui.inbox
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -35,8 +36,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.ebbplanner.R
 import androidx.compose.ui.unit.sp
 import app.ebbplanner.ui.components.EbbBottomNavigation
 import app.ebbplanner.ui.navigation.MainTab
@@ -53,9 +56,13 @@ fun InboxScreenDesign(
     showBottomNav: Boolean = false,
     onFabClick: () -> Unit = {},
     onTaskClick: (String) -> Unit = {},
+    onSearchToggle: () -> Unit = {},
+    onSearchQueryChange: (String) -> Unit = {},
+    onFilterSelected: (Int) -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(0),
         bottomBar = {
             if (showBottomNav) {
                 EbbBottomNavigation(selected = MainTab.Inbox)
@@ -80,7 +87,19 @@ fun InboxScreenDesign(
                     .fillMaxSize()
                     .padding(padding),
         ) {
-            InboxTopBar(title = state.title)
+            InboxTopBar(title = state.title, onSearchToggle = onSearchToggle)
+            if (state.searchVisible) {
+                androidx.compose.material3.OutlinedTextField(
+                    value = state.searchQuery,
+                    onValueChange = onSearchQueryChange,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s1),
+                    placeholder = { Text(stringResource(R.string.inbox_search_hint)) },
+                    singleLine = true,
+                )
+            }
             Text(
                 state.subtitle,
                 style = EbbTypography.bodyM,
@@ -96,6 +115,7 @@ fun InboxScreenDesign(
             InboxFilterRow(
                 filters = state.filters,
                 selected = state.selectedFilter,
+                onFilterSelected = onFilterSelected,
                 modifier = Modifier.padding(top = EbbSpacing.s2, bottom = EbbSpacing.s2),
             )
             when (state.visualMode) {
@@ -145,7 +165,10 @@ private fun InboxHintBanner(message: String) {
 }
 
 @Composable
-private fun InboxTopBar(title: String) {
+private fun InboxTopBar(
+    title: String,
+    onSearchToggle: () -> Unit = {},
+) {
     Row(
         modifier =
             Modifier
@@ -155,15 +178,9 @@ private fun InboxTopBar(title: String) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Spacer(modifier = Modifier.width(8.dp))
-        Text(title, style = EbbTypography.headlineM, modifier = Modifier.weight(1f))
-        IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
+        Text(title, style = EbbTypography.headlineM, modifier = Modifier.weight(1f), maxLines = 1)
+        IconButton(onClick = onSearchToggle, modifier = Modifier.size(48.dp)) {
             EbbSymbol("search", fontSize = 22.sp)
-        }
-        IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
-            EbbSymbol("sort", fontSize = 22.sp)
-        }
-        IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
-            EbbSymbol("more_vert", fontSize = 22.sp)
         }
     }
 }
@@ -173,6 +190,7 @@ private fun InboxFilterRow(
     filters: List<String>,
     selected: Int,
     modifier: Modifier = Modifier,
+    onFilterSelected: (Int) -> Unit = {},
 ) {
     Row(
         modifier =
@@ -185,6 +203,7 @@ private fun InboxFilterRow(
         filters.forEachIndexed { index, label ->
             val isSel = index == selected
             Surface(
+                onClick = { onFilterSelected(index) },
                 shape = EbbShapes.full,
                 color = if (isSel) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
                 border = if (isSel) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),

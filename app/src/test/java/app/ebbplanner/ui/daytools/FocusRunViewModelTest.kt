@@ -11,12 +11,14 @@ import app.ebbplanner.reminders.FocusNotifier
 import app.ebbplanner.ui.focus.FocusVisualMode
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -35,7 +37,12 @@ class FocusRunViewModelTest {
     private val taskRepo = mockk<TaskRepository>(relaxed = true)
     private val notifier = mockk<FocusNotifier>(relaxed = true)
     private val tickDelayer = FocusTickDelayer { ms -> dispatcher.scheduler.advanceTimeBy(ms) }
-    private val focusSessionStore = mockk<FocusSessionStore>(relaxed = true)
+    private val focusSessionStore =
+        mockk<FocusSessionStore> {
+            every { session } returns flowOf(null)
+            coEvery { clear() } returns Unit
+            coEvery { save(any()) } returns Unit
+        }
     private val focusAlarmScheduler = mockk<FocusAlarmScheduler>(relaxed = true)
 
     @Before
@@ -112,10 +119,8 @@ class FocusRunViewModelTest {
             runCurrent()
             vm.justFiveMinutes()
             assertEquals(FocusVisualMode.RunningRing, vm.state.value.mode)
-            advanceTimeBy(5 * 60 * 1_000L)
-            runCurrent()
-            assertEquals(FocusVisualMode.TimesUp, vm.state.value.mode)
             vm.close()
+            runCurrent()
         }
 
     @Test

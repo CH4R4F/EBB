@@ -158,7 +158,7 @@ class DayPlanningUseCaseTest {
                 )
             database.taskDao().insertAll(listOf(scheduled, inbox))
             val placed = useCase.scheduleTasksOnDay(date, listOf("inbox1"), 9 * 60, 23 * 60, 10 * 60 + 5)
-            assertEquals(1, placed)
+            assertEquals(1, placed.placedCount)
             val start = repository.getTask("inbox1")?.startLocalTime
             assertEquals("11:00", start)
         }

@@ -85,6 +85,7 @@ class OnboardingViewModel
             userPreferencesRepository.setDayBedMinutes(state.bedMinutes)
             userPreferencesRepository.setBreatherMinutes(state.breatherMinutes)
             userPreferencesRepository.setCelebrationStyle(state.celebrationStyle.name)
+            userPreferencesRepository.setRemindersDefault(state.remindersEnabled)
             userPreferencesRepository.setSeedSampleTasks(state.addSampleTasks)
             userPreferencesRepository.setWeekStartDay(state.weekStartDay)
             userPreferencesRepository.setOnboardingComplete(true)

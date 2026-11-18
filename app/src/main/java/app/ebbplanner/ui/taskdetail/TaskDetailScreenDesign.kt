@@ -585,7 +585,13 @@ private fun TaskDetailBottomBar(
                     horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s1),
                 ) {
                     EbbSymbol("play_arrow", fontSize = 18.sp, color = MaterialTheme.colorScheme.onPrimary)
-                    Text("Start focus", color = MaterialTheme.colorScheme.onPrimary, style = EbbTypography.labelL)
+                    Text(
+                        "Start focus",
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        style = EbbTypography.labelL,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
                 }
             }
         }

@@ -159,6 +159,10 @@ fun OverlapHelperDesign(
                 secondTitle = situation.secondTitle,
                 firstRange = DayGapScheduler.formatRange(situation.firstStartMinutes, situation.firstDurationMin),
                 secondRange = DayGapScheduler.formatRange(situation.secondStartMinutes, situation.secondDurationMin),
+                firstStartMinutes = situation.firstStartMinutes,
+                firstDurationMin = situation.firstDurationMin,
+                secondStartMinutes = situation.secondStartMinutes,
+                secondDurationMin = situation.secondDurationMin,
             )
             situation.options.forEach { option ->
                 val icon =
@@ -627,14 +631,22 @@ private fun RowScope.ShiftPreviewColumn(
             textAlign = TextAlign.Center,
         )
         Row(Modifier.padding(top = 8.dp)) {
+            val timelineStart = blocks.minOfOrNull { it.startMinutes } ?: (9 * 60)
             val hourStep = SHIFT_TIMELINE_HEIGHT / 6
+            val hourLabels =
+                (0..6).map { index ->
+                    app.ebbplanner.ui.time.ClockFormat.minutesToClock(
+                        timelineStart + (SHIFT_TIMELINE_MINUTES * index / 6).toInt(),
+                    )
+                }
             Box(Modifier.width(34.dp).height(SHIFT_TIMELINE_HEIGHT)) {
-                listOf("11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00").forEachIndexed { index, hour ->
+                hourLabels.forEachIndexed { index, hour ->
                     Text(
                         hour,
                         style = EbbTypography.labelM,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.align(Alignment.TopEnd).offset(y = hourStep * index - 10.dp),
+                        maxLines = 1,
                     )
                 }
             }
@@ -713,7 +725,13 @@ private fun ShiftBlock(
             if (!isEvent) {
                 Box(Modifier.width(3.dp).fillMaxHeight().background(EbbTaskColors.strong(color)))
             }
-            Text(title, style = EbbTypography.labelM, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
+            Text(
+                title,
+                style = EbbTypography.labelM,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            )
             if (isPinned) {
                 Spacer(Modifier.weight(1f))
                 EbbSymbol("keep", fontSize = 14.sp, modifier = Modifier.padding(end = 6.dp))
@@ -728,20 +746,55 @@ private fun OverlapTimelineCard(
     secondTitle: String,
     firstRange: String,
     secondRange: String,
+    firstStartMinutes: Int = 11 * 60 + 30,
+    firstDurationMin: Int = 30,
+    secondStartMinutes: Int = 11 * 60 + 30,
+    secondDurationMin: Int = 60,
 ) {
+    val firstEnd = firstStartMinutes + firstDurationMin
+    val secondEnd = secondStartMinutes + secondDurationMin
+    val windowStart = minOf(firstStartMinutes, secondStartMinutes).let { (it / 30) * 30 }
+    val windowEnd = maxOf(firstEnd, secondEnd) + 15
+    val windowSpan = (windowEnd - windowStart).coerceAtLeast(45)
+    val railHeight = 126.dp
+    fun minutesToY(min: Int): Dp {
+        val fraction = (min - windowStart).toFloat() / windowSpan
+        return (fraction * railHeight.value).dp
+    }
+    fun minutesToHeight(duration: Int): Dp {
+        val fraction = duration.toFloat() / windowSpan
+        return (fraction * railHeight.value).coerceAtLeast(24f).dp
+    }
+  val railLabels =
+        listOf(0, 1, 2).map { index ->
+            app.ebbplanner.ui.time.ClockFormat.minutesToClock(windowStart + (windowSpan * index / 2))
+        }
+    val overlapTop = minutesToY(maxOf(firstStartMinutes, secondStartMinutes))
+    val overlapBottom = minutesToY(minOf(firstEnd, secondEnd))
+    val overlapHeight =
+        if (overlapBottom > overlapTop) {
+            (overlapBottom - overlapTop).coerceAtLeast(8.dp)
+        } else {
+            0.dp
+        }
     Surface(Modifier.fillMaxWidth().height(150.dp), shape = EbbShapes.md, color = MaterialTheme.colorScheme.surface) {
         Row(Modifier.padding(12.dp)) {
-            Column(Modifier.width(44.dp), verticalArrangement = Arrangement.SpaceBetween) {
-                Text("11:30", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("12:00", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("12:30", style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(Modifier.width(44.dp).height(railHeight), verticalArrangement = Arrangement.SpaceBetween) {
+                railLabels.forEach { label ->
+                    Text(
+                        label,
+                        style = EbbTypography.labelM,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                }
             }
-            Box(Modifier.weight(1f)) {
+            Box(Modifier.weight(1f).height(railHeight)) {
                 Surface(
                     Modifier
                         .fillMaxWidth(0.48f)
-                        .height(70.dp)
-                        .offset(y = 10.dp),
+                        .height(minutesToHeight(firstDurationMin))
+                        .offset(y = minutesToY(firstStartMinutes)),
                     shape = EbbShapes.sm,
                     color = EbbTaskColors.tint("green", dark = true),
                     border = BorderStroke(0.dp, Color.Transparent),
@@ -749,8 +802,8 @@ private fun OverlapTimelineCard(
                     Row(Modifier.fillMaxSize()) {
                         Box(Modifier.width(3.dp).fillMaxHeight().background(EbbTaskColors.strong("green")))
                         Column(Modifier.padding(8.dp)) {
-                            Text(firstTitle, style = EbbTypography.labelL)
-                            Text(firstRange, style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(firstTitle, style = EbbTypography.labelL, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                            Text(firstRange, style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                         }
                     }
                 }
@@ -758,26 +811,27 @@ private fun OverlapTimelineCard(
                     Modifier
                         .align(Alignment.TopEnd)
                         .fillMaxWidth(0.48f)
-                        .height(95.dp)
-                        .offset(y = 45.dp),
+                        .height(minutesToHeight(secondDurationMin))
+                        .offset(y = minutesToY(secondStartMinutes)),
                     shape = EbbShapes.sm,
                     color = EbbTaskColors.tint("sky", dark = true),
                 ) {
                     Row(Modifier.fillMaxSize()) {
                         Box(Modifier.width(3.dp).fillMaxHeight().background(EbbTaskColors.strong("sky")))
                         Column(Modifier.padding(8.dp)) {
-                            Text(secondTitle, style = EbbTypography.labelL)
-                            Text(secondRange, style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(secondTitle, style = EbbTypography.labelL, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                            Text(secondRange, style = EbbTypography.labelM, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                         }
                     }
                 }
                 val hatchBase = MaterialTheme.colorScheme.secondary
+                if (overlapHeight > 0.dp) {
                 Box(
                     Modifier
                         .align(Alignment.TopStart)
                         .fillMaxWidth()
-                        .height(35.dp)
-                        .offset(y = 45.dp)
+                        .height(overlapHeight)
+                        .offset(y = overlapTop)
                         .background(hatchBase.copy(alpha = 0.12f), RoundedCornerShape(4.dp)),
                 ) {
                     val hatchLine = hatchBase.copy(alpha = 0.35f)
@@ -794,6 +848,7 @@ private fun OverlapTimelineCard(
                             x += 7f
                         }
                     }
+                }
                 }
             }
         }

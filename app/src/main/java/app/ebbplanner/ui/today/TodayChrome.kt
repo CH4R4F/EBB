@@ -58,6 +58,7 @@ fun TodayTopBar(
     onSearch: (() -> Unit)? = null,
     onSettings: () -> Unit = {},
     onMore: () -> Unit = {},
+    onMultiselectDone: (() -> Unit)? = null,
 ) {
     Row(
         modifier =
@@ -73,8 +74,10 @@ fun TodayTopBar(
                 style = EbbTypography.titleM,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = {}) {
-                Text(stringResource(R.string.action_done))
+            onMultiselectDone?.let { done ->
+                TextButton(onClick = done) {
+                    Text(stringResource(R.string.action_done))
+                }
             }
         } else {
             Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
@@ -243,9 +246,10 @@ fun TodayAnytimeTray(
             text = stringResource(R.string.today_anytime_title),
             style = EbbTypography.labelL,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
         )
         Row(
-            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
         ) {
             chips.forEach { chip ->
@@ -276,28 +280,29 @@ fun TodayAnytimeTray(
                     }
                 }
             }
-            Surface(
-                shape = EbbShapes.full,
-                color = MaterialTheme.colorScheme.surface,
-                border =
-                    BorderStroke(
-                        1.dp,
-                        MaterialTheme.colorScheme.outline,
-                    ),
-                onClick = onAddAnytime,
+        }
+        Surface(
+            shape = EbbShapes.full,
+            color = MaterialTheme.colorScheme.surface,
+            border =
+                BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outline,
+                ),
+            onClick = onAddAnytime,
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    EbbSymbol("add", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
-                    Text(
-                        stringResource(R.string.today_anytime_add),
-                        style = EbbTypography.labelL,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
+                EbbSymbol("add", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    stringResource(R.string.today_anytime_add),
+                    style = EbbTypography.labelL,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                )
             }
         }
     }

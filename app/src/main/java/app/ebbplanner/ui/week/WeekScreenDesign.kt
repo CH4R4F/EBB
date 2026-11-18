@@ -3,6 +3,7 @@
 package app.ebbplanner.ui.week
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -64,6 +65,7 @@ fun WeekScreenDesign(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(0),
         bottomBar = {
             if (showBottomNav) {
                 EbbBottomNavigation(selected = MainTab.Week)
@@ -133,7 +135,13 @@ private fun WeekTopBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onPreviousWeek) { EbbSymbol("chevron_left", fontSize = 22.sp) }
-        Text(range, style = EbbTypography.headlineM, modifier = Modifier.weight(1f), maxLines = 1)
+        Text(
+            range,
+            style = EbbTypography.headlineM,
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        )
         IconButton(onClick = onNextWeek) { EbbSymbol("chevron_right", fontSize = 22.sp) }
         TextButton(onClick = onThisWeek) {
             Text(stringResource(R.string.week_this_week), style = EbbTypography.labelL)

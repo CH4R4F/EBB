@@ -12,7 +12,7 @@ import org.robolectric.annotation.Config
 class BuildConfigSmokeTest {
     @Test
     fun versionName_matchesVersionProperties() {
-        assertEquals("0.1.0", BuildConfig.VERSION_NAME.removeSuffix("-debug"))
+        assertEquals("0.1.1", BuildConfig.VERSION_NAME.removeSuffix("-debug"))
         assertTrue(BuildConfig.VERSION_CODE >= 100)
     }
 }

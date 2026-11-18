@@ -390,7 +390,7 @@ fun OnboardingPreferencesScreen(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .height(EbbSpacing.touchBig)
+                        .heightIn(min = EbbSpacing.touchBig)
                         .padding(top = EbbSpacing.s2)
                         .clickable { weekPickerOpen = true },
                 horizontalArrangement = Arrangement.SpaceBetween,

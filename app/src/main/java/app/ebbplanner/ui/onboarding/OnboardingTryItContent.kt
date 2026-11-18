@@ -167,21 +167,12 @@ fun OnboardingTryItTimelineSection(
                 InboxTaskRow(title = "Call bank about card")
                 InboxTaskRow(title = "Water plants")
             }
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = EbbSpacing.s3),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    stringResource(R.string.onboarding_try_it_cant_drag),
-                    style = EbbTypography.bodyM,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                TextButton(onClick = {}) {
-                    EbbSymbol("event_available", fontSize = 18.sp, modifier = Modifier.padding(end = EbbSpacing.s1))
-                    Text(stringResource(R.string.onboarding_try_it_schedule), style = EbbTypography.labelL)
-                }
-            }
+            Text(
+                stringResource(R.string.onboarding_try_it_cant_drag),
+                style = EbbTypography.bodyM,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = EbbSpacing.s3),
+            )
         }
     }
 }

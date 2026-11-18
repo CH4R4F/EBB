@@ -50,6 +50,8 @@ data class TodayScheduledBlock(
     val isGhost: Boolean = false,
     val isLifted: Boolean = false,
     val selected: Boolean = false,
+    val overlapLane: Int = 0,
+    val overlapLaneCount: Int = 1,
 )
 
 data class TodayCalendarEvent(

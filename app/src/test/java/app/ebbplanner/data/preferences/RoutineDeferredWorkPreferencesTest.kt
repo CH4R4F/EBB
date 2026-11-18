@@ -3,6 +3,7 @@ package app.ebbplanner.data.preferences
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import app.ebbplanner.data.preferences.PendingRoutineLink
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -21,6 +22,12 @@ class RoutineDeferredWorkPreferencesTest {
     fun setUp() {
         val context: Context = ApplicationProvider.getApplicationContext()
         preferences = RoutineDeferredWorkPreferences(context)
+        runBlocking {
+            preferences.snapshotPendingSyncRoutineIds().forEach { preferences.removePendingSync(it) }
+            preferences.snapshotPendingLinks().forEach { link ->
+                preferences.removePendingLink(link.routineId, link.taskId)
+            }
+        }
     }
 
     @Test
