@@ -31,6 +31,12 @@ android {
     compileSdk = 35
 
     signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         create("release") {
             val storePath =
                 releaseSigningEnv("EBB_KEYSTORE_FILE")
@@ -66,6 +72,7 @@ android {
 
     buildTypes {
         debug {
+            signingConfig = signingConfigs.getByName("debug")
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             resValue("string", "app_name", "Ebb Debug")

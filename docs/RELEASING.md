@@ -23,14 +23,14 @@ Example: `0.1.0` → `versionName` `0.1.0`, `versionCode` **100**. **Settings** 
 
 | Variant | Application ID | Notes |
 |---------|----------------|-------|
-| **Debug** (CI `debug-latest`) | `app.ebbplanner.debug` | Label **Ebb Debug**, `-debug` version suffix; uses the default debug certificate (per-developer locally). |
+| **Debug** (CI `debug-latest`) | `app.ebbplanner.debug` | Label **Ebb Debug**, `-debug` version suffix; signed with the **shared** [`app/debug.keystore`](../app/debug.keystore) so every `debug-latest` build uses the same certificate and installs as an update (no uninstall/data loss). Safe to publish because the package id cannot replace a release install. |
 | **Release** (tagged GitHub Release) | `app.ebbplanner` | R8 minify, not debuggable; signed with the **upload/release keystore** below. |
 
 Debug APKs **cannot** install over a release build (different package name). Existing debug installs keep working as the separate debug app.
 
 ## Release signing keystore (required for tags)
 
-**Never commit** a keystore or passwords to the repository. Back up the keystore offline — if it is lost, users must uninstall before installing a build signed with a new key.
+**Never commit** a release/upload keystore. The only keystore in git is `app/debug.keystore` (debug builds only). Back up the **release** keystore offline — if it is lost, users must uninstall `app.ebbplanner` before installing a build signed with a new key.
 
 ### 1. Create the keystore
 
