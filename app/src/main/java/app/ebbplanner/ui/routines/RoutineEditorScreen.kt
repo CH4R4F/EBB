@@ -20,10 +20,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -37,13 +33,10 @@ import app.ebbplanner.ui.time.ClockFormat
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun RoutineEditorScreen(
-    onClose: () -> Unit,
+    onClose: (showDeferredSaveMessage: Boolean) -> Unit,
     viewModel: RoutineEditorViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val deferredSaveMessage = stringResource(R.string.routine_saved_deferred_days)
     var showTimePicker by remember { mutableStateOf(false) }
     val timeParts = remember(state.startLocalTime) { ClockFormat.parseMinutes(state.startLocalTime) ?: (9 * 60) }
     val pickerState =
@@ -54,7 +47,6 @@ fun RoutineEditorScreen(
         )
 
     Column(Modifier.fillMaxSize().padding(EbbSpacing.s4)) {
-        SnackbarHost(hostState = snackbarHostState)
         Text(
             if (state.isNew) stringResource(R.string.routine_editor_new) else state.title,
             style = EbbTypography.headlineM,
@@ -110,28 +102,21 @@ fun RoutineEditorScreen(
         )
         TextButton(
             onClick = {
-                viewModel.save { deferred ->
-                    scope.launch {
-                        if (deferred) {
-                            snackbarHostState.showSnackbar(
-                                message = deferredSaveMessage,
-                                withDismissAction = true,
-                            )
-                            kotlinx.coroutines.delay(1_800)
-                        }
-                        onClose()
-                    }
-                }
+                viewModel.save { deferred -> onClose(deferred) }
             },
+            enabled = !state.saveInFlight,
             modifier = Modifier.padding(top = EbbSpacing.s4),
         ) {
-            Text("Save", style = EbbTypography.labelL)
+            Text(
+                if (state.saveInFlight) stringResource(R.string.action_saving) else "Save",
+                style = EbbTypography.labelL,
+            )
         }
-        TextButton(onClick = onClose) {
+        TextButton(onClick = { onClose(false) }, enabled = !state.saveInFlight) {
             Text("Cancel")
         }
         if (!state.isNew) {
-            TextButton(onClick = { viewModel.delete(onClose) }) {
+            TextButton(onClick = { viewModel.delete { onClose(false) } }) {
                 Text(stringResource(R.string.routine_delete))
             }
         }

@@ -26,6 +26,7 @@ data class RoutineEditorState(
     val iconKey: String? = "event_repeat",
     val enabled: Boolean = true,
     val isNew: Boolean = true,
+    val saveInFlight: Boolean = false,
     val saveError: String? = null,
 )
 
@@ -114,21 +115,29 @@ class RoutineEditorViewModel
         fun save(onSaved: (deferredInstanceWork: Boolean) -> Unit) {
             viewModelScope.launch {
                 val draft = _state.value
+                if (draft.saveInFlight) return@launch
                 if (draft.repeatRule == RoutineEntity.REPEAT_WEEKLY && draft.weeklyDays.isEmpty()) {
                     _state.value = draft.copy(saveError = "Pick at least one weekday")
                     return@launch
                 }
-                val now = System.currentTimeMillis()
-                val id =
-                    if (draft.isNew || draft.id == NEW_ROUTINE_ID) {
-                        UUID.randomUUID().toString()
-                    } else {
-                        draft.id
+                val stableId =
+                    when {
+                        !draft.isNew && draft.id.isNotBlank() && draft.id != NEW_ROUTINE_ID -> draft.id
+                        draft.id.isNotBlank() && draft.id != NEW_ROUTINE_ID -> draft.id
+                        else -> UUID.randomUUID().toString()
                     }
-                val existing = if (!draft.isNew) routineRepository.getRoutine(draft.id) else null
+                _state.value =
+                    draft.copy(
+                        id = stableId,
+                        isNew = false,
+                        saveInFlight = true,
+                        saveError = null,
+                    )
+                val now = System.currentTimeMillis()
+                val existing = routineRepository.getRoutine(stableId)
                 val entity =
                     RoutineEntity(
-                        id = id,
+                        id = stableId,
                         title = draft.title.ifBlank { "Routine" },
                         repeatRule = draft.repeatRule,
                         weeklyDays = encodeWeeklyDays(draft.repeatRule, draft.weeklyDays),
@@ -140,14 +149,18 @@ class RoutineEditorViewModel
                         createdAt = existing?.createdAt ?: now,
                         updatedAt = now,
                     )
-                val deferred =
-                    routineInstanceGenerator.persistRoutineAndSyncInstances(
-                        upsertRoutine = { routineRepository.upsert(entity) },
-                        routine = entity,
-                        linkTaskId = linkTaskId,
-                        linkOnSave = draft.isNew,
-                    )
-                onSaved(deferred)
+                try {
+                    val deferred =
+                        routineInstanceGenerator.persistRoutineAndSyncInstances(
+                            upsertRoutine = { routineRepository.upsert(entity) },
+                            routine = entity,
+                            linkTaskId = linkTaskId,
+                            linkOnSave = linkTaskId != null && existing == null,
+                        )
+                    onSaved(deferred)
+                } finally {
+                    _state.value = _state.value.copy(saveInFlight = false)
+                }
             }
         }
 

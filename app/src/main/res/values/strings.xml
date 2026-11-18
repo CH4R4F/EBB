@@ -101,6 +101,7 @@
 
     <string name="action_continue">Continue</string>
     <string name="action_save">Save</string>
+    <string name="action_saving">Saving…</string>
     <string name="action_done">Done</string>
 
     <string name="tab_today">Today</string>

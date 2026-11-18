@@ -55,7 +55,7 @@ class RoutineOccurrenceRepairRunner
                     }
                 }
                 if (!pending && !repairState.isRepairPending()) {
-                    routineInstanceGenerator.ensureRollingWindowLocked()
+                    routineInstanceGenerator.drainDeferredThenEnsureRollingWindowLocked()
                 }
             }
         }

@@ -45,28 +45,42 @@ class RoutineDeferredWorkPreferences
             }
         }
 
-        suspend fun takePendingLinks(): List<Pair<String, String>> {
-            val snapshot =
-                dataStore.data.map { prefs ->
-                    parseLinks(prefs[KEY_PENDING_LINKS])
-                }.first()
-            if (snapshot.isEmpty()) return emptyList()
+        suspend fun snapshotPendingLinks(): List<Pair<String, String>> =
+            dataStore.data.map { prefs ->
+                parseLinks(prefs[KEY_PENDING_LINKS])
+            }.first()
+
+        suspend fun snapshotPendingSyncRoutineIds(): List<String> =
+            dataStore.data.map { prefs ->
+                parseIds(prefs[KEY_PENDING_SYNC_IDS])
+            }.first()
+
+        suspend fun removePendingLink(
+            routineId: String,
+            taskId: String,
+        ) {
             dataStore.edit { prefs ->
-                prefs.remove(KEY_PENDING_LINKS)
+                val current = parseLinks(prefs[KEY_PENDING_LINKS]).toMutableList()
+                val removed = current.removeAll { it.first == routineId && it.second == taskId }
+                if (!removed) return@edit
+                if (current.isEmpty()) {
+                    prefs.remove(KEY_PENDING_LINKS)
+                } else {
+                    prefs[KEY_PENDING_LINKS] = encodeLinks(current)
+                }
             }
-            return snapshot
         }
 
-        suspend fun takePendingSyncRoutineIds(): List<String> {
-            val snapshot =
-                dataStore.data.map { prefs ->
-                    parseIds(prefs[KEY_PENDING_SYNC_IDS])
-                }.first()
-            if (snapshot.isEmpty()) return emptyList()
+        suspend fun removePendingSync(routineId: String) {
             dataStore.edit { prefs ->
-                prefs.remove(KEY_PENDING_SYNC_IDS)
+                val current = parseIds(prefs[KEY_PENDING_SYNC_IDS]).toMutableList()
+                if (!current.remove(routineId)) return@edit
+                if (current.isEmpty()) {
+                    prefs.remove(KEY_PENDING_SYNC_IDS)
+                } else {
+                    prefs[KEY_PENDING_SYNC_IDS] = current.joinToString(",")
+                }
             }
-            return snapshot
         }
 
         companion object {

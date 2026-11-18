@@ -2,11 +2,18 @@ package app.ebbplanner.ui.main
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import app.ebbplanner.R
+import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import app.ebbplanner.reminders.FocusNotifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -52,8 +59,12 @@ fun MainShell(
         MainTab.entries.firstOrNull { currentRoute?.startsWith(it.route) == true } ?: MainTab.Today
     val showBottomBar =
         MainTab.entries.any { it.route == currentRoute }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val routineDeferredSaveMessage = stringResource(R.string.routine_saved_deferred_days)
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (showBottomBar) {
                 EbbBottomNavigation(
@@ -111,7 +122,17 @@ fun MainShell(
                     ),
             ) {
                 app.ebbplanner.ui.routines.RoutineEditorScreen(
-                    onClose = { navController.popBackStack() },
+                    onClose = { showDeferredSaveMessage ->
+                        navController.popBackStack()
+                        if (showDeferredSaveMessage) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = routineDeferredSaveMessage,
+                                    withDismissAction = true,
+                                )
+                            }
+                        }
+                    },
                 )
             }
             composable(AppRoutes.SHIFT_DAY) { ShiftDayScreen(navController = navController) }

@@ -33,9 +33,14 @@ class RoutineInstanceGenerator
             if (repairState.isRepairPending()) return
             generationGate.withExclusive {
                 if (repairState.isRepairPending()) return@withExclusive
-                applyDeferredRoutineWorkLocked()
-                ensureRollingWindowLocked(daysAhead)
+                drainDeferredThenEnsureRollingWindowLocked(daysAhead)
             }
+        }
+
+        /** Caller must hold [RoutineGenerationGate] when invoked from repair / other exclusive paths. */
+        suspend fun drainDeferredThenEnsureRollingWindowLocked(daysAhead: Int = DEFAULT_WINDOW_DAYS) {
+            applyDeferredRoutineWorkLocked()
+            ensureRollingWindowLocked(daysAhead)
         }
 
         suspend fun ensureRollingWindowLocked(daysAhead: Int = DEFAULT_WINDOW_DAYS) {
@@ -52,6 +57,7 @@ class RoutineInstanceGenerator
             if (repairState.isRepairPending()) return
             generationGate.withExclusive {
                 if (repairState.isRepairPending()) return@withExclusive
+                applyDeferredRoutineWorkLocked()
                 ensureForDateLocked(date)
             }
         }
@@ -140,15 +146,25 @@ class RoutineInstanceGenerator
         }
 
         suspend fun applyDeferredRoutineWorkLocked() {
-            val links = deferredWorkPreferences.takePendingLinks()
+            val links = deferredWorkPreferences.snapshotPendingLinks()
             links.forEach { (routineId, taskId) ->
-                val routine = routineDao.getById(routineId) ?: return@forEach
-                linkExistingTaskLocked(taskId, routine)
+                val routine =
+                    routineDao.getById(routineId) ?: run {
+                        deferredWorkPreferences.removePendingLink(routineId, taskId)
+                        return@forEach
+                    }
+                applyLinkToTaskOnlyLocked(taskId, routine)
+                deferredWorkPreferences.removePendingLink(routineId, taskId)
             }
-            val syncIds = deferredWorkPreferences.takePendingSyncRoutineIds()
+            val syncIds = deferredWorkPreferences.snapshotPendingSyncRoutineIds()
             syncIds.forEach { routineId ->
-                val routine = routineDao.getById(routineId) ?: return@forEach
-                syncFutureInstancesLocked(routine)
+                val routine =
+                    routineDao.getById(routineId) ?: run {
+                        deferredWorkPreferences.removePendingSync(routineId)
+                        return@forEach
+                    }
+                syncFutureInstancesLocked(routine, skipLinkDay = null, runRollingWindowAfter = false)
+                deferredWorkPreferences.removePendingSync(routineId)
             }
         }
 
@@ -167,7 +183,16 @@ class RoutineInstanceGenerator
             taskId: String,
             routine: RoutineEntity,
         ) {
-            val task = taskDao.getById(taskId) ?: return
+            val occurrence = applyLinkToTaskOnlyLocked(taskId, routine) ?: return
+            syncFutureInstancesLocked(routine, skipLinkDay = occurrence, runRollingWindowAfter = true)
+        }
+
+        /** Links an existing task to a routine occurrence without syncing other days or rolling the window. */
+        private suspend fun applyLinkToTaskOnlyLocked(
+            taskId: String,
+            routine: RoutineEntity,
+        ): String? {
+            val task = taskDao.getById(taskId) ?: return null
             val today = LocalDate.now()
             val occurrence =
                 when {
@@ -215,11 +240,10 @@ class RoutineInstanceGenerator
                     ),
                 )
                 holder?.let { reminderSync.syncTask(it.id) }
-                syncFutureInstancesLocked(routine, skipLinkDay = occurrence)
-                return
+                return occurrence
             }
             reminderSync.syncTask(taskId)
-            syncFutureInstancesLocked(routine, skipLinkDay = occurrence)
+            return occurrence
         }
 
         suspend fun syncFutureInstances(
@@ -236,6 +260,7 @@ class RoutineInstanceGenerator
         private suspend fun syncFutureInstancesLocked(
             routine: RoutineEntity,
             skipLinkDay: String? = null,
+            runRollingWindowAfter: Boolean = true,
         ) {
             pruneNonApplyingInstances(routine)
             val today = LocalDate.now()
@@ -267,7 +292,9 @@ class RoutineInstanceGenerator
                 }
                 day = day.plusDays(1)
             }
-            ensureRollingWindowLocked()
+            if (runRollingWindowAfter) {
+                ensureRollingWindowLocked()
+            }
         }
 
         private suspend fun pruneNonApplyingInstances(routine: RoutineEntity) {
