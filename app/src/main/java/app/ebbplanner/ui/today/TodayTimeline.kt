@@ -63,10 +63,6 @@ internal val timelineDpPerMinute = 72.dp / 60f
 internal val timelineOriginY = 36.dp
 internal val timelineMinLaneWidth = 96.dp
 
-internal fun timelineHourRailForTests(
-    metrics: TimelineLayoutMetrics,
-    compactHourLabels: Boolean = false,
-): Dp = timelineHourRailWidthDp(metrics, compactHourLabels)
 
 internal fun minutesToTimelineY(
     minutes: Int,
@@ -107,11 +103,11 @@ fun TodayTimeline(
         }
     val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
     val compactRail = state.compactHourRail || largeText
-    val hourRail = timelineHourRailWidthDp(layoutMetrics, compactRail)
+    val hourRail = rememberTimelineHourRailWidth(compactRail, fontScale)
     val badgeHeight = nowBadgeHeightDp(layoutMetrics)
     val trackStart = hourRail + 4.dp
     val trackEnd = 8.dp
-    val trackWidth = timelineTrackWidthDp(screenWidthDp, layoutMetrics, compactRail, trackEnd)
+    val trackWidth = timelineTrackWidthDp(screenWidthDp, hourRail, trackEnd)
     val timeMapping =
         remember(visibleBlocks, layoutMetrics, state.timelineStartHour, state.timelineEndHour) {
             buildTimelineTimeMapping(
@@ -398,7 +394,7 @@ private fun HourRule(
         if (label != null) {
             Text(
                 text = label,
-                style = EbbTypography.labelM,
+                style = timelineHourLabelTextStyle(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier =
                     Modifier
@@ -488,7 +484,7 @@ private fun NowLineTimeBadge(
         ) {
             Text(
                 label,
-                style = EbbTypography.labelS,
+                style = timelineNowBadgeTextStyle(),
                 color = onPrimary,
                 maxLines = 1,
                 softWrap = false,
@@ -645,6 +641,7 @@ private fun ShortTaskRow(
             TimeLeftPill(
                 blockId = block.id,
                 label = it,
+                maxTextWidth = (contentPlan.contentWidthDp - timeLeftPillHorizontalPadding).coerceAtLeast(0.dp),
                 lineHeightDp = pillHeightDp(layoutMetrics),
                 modifier = Modifier.padding(top = pillGapDp()),
             )
@@ -699,6 +696,7 @@ private fun StandardTaskRow(
             TimeLeftPill(
                 blockId = block.id,
                 label = it,
+                maxTextWidth = (contentPlan.contentWidthDp - timeLeftPillHorizontalPadding).coerceAtLeast(0.dp),
                 lineHeightDp = pillHeightDp(layoutMetrics),
                 modifier = Modifier.padding(top = pillGapDp()),
             )
@@ -927,10 +925,17 @@ private fun TaskDoneRingSlot(
 private fun TimeLeftPill(
     blockId: String,
     label: String,
+    maxTextWidth: Dp,
     lineHeightDp: Dp,
     modifier: Modifier = Modifier,
 ) {
     val primary = MaterialTheme.colorScheme.primary
+    val textMeasurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val display =
+        androidx.compose.runtime.remember(label, maxTextWidth, density, textMeasurer) {
+            pickTimeLeftPillLabel(textMeasurer, density, label, maxTextWidth)
+        }
     Box(
         modifier =
             modifier
@@ -941,12 +946,12 @@ private fun TimeLeftPill(
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            label,
+            display,
             style = EbbTypography.labelM,
             color = MaterialTheme.colorScheme.onPrimary,
-            maxLines = 2,
-            softWrap = true,
-            overflow = TextOverflow.Clip,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

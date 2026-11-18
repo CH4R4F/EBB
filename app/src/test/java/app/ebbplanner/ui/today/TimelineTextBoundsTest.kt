@@ -8,6 +8,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.hasAnyDescendant
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import app.ebbplanner.data.local.entity.TaskEntity
@@ -35,7 +38,7 @@ class TimelineTextBoundsTest {
     @Test
     fun laneContentWidth_twoLanes_scale100_matchesExpectation() {
         val metrics = TimelineLayoutMetrics(1f)
-        val track = timelineTrackWidthDp(411.dp, metrics, compactHourLabels = false)
+        val track = robolectricTimelineTrackWidth(411, 1f, false)
         val lane = track / 2 - 2.dp
         val contentW = timelineBlockContentWidth(lane, metrics, compactLane = true)
         assertTrue("2-lane content width was $contentW at 411dp", contentW >= 90.dp)
@@ -59,6 +62,65 @@ class TimelineTextBoundsTest {
     @Test
     fun noTextClipped_scale200_threeLanes() = assertNoClipped(2f, 3)
 
+    @Test
+    fun timeLeftPill_scale200_twoLanes_staysSingleLine() {
+        val today = LocalDate.of(2025, 11, 17)
+        val now = 10 * 60 + 2
+        val tasks =
+            listOf(
+                TaskEntity(
+                    id = "a",
+                    title = "Running",
+                    placement = TaskEntity.PLACEMENT_SCHEDULED,
+                    date = today.toString(),
+                    startLocalTime = "10:00",
+                    durationMin = 45,
+                    createdAt = 1,
+                    updatedAt = 1,
+                ),
+                TaskEntity(
+                    id = "b",
+                    title = "Standup",
+                    placement = TaskEntity.PLACEMENT_SCHEDULED,
+                    date = today.toString(),
+                    startLocalTime = "10:15",
+                    durationMin = 15,
+                    createdAt = 1,
+                    updatedAt = 1,
+                ),
+            )
+        val mapped =
+            TodayPresentationMapper.from(
+                TodayUiState(date = today, scheduledTasks = tasks, isLoading = false),
+                now,
+                2f,
+            )
+        val state =
+            mapped.copy(
+                showNowLine = true,
+                nowMinutes = now,
+                blocks =
+                    mapped.blocks.map {
+                        it.copy(isCurrent = it.id == "a", minutesLeftLabel = "4 min left")
+                    },
+            )
+        composeRule.setContent {
+            WithFontScale(2f) {
+                EbbTheme {
+                    TodayTimeline(state = state, modifier = Modifier.height(800.dp))
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        val allowed = listOf("4 min left", "4m left", "4m")
+        val shown =
+            allowed.firstOrNull { label ->
+                composeRule.onAllNodesWithText(label, useUnmergedTree = true)
+                    .fetchSemanticsNodes().isNotEmpty()
+            }
+        assertTrue("expected one-line pill label, saw none of $allowed", shown != null)
+    }
+
     private fun assertNoClipped(
         scale: Float,
         lanes: Int,
@@ -66,7 +128,7 @@ class TimelineTextBoundsTest {
         val specs = listOf("Call mum", "Pay rent", "Buy stamps", "Plan week", "Gym class")
         val pairs = specs.take(lanes).mapIndexed { i, title -> title to durations[i] }
         val (ids, state) = mount(scale, lanes, pairs)
-        val trackWidth = timelineTrackWidthDp(411.dp, TimelineLayoutMetrics(scale), compactHourLabels = false)
+        val trackWidth = robolectricTimelineTrackWidth(411, scale, false)
         val visible =
             buildTimelineOverlapPlan(
                 state.blocks,

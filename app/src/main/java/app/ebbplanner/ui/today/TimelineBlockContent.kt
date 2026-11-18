@@ -1,7 +1,12 @@
 package app.ebbplanner.ui.today
 
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.ebbplanner.ui.theme.EbbTypography
 
 fun timelineRingSlotWidth(metrics: TimelineLayoutMetrics): Dp =
     if (metrics.largeText) {
@@ -53,16 +58,37 @@ fun blockVerticalPaddingDp(
         else -> 12.dp
     }
 
-fun formatTimeLeftPillLabel(
-    label: String,
-    narrow: Boolean,
-): String {
-    if (!narrow) return label
-    val match = Regex("(\\d+)\\s*min").find(label) ?: return label
-    return "${match.groupValues[1]}m"
+fun timeLeftPillLabelCandidates(fullLabel: String): List<String> {
+    val match = Regex("(\\d+)\\s*min\\s+left", RegexOption.IGNORE_CASE).find(fullLabel)
+    if (match == null) return listOf(fullLabel)
+    val minutes = match.groupValues[1]
+    return listOf(fullLabel, "${minutes}m left", "${minutes}m")
 }
 
-fun useNarrowTimeLeftPill(contentWidthDp: Dp): Boolean = contentWidthDp < 88.dp
+fun pickTimeLeftPillLabel(
+    textMeasurer: TextMeasurer,
+    density: Density,
+    fullLabel: String,
+    maxTextWidth: Dp,
+    style: TextStyle = EbbTypography.labelM,
+): String {
+    if (maxTextWidth <= 0.dp) return timeLeftPillLabelCandidates(fullLabel).last()
+    val maxPx = with(density) { maxTextWidth.toPx().toInt().coerceAtLeast(0) }
+    val candidates = timeLeftPillLabelCandidates(fullLabel)
+    return candidates.firstOrNull { candidate ->
+        val layout =
+            textMeasurer.measure(
+                text = candidate,
+                style = style,
+                constraints = Constraints(maxWidth = maxPx),
+                maxLines = 1,
+                density = density,
+            )
+        layout.lineCount == 1 && !layout.didOverflowWidth
+    } ?: candidates.last()
+}
+
+internal val timeLeftPillHorizontalPadding = 16.dp
 
 data class BlockContentPlan(
     val titleMaxLines: Int,
@@ -100,11 +126,7 @@ fun planBlockContent(
         } else {
             0.dp
         }
-    val narrowPill = useNarrowTimeLeftPill(contentWidth)
-    val pillLabel =
-        block.minutesLeftLabel?.let {
-            formatTimeLeftPillLabel(it, narrowPill)
-        }
+    val pillLabel = block.minutesLeftLabel
 
     val metaH = metaRowHeightDp(metrics)
   val oneLineContent = vPad + titleLine + pillH

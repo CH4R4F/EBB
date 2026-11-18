@@ -109,7 +109,7 @@ class TimelineChipAfterGroupTest {
     ): TimelineOverflowCluster {
         val screenW =
             RuntimeEnvironment.getApplication().resources.configuration.screenWidthDp.dp
-        val trackWidth = timelineTrackWidthDp(screenW, TimelineLayoutMetrics(fontScale = fontScale), false)
+        val trackWidth = robolectricTimelineTrackWidth(screenW.value.toInt(), fontScale, false)
         return buildTimelineOverlapPlan(
             state.blocks,
             TimelineLayoutMetrics(fontScale = fontScale),

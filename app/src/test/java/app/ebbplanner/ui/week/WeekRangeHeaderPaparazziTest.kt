@@ -19,6 +19,17 @@ private val weekRangeCrossMonth =
         LocalDate.of(2025, 11, 6),
     )
 
+/** PIXEL_6 uses 945px width at 2.625 density → 360dp, not 360px. */
+private fun weekRangeDeviceW360Dp(fontScale: Float): DeviceConfig {
+    val base = DeviceConfig.PIXEL_6
+    val density = base.screenWidth / 411f
+    return base.copy(
+        screenWidth = (360 * density).toInt(),
+        screenHeight = (800 * density).toInt(),
+        fontScale = fontScale,
+    )
+}
+
 class WeekRangeHeaderF100W411PaparazziTest {
     @get:Rule
     val paparazzi = weekRangePaparazzi(DeviceConfig.PIXEL_6.copy(fontScale = 1f))
@@ -38,13 +49,7 @@ class WeekRangeHeaderF200W411PaparazziTest {
 class WeekRangeHeaderF100W360PaparazziTest {
     @get:Rule
     val paparazzi =
-        weekRangePaparazzi(
-            DeviceConfig.PIXEL_6.copy(
-                screenWidth = 360,
-                screenHeight = 800,
-                fontScale = 1f,
-            ),
-        )
+        weekRangePaparazzi(weekRangeDeviceW360Dp(fontScale = 1f))
 
     @Test
     fun week_range_sameMonth_f100_w360() = paparazzi.snapWeekRange("week_range_sameMonth_f100_w360", weekRangeSameMonth)
@@ -53,13 +58,7 @@ class WeekRangeHeaderF100W360PaparazziTest {
 class WeekRangeHeaderF200W360PaparazziTest {
     @get:Rule
     val paparazzi =
-        weekRangePaparazzi(
-            DeviceConfig.PIXEL_6.copy(
-                screenWidth = 360,
-                screenHeight = 800,
-                fontScale = 2f,
-            ),
-        )
+        weekRangePaparazzi(weekRangeDeviceW360Dp(fontScale = 2f))
 
     @Test
     fun week_range_crossMonth_f200_w360() = paparazzi.snapWeekRange("week_range_crossMonth_f200_w360", weekRangeCrossMonth)

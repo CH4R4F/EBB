@@ -76,7 +76,7 @@ class TimelineNowBadgeLayoutTest {
         var lineCenterYPx = 0f
         composeRule.setContent {
             WithFontScale(fontScale) {
-                val rail = timelineHourRailWidthDp(TimelineLayoutMetrics(fontScale), false)
+                val rail = robolectricTimelineHourRail(fontScale, false)
                 val mapping =
                     buildTimelineTimeMapping(
                         state.blocks,
