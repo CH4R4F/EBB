@@ -219,6 +219,7 @@ fun TodayTimeline(
                     laneWidthDp = placement.widthDp,
                     compactLane = compactLane,
                     titleOnly = state.titleOnlyBlocks,
+                    ringSlotWidth = timelineRingSlotWidth(layoutMetrics),
                 )
             ScheduledTaskBlock(
                 block = block,
@@ -272,6 +273,7 @@ fun TodayTimeline(
                     laneWidthDp = trackWidth,
                     compactLane = false,
                     titleOnly = state.titleOnlyBlocks,
+                    ringSlotWidth = timelineRingSlotWidth(layoutMetrics),
                 )
             ScheduledTaskBlock(
                 block = block,
@@ -638,10 +640,9 @@ private fun ShortTaskRow(
         contentTextAlpha = textAlpha,
     ) {
         contentPlan.pillLabel?.let {
-            TimeLeftPill(
+            TimeLeftPillInColumn(
                 blockId = block.id,
                 label = it,
-                maxTextWidth = (contentPlan.contentWidthDp - timeLeftPillHorizontalPadding).coerceAtLeast(0.dp),
                 lineHeightDp = pillHeightDp(layoutMetrics),
                 modifier = Modifier.padding(top = pillGapDp()),
             )
@@ -693,10 +694,9 @@ private fun StandardTaskRow(
         contentTextAlpha = textAlpha,
     ) {
         contentPlan.pillLabel?.let {
-            TimeLeftPill(
+            TimeLeftPillInColumn(
                 blockId = block.id,
                 label = it,
-                maxTextWidth = (contentPlan.contentWidthDp - timeLeftPillHorizontalPadding).coerceAtLeast(0.dp),
                 lineHeightDp = pillHeightDp(layoutMetrics),
                 modifier = Modifier.padding(top = pillGapDp()),
             )
@@ -922,6 +922,26 @@ private fun TaskDoneRingSlot(
 }
 
 @Composable
+private fun TimeLeftPillInColumn(
+    blockId: String,
+    label: String,
+    lineHeightDp: Dp,
+    modifier: Modifier = Modifier,
+) {
+    androidx.compose.foundation.layout.BoxWithConstraints(
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        val maxTextWidth = (maxWidth - timeLeftPillHorizontalPadding).coerceAtLeast(0.dp)
+        TimeLeftPill(
+            blockId = blockId,
+            label = label,
+            maxTextWidth = maxTextWidth,
+            lineHeightDp = lineHeightDp,
+        )
+    }
+}
+
+@Composable
 private fun TimeLeftPill(
     blockId: String,
     label: String,
@@ -936,6 +956,11 @@ private fun TimeLeftPill(
         androidx.compose.runtime.remember(label, maxTextWidth, density, textMeasurer) {
             pickTimeLeftPillLabel(textMeasurer, density, label, maxTextWidth)
         }
+    val chosenLabels = LocalTimelinePillChosenLabels.current
+    val lineEllipsized = LocalTimelinePillLineEllipsized.current
+    androidx.compose.runtime.SideEffect {
+        chosenLabels?.put(blockId, display)
+    }
     Box(
         modifier =
             modifier
@@ -952,6 +977,9 @@ private fun TimeLeftPill(
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Ellipsis,
+            onTextLayout = { layout ->
+                lineEllipsized?.put(blockId, layout.isLineEllipsized(0))
+            },
         )
     }
 }

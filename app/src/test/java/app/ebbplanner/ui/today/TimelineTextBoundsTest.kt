@@ -1,20 +1,16 @@
 package app.ebbplanner.ui.today
 
-import android.content.res.Configuration
 import androidx.compose.foundation.layout.height
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.platform.LocalConfiguration
+import app.ebbplanner.ui.WithFontScale
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.hasAnyDescendant
-import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.ui.theme.EbbTheme
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -40,7 +36,13 @@ class TimelineTextBoundsTest {
         val metrics = TimelineLayoutMetrics(1f)
         val track = robolectricTimelineTrackWidth(411, 1f, false)
         val lane = track / 2 - 2.dp
-        val contentW = timelineBlockContentWidth(lane, metrics, compactLane = true)
+        val contentW =
+            timelineBlockContentWidth(
+                lane,
+                metrics,
+                compactLane = true,
+                ringSlotWidth = timelineRingSlotWidth(metrics),
+            )
         assertTrue("2-lane content width was $contentW at 411dp", contentW >= 90.dp)
     }
 
@@ -63,7 +65,8 @@ class TimelineTextBoundsTest {
     fun noTextClipped_scale200_threeLanes() = assertNoClipped(2f, 3)
 
     @Test
-    fun timeLeftPill_scale200_twoLanes_staysSingleLine() {
+    @Config(qualifiers = "w360dp-h640dp-normal-long-notround-any-420dpi-keyshidden-nonav")
+    fun timeLeftPill_scale200_twoLanes_choosesShortLabelWithoutEllipsis() {
         val today = LocalDate.of(2025, 11, 17)
         val now = 10 * 60 + 2
         val tasks =
@@ -104,21 +107,23 @@ class TimelineTextBoundsTest {
                         it.copy(isCurrent = it.id == "a", minutesLeftLabel = "4 min left")
                     },
             )
+        val chosen = mutableMapOf<String, String>()
+        val ellipsized = mutableMapOf<String, Boolean>()
         composeRule.setContent {
-            WithFontScale(2f) {
-                EbbTheme {
-                    TodayTimeline(state = state, modifier = Modifier.height(800.dp))
+            CompositionLocalProvider(
+                LocalTimelinePillChosenLabels provides chosen,
+                LocalTimelinePillLineEllipsized provides ellipsized,
+            ) {
+                WithFontScale(2f) {
+                    EbbTheme {
+                        TodayTimeline(state = state, modifier = Modifier.height(800.dp))
+                    }
                 }
             }
         }
         composeRule.waitForIdle()
-        val allowed = listOf("4 min left", "4m left", "4m")
-        val shown =
-            allowed.firstOrNull { label ->
-                composeRule.onAllNodesWithText(label, useUnmergedTree = true)
-                    .fetchSemanticsNodes().isNotEmpty()
-            }
-        assertTrue("expected one-line pill label, saw none of $allowed", shown != null)
+        assertEquals("4m left", chosen["a"])
+        assertEquals(false, ellipsized["a"])
     }
 
     private fun assertNoClipped(
@@ -231,17 +236,5 @@ class TimelineTextBoundsTest {
                 inner.right <= outer.right + 0.5f &&
                 inner.bottom <= outer.bottom + 0.5f,
         )
-    }
-}
-
-@Composable
-private fun WithFontScale(
-    scale: Float,
-    content: @Composable () -> Unit,
-) {
-    val base = RuntimeEnvironment.getApplication().resources.configuration
-    val config = Configuration(base).apply { fontScale = scale }
-    CompositionLocalProvider(LocalConfiguration provides config) {
-        content()
     }
 }

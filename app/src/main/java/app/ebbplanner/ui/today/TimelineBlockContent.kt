@@ -73,20 +73,35 @@ fun pickTimeLeftPillLabel(
     style: TextStyle = EbbTypography.labelM,
 ): String {
     if (maxTextWidth <= 0.dp) return timeLeftPillLabelCandidates(fullLabel).last()
-    val maxPx = with(density) { maxTextWidth.toPx().toInt().coerceAtLeast(0) }
+    val maxPx = with(density) { maxTextWidth.toPx() }
     val candidates = timeLeftPillLabelCandidates(fullLabel)
     return candidates.firstOrNull { candidate ->
         val layout =
             textMeasurer.measure(
                 text = candidate,
                 style = style,
-                constraints = Constraints(maxWidth = maxPx),
+                constraints = Constraints(maxWidth = maxPx.toInt().coerceAtLeast(0)),
                 maxLines = 1,
+                softWrap = false,
                 density = density,
             )
-        layout.lineCount == 1 && !layout.didOverflowWidth
+        !layout.didOverflowWidth && !layout.isLineEllipsized(0)
     } ?: candidates.last()
 }
+
+internal val timelineRowAccentWidth = 4.dp
+
+fun timelineTaskIconLeadingWidthDp(metrics: TimelineLayoutMetrics): Dp {
+    val iconSp = if (metrics.largeText) 16f else 18f
+    return 8.dp + scaledLineDp(iconSp, metrics.fontScale)
+}
+
+fun timelineColumnHorizontalPadding(compactLane: Boolean): Dp =
+    if (compactLane) {
+        4.dp + 4.dp
+    } else {
+        6.dp + 4.dp
+    }
 
 internal val timeLeftPillHorizontalPadding = 16.dp
 
@@ -102,11 +117,21 @@ fun timelineBlockContentWidth(
     laneWidthDp: Dp,
     metrics: TimelineLayoutMetrics,
     compactLane: Boolean,
+    ringSlotWidth: Dp = timelineRingSlotWidth(metrics),
 ): Dp {
-    val ring = timelineRingSlotWidth(metrics)
-    val icon = if (compactLane) 0.dp else 26.dp
-    val horizontal = if (compactLane) 8.dp else 12.dp
-    return (laneWidthDp - 4.dp - ring - icon - horizontal).coerceAtLeast(0.dp)
+    val iconLeading =
+        if (compactLane) {
+            0.dp
+        } else {
+            timelineTaskIconLeadingWidthDp(metrics)
+        }
+    return (
+        laneWidthDp -
+            ringSlotWidth -
+            timelineRowAccentWidth -
+            iconLeading -
+            timelineColumnHorizontalPadding(compactLane)
+    ).coerceAtLeast(0.dp)
 }
 
 fun planBlockContent(
@@ -116,8 +141,9 @@ fun planBlockContent(
     laneWidthDp: Dp,
     compactLane: Boolean,
     titleOnly: Boolean,
+    ringSlotWidth: Dp = timelineRingSlotWidth(metrics),
 ): BlockContentPlan {
-    val contentWidth = timelineBlockContentWidth(laneWidthDp, metrics, compactLane)
+    val contentWidth = timelineBlockContentWidth(laneWidthDp, metrics, compactLane, ringSlotWidth)
     val titleLine = titleLineHeightDp(metrics, compactLane)
     val vPad = blockVerticalPaddingDp(metrics, block.short)
     val pillH =

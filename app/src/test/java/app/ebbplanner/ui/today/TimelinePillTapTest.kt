@@ -1,5 +1,7 @@
 package app.ebbplanner.ui.today
 
+import app.ebbplanner.ui.WithFontScale
+
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
@@ -100,14 +102,3 @@ class TimelinePillTapTest {
         )
 }
 
-@Composable
-private fun WithFontScale(
-    scale: Float,
-    content: @Composable () -> Unit,
-) {
-    val base = RuntimeEnvironment.getApplication().resources.configuration
-    val config = Configuration(base).apply { fontScale = scale }
-    CompositionLocalProvider(LocalConfiguration provides config) {
-        content()
-    }
-}
