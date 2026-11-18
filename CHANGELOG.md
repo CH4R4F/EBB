@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Today timeline (overlap)** — removed horizontal scroll; per-overlap-group lane caps with font-scaled minimum width; overflow tasks open via tappable `+N` sheet; track uses full timeline height; draw-time overlap uses dp-accurate min heights so lane assignment matches painted blocks (Kilo/Lima at 2.0); non-overlapping groups keep full width.
+- **Today timeline (overlap)** — real scheduled-time grouping only (Kilo/Lima, Uno/Vole no false pill); cap drawn height when min dp would cross a non-overlapping neighbour; reserved `+N` column (never over visible blocks) with whole-group sheet; per-group lane caps; draw height from dp; non-overlapping tasks stay full width.
+- **Overlap helper** — Apply disabled when `analyzeOverlap` finds no real overlap; pill matches helper.
+- **Narrow timeline lanes** — title-first compact layout, hide icon; time-left pill under title when lane &lt; 100dp.
 - **Settings & chrome** — zero window insets on Settings `Scaffold`/`TopAppBar`; removed duplicate Today ⋮ (settings gear only).
 - **Timeline taps** — time-left pill no longer steals clicks; bottom-edge / overflow reachability UI tests and Paparazzi at 1.0 and 2.0.
 - **Font scale 2.0** — week day labels, hour rail, make-it-fit meters, onboarding wake/bed/breather chips; extra Paparazzi shots.

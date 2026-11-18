@@ -1,25 +1,25 @@
 package app.ebbplanner.ui.today
 
 import android.content.res.Configuration
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.foundation.layout.height
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.click
-import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.ui.theme.EbbTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,81 +36,115 @@ class TodayTimelineTapTest {
     @get:Rule
     val composeRule = createComposeRule()
 
+    private val tapHeights = listOf(0.15f, 0.5f, 0.9f)
+
     @Test
-    fun timeline_tapOpensMatchingTask_includingShortBlockAndCurrentPill() {
-        val today = LocalDate.of(2025, 11, 17)
-        val now = 10 * 60 + 15
-        val uiState =
-            TodayUiState(
-                date = today,
-                dateLabel = "Mon 17 Nov",
-                scheduledTasks =
-                    listOf(
-                        task(today, "focus-probe", "10:00", 45),
-                        task(today, "call-mum", "11:00", 30),
-                        task(today, "short-after", "11:35", 5),
-                    ),
-                isLoading = false,
-            )
-        val mapped = TodayPresentationMapper.from(uiState, now, fontScale = 1f)
-        val state =
-            mapped.copy(
-                showNowLine = true,
-                nowMinutes = now,
-                blocks =
-                    mapped.blocks.map { block ->
-                        if (block.id == "focus-probe") {
-                            block.copy(isCurrent = true, minutesLeftLabel = "12 min left")
-                        } else {
-                            block
-                        }
-                    },
-            )
-        var opened: String? = null
-        composeRule.setContent {
-            WithFontScale(1f) {
-                EbbTheme {
-                    TodayTimeline(
-                        state = state,
-                        modifier = Modifier.height(900.dp),
-                        onTaskClick = { opened = it },
-                    )
+    fun visibleBlocks_allHeights_openOwnTask_scale_100_fourLanes() {
+        tapEveryVisibleHeight(
+            fontScale = 1f,
+            count = 4,
+            timelineHeight = 820.dp,
+        )
+    }
+
+    @Test
+    fun visibleBlocks_allHeights_openOwnTask_scale_100_fiveLanes() {
+        tapEveryVisibleHeight(
+            fontScale = 1f,
+            count = 5,
+            timelineHeight = 820.dp,
+        )
+    }
+
+    @Test
+    fun visibleBlocks_allHeights_openOwnTask_scale_100_sixLanes() {
+        tapEveryVisibleHeight(
+            fontScale = 1f,
+            count = 6,
+            timelineHeight = 900.dp,
+        )
+    }
+
+    @Test
+    fun visibleBlocks_allHeights_openOwnTask_scale_200_fiveLanes() {
+        tapEveryVisibleHeight(
+            fontScale = 2f,
+            count = 5,
+            timelineHeight = 900.dp,
+        )
+    }
+
+    @Test
+    fun visibleBlocks_allHeights_openOwnTask_scale_200_sixLanes() {
+        tapEveryVisibleHeight(
+            fontScale = 2f,
+            count = 6,
+            timelineHeight = 960.dp,
+        )
+    }
+
+    @Test
+    fun runningCluster_atScale100_centerTapOpensRunningTaskOnly() {
+        exerciseRunningCluster(1f)
+    }
+
+    @Test
+    fun runningCluster_atScale200_centerTapOpensRunningTaskOnly() {
+        exerciseRunningCluster(2f)
+    }
+
+    private fun exerciseRunningCluster(scale: Float) {
+            val today = LocalDate.of(2025, 11, 17)
+            val now = 10 * 60 + 1
+            val tasks =
+                listOf(
+                    task(today, "running", "10:00", 5),
+                    task(today, "b", "10:02", 5),
+                    task(today, "c", "10:04", 5),
+                )
+            val mapped =
+                TodayPresentationMapper.from(
+                    TodayUiState(date = today, scheduledTasks = tasks, isLoading = false),
+                    now,
+                    scale,
+                )
+            val state =
+                mapped.copy(
+                    showNowLine = true,
+                    nowMinutes = now,
+                    blocks =
+                        mapped.blocks.map {
+                            if (it.id == "running") {
+                                it.copy(isCurrent = true, minutesLeftLabel = "3 min left")
+                            } else {
+                                it
+                            }
+                        },
+                )
+            var opened: String? = null
+            composeRule.setContent {
+                WithFontScale(scale) {
+                    EbbTheme {
+                        TodayTimeline(
+                            state = state,
+                            modifier = Modifier.height(720.dp),
+                            onTaskClick = { opened = it },
+                        )
+                    }
                 }
             }
-        }
-        composeRule.waitForIdle()
-        composeRule.onNodeWithTag(timelineTaskTestTag("focus-probe"), useUnmergedTree = true).performClick()
-        composeRule.runOnIdle { assertEquals("focus-probe", opened) }
-        composeRule.onNodeWithTag(timelineTaskTestTag("call-mum"), useUnmergedTree = true).performClick()
-        composeRule.runOnIdle { assertEquals("call-mum", opened) }
-        composeRule.onNodeWithTag(timelineTaskTestTag("short-after"), useUnmergedTree = true).performClick()
-        composeRule.runOnIdle { assertEquals("short-after", opened) }
+            composeRule.waitForIdle()
+            visiblePlacementIds(state, scale).forEach { id ->
+                tapHeights.forEach { fraction ->
+                    composeRule.runOnIdle { opened = null }
+                    tapTaskAt(id, fraction)
+                    composeRule.runOnIdle { assertEquals("scale=$scale id=$id y=$fraction", id, opened) }
+                }
+            }
     }
 
     @Test
-    fun four_overlapping_lanes_scale_100_eachVisibleOrOverflowBottomTapOpensTask() {
-        exerciseOverlapScenario(fontScale = 1f, ids = listOf("lane-a", "lane-b", "lane-c", "lane-d"))
-    }
-
-    @Test
-    fun five_overlapping_lanes_scale_100_overflowChipOpensHiddenTask() {
-        exerciseOverlapScenario(
-            fontScale = 1f,
-            ids = listOf("lane-a", "lane-b", "lane-c", "lane-d", "lane-e"),
-        )
-    }
-
-    @Test
-    fun five_overlapping_lanes_scale_200_overflowChipOpensHiddenTask() {
-        exerciseOverlapScenario(
-            fontScale = 2f,
-            ids = listOf("lane-a", "lane-b", "lane-c", "lane-d", "lane-e"),
-            tapIds = listOf("lane-e"),
-        )
-    }
-
-    @Test
-    fun kilo_lima_adjacent_scale_200_bottomTapOpensCorrectBlock() {
+    fun kiloLima_fullWidth_allHeights_scale_200() {
         val today = LocalDate.of(2025, 11, 17)
         val tasks =
             listOf(
@@ -124,62 +158,116 @@ class TodayTimelineTapTest {
                 EbbTheme {
                     TodayTimeline(
                         state = mapped,
-                        modifier = Modifier.height(800.dp),
+                        modifier = Modifier.height(900.dp),
                         onTaskClick = { opened = it },
                     )
                 }
             }
         }
         composeRule.waitForIdle()
-        openTaskViaTimelineOrOverflow("kilo", mapped, 2f) { opened }
-        composeRule.runOnIdle { assertEquals("kilo", opened) }
-        composeRule.runOnIdle { opened = null }
-        openTaskViaTimelineOrOverflow("lima", mapped, 2f) { opened }
-        composeRule.runOnIdle { assertEquals("lima", opened) }
+        val trackWidth =
+            (
+                RuntimeEnvironment.getApplication().resources.configuration.screenWidthDp -
+                    68
+            ).dp
+        assertTrue(
+            planTimelineOverlaps(
+                mapped.blocks,
+                TimelineLayoutMetrics(fontScale = 2f),
+                trackWidth,
+                mapped.timelineStartHour,
+            ).overflow.isEmpty(),
+        )
+        listOf("kilo", "lima").forEach { id ->
+            tapHeights.forEach { fraction ->
+                composeRule.runOnIdle { opened = null }
+                tapTaskAt(id, fraction)
+                composeRule.runOnIdle { assertEquals(id, opened) }
+            }
+        }
     }
 
     @Test
-    fun currentFiveMinuteTask_and_nearby_tasks_tappable_scale_100() {
+    fun overflowSheet_listsWholeGroup() {
         val today = LocalDate.of(2025, 11, 17)
-        val now = 10 * 60 + 2
         val tasks =
-            listOf(
-                task(today, "running", "10:00", 5),
-                task(today, "next-a", "10:06", 15),
-                task(today, "next-b", "10:12", 15),
+            (1..5).map { i ->
+                task(today, "lane-$i", "10:${((i - 1) * 5).toString().padStart(2, '0')}", 30)
+            }
+        val mapped =
+            TodayPresentationMapper.from(
+                TodayUiState(date = today, scheduledTasks = tasks, isLoading = false),
+                10 * 60,
+                1f,
             )
-        val mapped = TodayPresentationMapper.from(TodayUiState(date = today, scheduledTasks = tasks, isLoading = false), now, 1f)
-        val state =
-            mapped.copy(
-                showNowLine = true,
-                nowMinutes = now,
-                blocks = mapped.blocks.map { if (it.id == "running") it.copy(isCurrent = true, minutesLeftLabel = "3 min left") else it },
-            )
-        var opened: String? = null
         composeRule.setContent {
             WithFontScale(1f) {
                 EbbTheme {
-                    TodayTimeline(state = state, modifier = Modifier.height(700.dp), onTaskClick = { opened = it })
+                    TodayTimeline(
+                        state = mapped,
+                        modifier = Modifier.height(820.dp),
+                        onTaskClick = {},
+                    )
                 }
             }
         }
         composeRule.waitForIdle()
-        listOf("running", "next-a", "next-b").forEach { id ->
-            tapBottomEdge(id)
-            composeRule.runOnIdle { assertEquals(id, opened) }
+        val cluster = overflowCluster(mapped, 1f)
+        composeRule.onNodeWithTag(timelineOverflowChipTag(cluster.groupKey), useUnmergedTree = true).performTouchInput {
+            click(Offset(centerX, centerY))
+        }
+        composeRule.waitForIdle()
+        cluster.allGroupBlocks.forEach { block ->
+            composeRule.onNodeWithTag(timelineOverflowSheetRowTag(block.id), useUnmergedTree = true).assertIsDisplayed()
         }
     }
 
-    private fun exerciseOverlapScenario(
+  @Test
+    fun compactLane_threeLetterTitle_visible() {
+        val today = LocalDate.of(2025, 11, 17)
+        val tasks =
+            (1..4).map { i ->
+                TaskEntity(
+                    id = "lane-$i",
+                    title = if (i == 1) "Abc" else "lane-$i",
+                    placement = TaskEntity.PLACEMENT_SCHEDULED,
+                    date = today.toString(),
+                    startLocalTime = "10:${((i - 1) * 5).toString().padStart(2, '0')}",
+                    durationMin = 30,
+                    createdAt = 1,
+                    updatedAt = 1,
+                )
+            }
+        val mapped =
+            TodayPresentationMapper.from(
+                TodayUiState(date = today, scheduledTasks = tasks, isLoading = false),
+                10 * 60,
+                1f,
+            )
+        composeRule.setContent {
+            WithFontScale(1f) {
+                EbbTheme {
+                    TodayTimeline(
+                        state = mapped,
+                        modifier = Modifier.height(820.dp),
+                        onTaskClick = {},
+                    )
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Abc", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    private fun tapEveryVisibleHeight(
         fontScale: Float,
-        ids: List<String>,
-        tapIds: List<String>? = null,
+        count: Int,
+        timelineHeight: Dp,
     ) {
         val today = LocalDate.of(2025, 11, 17)
-        val starts = listOf("10:00", "10:05", "10:10", "10:15", "10:20")
         val tasks =
-            ids.mapIndexed { index, id ->
-                task(today, id, starts[index], 30)
+            (0 until count).map { i ->
+                task(today, "lane-${'a' + i}", "10:${(i * 5).toString().padStart(2, '0')}", 30)
             }
         val mapped =
             TodayPresentationMapper.from(
@@ -193,45 +281,30 @@ class TodayTimelineTapTest {
                 EbbTheme {
                     TodayTimeline(
                         state = mapped,
-                        modifier = Modifier.height(720.dp),
+                        modifier = Modifier.height(timelineHeight),
                         onTaskClick = { opened = it },
                     )
                 }
             }
         }
         composeRule.waitForIdle()
-        val trackWidth =
-            (
-                RuntimeEnvironment.getApplication().resources.configuration.screenWidthDp -
-                    68
-            ).dp
-        val plan =
-            planTimelineOverlaps(
-                mapped.blocks,
-                TimelineLayoutMetrics(fontScale = fontScale, titleOnlyBlocks = false),
-                trackWidth,
-                mapped.timelineStartHour,
-            )
-        ids.forEach { id ->
-            val reachable =
-                plan.placements.any { it.first.id == id } ||
-                    plan.overflow.any { cluster -> cluster.hiddenBlocks.any { it.id == id } }
-            assertEquals("task $id should be visible or in +N", true, reachable)
-        }
-        val taps = tapIds ?: listOf(ids.first(), ids.last())
-        taps.forEach { id ->
-            composeRule.runOnIdle { opened = null }
-            openTaskViaTimelineOrOverflow(id, mapped, fontScale) { opened }
-            composeRule.runOnIdle { assertEquals(id, opened) }
+        val visible = visiblePlacementIds(mapped, fontScale)
+        assertTrue("expected visible lanes", visible.isNotEmpty())
+        visible.forEach { id ->
+            tapHeights.forEach { fraction ->
+                composeRule.runOnIdle { opened = null }
+                tapTaskAt(id, fraction)
+                composeRule.runOnIdle {
+                    assertEquals("scale=$fontScale lanes=$count id=$id at $fraction", id, opened)
+                }
+            }
         }
     }
 
-    private fun openTaskViaTimelineOrOverflow(
-        id: String,
-        mapped: TodayPresentationState,
+    private fun visiblePlacementIds(
+        state: TodayPresentationState,
         fontScale: Float,
-        openedSoFar: () -> String? = { null },
-    ) {
+    ): List<String> {
         val trackWidth =
             (
                 RuntimeEnvironment.getApplication().resources.configuration.screenWidthDp -
@@ -239,39 +312,39 @@ class TodayTimelineTapTest {
             ).dp
         val plan =
             planTimelineOverlaps(
-                mapped.blocks,
-                TimelineLayoutMetrics(fontScale = fontScale, titleOnlyBlocks = false),
+                state.blocks,
+                TimelineLayoutMetrics(fontScale = fontScale),
                 trackWidth,
-                mapped.timelineStartHour,
+                state.timelineStartHour,
             )
-        val onTimeline =
-            composeRule.onAllNodesWithTag(timelineTaskTestTag(id), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
-        if (onTimeline) {
-            val node = composeRule.onNodeWithTag(timelineTaskTestTag(id), useUnmergedTree = true)
-            node.assertIsDisplayed()
-            node.performTouchInput {
-                val y = top + (bottom - top) * 0.92f
-                click(Offset(centerX, y))
-            }
-            composeRule.waitForIdle()
-            if (openedSoFar() == null) {
-                node.performClick()
-                composeRule.waitForIdle()
-            }
-        } else {
-            val cluster = plan.overflow.first { cluster -> cluster.hiddenBlocks.any { it.id == id } }
-            composeRule.onNodeWithTag(timelineOverflowChipTag(cluster.groupKey), useUnmergedTree = true).performClick()
-            composeRule.waitForIdle()
-            composeRule.onNodeWithText(id, useUnmergedTree = true).performClick()
-            composeRule.waitForIdle()
-        }
+        return plan.placements.map { it.first.id }
     }
 
-    private fun tapBottomEdge(taskId: String) {
+    private fun overflowCluster(
+        state: TodayPresentationState,
+        fontScale: Float,
+    ): TimelineOverflowCluster {
+        val trackWidth =
+            (
+                RuntimeEnvironment.getApplication().resources.configuration.screenWidthDp -
+                    68
+            ).dp
+        return planTimelineOverlaps(
+            state.blocks,
+            TimelineLayoutMetrics(fontScale = fontScale),
+            trackWidth,
+            state.timelineStartHour,
+        ).overflow.first()
+    }
+
+    private fun tapTaskAt(
+        taskId: String,
+        heightFraction: Float,
+    ) {
         val node = composeRule.onNodeWithTag(timelineTaskTestTag(taskId), useUnmergedTree = true)
         node.assertIsDisplayed()
         node.performTouchInput {
-            val y = top + (bottom - top) * 0.92f
+            val y = top + (bottom - top) * heightFraction
             click(Offset(centerX, y))
         }
         composeRule.waitForIdle()

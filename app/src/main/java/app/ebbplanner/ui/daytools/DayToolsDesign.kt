@@ -161,6 +161,7 @@ fun OverlapHelperDesign(
         title = headline,
         subtitle = subtitle,
         doneLabel = "Apply",
+        doneEnabled = situation != null,
         sheetTopInset = DAY_TOOL_SHEET_TOP_INSET,
         sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = modifier,

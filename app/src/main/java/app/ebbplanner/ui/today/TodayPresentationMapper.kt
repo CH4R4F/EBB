@@ -15,7 +15,6 @@ object TodayPresentationMapper {
         nowMinutes: Int = defaultNowMinutes(),
         fontScale: Float = 1f,
     ): TodayPresentationState {
-        val layoutMetrics = TimelineLayoutMetrics(fontScale = fontScale, titleOnlyBlocks = false)
         if (state.isLoading) {
             return TodayPresentationState(
                 dateLabel = state.dateLabel.ifBlank { state.date.format(dateFormatter) },
@@ -34,12 +33,11 @@ object TodayPresentationMapper {
         val blocks =
             applyOverlapMetadata(
                 scheduled.mapNotNull { task -> task.toBlock(nowMinutes) },
-                layoutMetrics,
             )
         val minutesLeft = (state.bedMinutes - nowMinutes).coerceAtLeast(0)
         val plannedRemaining = scheduled.filter { it.status != TaskEntity.STATUS_DONE }.sumOf { it.durationMin }
         val overfull = isToday(state.date) && plannedRemaining > minutesLeft
-        val overlap = blocks.any { it.overlapLaneCount > 1 }
+        val overlap = hasRealTimeOverlap(blocks)
         val events = state.calendarEvents.map { it.toPresentation() }
         val timeline = computeTimelineWindow(blocks, events)
         return TodayPresentationState(

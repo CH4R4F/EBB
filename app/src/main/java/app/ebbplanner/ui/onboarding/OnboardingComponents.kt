@@ -389,13 +389,14 @@ fun DayShapeTimeCard(
                     fontSize = 20.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                val largeText = androidx.compose.ui.platform.LocalConfiguration.current.fontScale >= 1.75f
                 Text(
                     text = label,
-                    style = EbbTypography.labelL,
+                    style = if (largeText) EbbTypography.labelM else EbbTypography.labelL,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    maxLines = 2,
+                    softWrap = true,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
                 )
             }
             val largeText = androidx.compose.ui.platform.LocalConfiguration.current.fontScale >= 1.75f
