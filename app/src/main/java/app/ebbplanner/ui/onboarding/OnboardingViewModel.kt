@@ -27,6 +27,7 @@ data class OnboardingUiState(
     val addSampleTasks: Boolean = false,
     val remindersEnabled: Boolean = true,
     val linkedCalendarCount: Int = 0,
+    val weekStartDay: Int = UserPreferencesRepository.WEEK_START_USE_LOCALE,
 )
 
 @HiltViewModel
@@ -67,6 +68,10 @@ class OnboardingViewModel
             _uiState.update { it.copy(linkedCalendarCount = count.coerceAtLeast(0)) }
         }
 
+        fun setWeekStartDay(day: Int) {
+            _uiState.update { it.copy(weekStartDay = day) }
+        }
+
         fun completeOnboarding(onComplete: () -> Unit) {
             viewModelScope.launch {
                 persistOnboardingChoices()
@@ -81,6 +86,7 @@ class OnboardingViewModel
             userPreferencesRepository.setBreatherMinutes(state.breatherMinutes)
             userPreferencesRepository.setCelebrationStyle(state.celebrationStyle.name)
             userPreferencesRepository.setSeedSampleTasks(state.addSampleTasks)
+            userPreferencesRepository.setWeekStartDay(state.weekStartDay)
             userPreferencesRepository.setOnboardingComplete(true)
             if (state.addSampleTasks) {
                 taskRepository.seedSampleTasksForToday(LocalDate.now())

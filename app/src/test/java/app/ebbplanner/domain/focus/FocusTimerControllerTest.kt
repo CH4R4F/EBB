@@ -11,12 +11,12 @@ class FocusTimerControllerTest {
     @Test
     fun justFiveMinutes_countsDownToTimesUp() {
         controller.startFixedMinutes(t0, 5)
-        var timesUp = false
+        var ended = false
         for (i in 0 until 5) {
-            timesUp = controller.tick(t0 + i * 60_000L)
+            ended = controller.tick(t0 + i * 60_000L) == FocusTickResult.SessionEnded
         }
-        timesUp = controller.tick(t0 + 5 * 60_000L)
-        assertTrue(timesUp)
+        ended = controller.tick(t0 + 5 * 60_000L) == FocusTickResult.SessionEnded
+        assertTrue(ended)
         assertEquals(FocusPhase.TimesUp, controller.phase())
     }
 

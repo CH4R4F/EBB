@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Quick capture** — single interactive sheet (one field, one Add); working estimate chip; ModalBottomSheet drag handle only.
+- **Navigation** — removed duplicate bottom bars on Inbox, Week, and Routines (MainShell owns the real bar).
+- **Week start** — persisted DataStore preference with onboarding picker and Settings row; Week view respects it.
+- **Today timeline** — visible hours expand to fit scheduled tasks and events (minimum 09:00–17:00).
+- **Anytime tray** — normal chip height; “+ add” opens quick capture for an anytime task.
+- **Day tool sheets** — Shift, Overlap, and Make it fit no longer render a fake Today screen behind the sheet.
+
 ## [0.1.0] - 2026-11-18
 
 First public preview of Ebb — an ADHD-friendly day planner for Android.

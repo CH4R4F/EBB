@@ -30,14 +30,15 @@ fun TodayScreen(
     val presentation by viewModel.presentationState.collectAsStateWithLifecycle()
 
     var showCapture by rememberSaveable { mutableStateOf(false) }
+    var capturePrefill by rememberSaveable { mutableStateOf("") }
 
     TodayScreenDesign(
         state = presentation,
         modifier = modifier.fillMaxSize().testTag(TODAY_TIMELINE_TAG),
         showBottomNav = false,
-        onFabClick = { showCapture = true },
+        onFabClick = { capturePrefill = ""; showCapture = true },
         onPlanDayClick = onOpenPlanDay,
-        onAddTaskClick = { showCapture = true },
+        onAddTaskClick = { capturePrefill = ""; showCapture = true },
         onShiftClick = onOpenShiftDay,
         onOpenOverlap = onOpenOverlap,
         onOpenMakeItFit = onOpenMakeItFit,
@@ -46,6 +47,7 @@ fun TodayScreen(
         onSettings = onOpenSettings,
         onAnytimeClick = onOpenTask,
         onAnytimeDone = viewModel::markTaskDone,
+        onAddAnytimeCapture = { capturePrefill = ""; showCapture = true },
         onTaskClick = onOpenTask,
         onTaskLongPress = onOpenTaskSchedule,
         onMarkTaskDone = viewModel::markTaskDone,
@@ -55,6 +57,7 @@ fun TodayScreen(
         visible = showCapture,
         onDismiss = { showCapture = false },
         onSave = viewModel::captureTask,
+        defaultText = capturePrefill,
     )
 }
 

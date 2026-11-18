@@ -32,7 +32,10 @@
     <string name="onboarding_breather_label">Breather between tasks</string>
     <string name="onboarding_week_starts_label">Week starts on</string>
     <string name="onboarding_week_starts_value">Monday</string>
-    <string name="onboarding_week_starts_hint">From your phone’s region</string>
+    <string name="onboarding_week_starts_hint">Tap to choose — or follow your phone’s region</string>
+    <string name="week_start_picker_title">Week starts on</string>
+    <string name="week_start_follow_device">Follow device region (%1$s)</string>
+    <string name="settings_week_start">Week starts on</string>
     <string name="onboarding_celebrations_label">Celebrations</string>
     <string name="onboarding_celebration_calm">Calm</string>
     <string name="onboarding_celebration_lively">Lively</string>

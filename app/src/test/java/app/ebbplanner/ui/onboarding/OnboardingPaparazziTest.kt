@@ -57,7 +57,7 @@ class OnboardingPaparazziTest {
     @Test
     fun o4_preferences_dark() =
         snap("o4_preferences_dark", true) {
-            OnboardingPreferencesScreen(stateDefault, {}, {}, {}, {})
+            OnboardingPreferencesScreen(stateDefault, {}, {}, {}, {}, {})
         }
 
     @Test

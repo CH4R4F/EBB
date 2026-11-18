@@ -43,7 +43,14 @@ class TaskRepositoryTest {
         val prefs = mockk<app.ebbplanner.data.preferences.UserPreferencesRepository>(relaxed = true)
         every { prefs.remindersDefault } returns kotlinx.coroutines.flow.flowOf(true)
         repository =
-            TaskRepository(database.taskDao(), database.dayPlanDao(), database.subtaskDao(), reminderSync, prefs)
+            TaskRepository(
+                database.taskDao(),
+                database.dayPlanDao(),
+                database.subtaskDao(),
+                reminderSync,
+                prefs,
+                mockk(relaxed = true),
+            )
     }
 
     @After

@@ -1,5 +1,6 @@
 package app.ebbplanner.ui.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +15,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -22,6 +26,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.ebbplanner.BuildConfig
 import app.ebbplanner.R
+import app.ebbplanner.ui.components.WeekStartDayPickerSheet
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTypography
@@ -34,6 +39,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var weekPickerOpen by remember { mutableStateOf(false) }
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -64,6 +70,30 @@ fun SettingsScreen(
                 checked = state.remindersDefault,
                 onCheckedChange = viewModel::setRemindersDefault,
             )
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { weekPickerOpen = true }
+                        .padding(vertical = EbbSpacing.s3),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.settings_week_start), style = EbbTypography.bodyL)
+                    Text(
+                        state.weekStartLabel,
+                        style = EbbTypography.bodyM,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                EbbSymbol("chevron_right", fontSize = 22.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            WeekStartDayPickerSheet(
+                visible = weekPickerOpen,
+                selected = state.weekStartDay,
+                onSelect = viewModel::setWeekStartDay,
+                onDismiss = { weekPickerOpen = false },
+            )
             Text(
                 stringResource(R.string.settings_wake_bed_format, state.wakeLabel, state.bedLabel),
                 style = EbbTypography.bodyM,
@@ -81,6 +111,43 @@ fun SettingsScreen(
                 modifier = Modifier.padding(top = EbbSpacing.s4),
             )
         }
+    }
+}
+
+@Composable
+fun SettingsPreviewPanel(state: SettingsUiState) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s4),
+    ) {
+        Text(stringResource(R.string.settings_title), style = EbbTypography.titleL)
+        PreferenceToggle(
+            label = stringResource(R.string.settings_material_you),
+            checked = state.materialYou,
+            onCheckedChange = {},
+        )
+        PreferenceToggle(
+            label = stringResource(R.string.settings_reminders_default),
+            checked = state.remindersDefault,
+            onCheckedChange = {},
+        )
+        Text(
+            stringResource(R.string.settings_week_start),
+            style = EbbTypography.bodyL,
+            modifier = Modifier.padding(top = EbbSpacing.s3),
+        )
+        Text(
+            state.weekStartLabel,
+            style = EbbTypography.bodyM,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            stringResource(R.string.settings_wake_bed_format, state.wakeLabel, state.bedLabel),
+            style = EbbTypography.bodyM,
+            modifier = Modifier.padding(top = EbbSpacing.s3),
+        )
     }
 }
 

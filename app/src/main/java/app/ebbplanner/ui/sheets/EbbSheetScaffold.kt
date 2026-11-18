@@ -32,9 +32,6 @@ import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTypography
-import app.ebbplanner.ui.today.TodayPresentationState
-import app.ebbplanner.ui.today.TodayScreenDesign
-import app.ebbplanner.ui.today.TodayVisualMode
 
 @Suppress("LongParameterList", "LongMethod")
 @Composable
@@ -52,19 +49,13 @@ fun EbbSheetScaffold(
     cancelLabel: String = "Cancel",
     onDoneClick: () -> Unit = {},
     onCancelClick: () -> Unit = {},
-    backgroundState: app.ebbplanner.ui.today.TodayPresentationState? = null,
     content: @Composable () -> Unit,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
-        TodayScreenDesign(
-            state =
-                backgroundState ?: TodayPresentationState(
-                    visualMode = TodayVisualMode.Empty,
-                    showNowLine = false,
-                    blocks = emptyList(),
-                ),
-            showBottomNav = true,
-            modifier = Modifier.fillMaxSize(),
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
         )
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f)))
         val sheetModifier =

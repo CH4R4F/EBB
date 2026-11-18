@@ -40,12 +40,17 @@ import app.ebbplanner.ui.theme.EbbTypography
 fun RoutinesScreenDesign(
     state: RoutinesPresentationState,
     modifier: Modifier = Modifier,
+    showBottomNav: Boolean = false,
     onFabClick: () -> Unit = {},
     onRoutineClick: (String) -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        bottomBar = { EbbBottomNavigation(selected = MainTab.Routines) },
+        bottomBar = {
+            if (showBottomNav) {
+                EbbBottomNavigation(selected = MainTab.Routines)
+            }
+        },
         floatingActionButton = {
             if (state.mode == RoutinesVisualMode.Empty || state.routines.isNotEmpty()) {
                 ExtendedFloatingActionButton(
@@ -226,6 +231,6 @@ fun RoutinesAppPreview(
     state: RoutinesPresentationState,
 ) {
     app.ebbplanner.ui.onboarding.OnboardingAppPreview(darkTheme = darkTheme) {
-        RoutinesScreenDesign(state = state)
+        RoutinesScreenDesign(state = state, showBottomNav = true)
     }
 }

@@ -58,6 +58,7 @@ class TaskDetailViewModelTest {
                 database.subtaskDao(),
                 mockk(relaxed = true),
                 prefs,
+                mockk(relaxed = true),
             )
         planningUseCase = DayPlanningUseCase(repository, clock)
     }

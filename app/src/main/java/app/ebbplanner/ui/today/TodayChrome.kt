@@ -229,6 +229,7 @@ fun TodayAnytimeTray(
     modifier: Modifier = Modifier,
     onChipClick: (String) -> Unit = {},
     onChipDone: (String) -> Unit = {},
+    onAddAnytime: () -> Unit = {},
 ) {
     Row(
         modifier =
@@ -254,18 +255,21 @@ fun TodayAnytimeTray(
                     modifier = Modifier.clickable { onChipClick(chip.id) },
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(
                             text = chip.title,
                             style = EbbTypography.labelL,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
-                        IconButton(
-                            onClick = { onChipDone(chip.id) },
-                            modifier = Modifier.size(48.dp),
+                        Box(
+                            modifier =
+                                Modifier
+                                    .size(28.dp)
+                                    .clickable { onChipDone(chip.id) },
+                            contentAlignment = Alignment.Center,
                         ) {
                             EbbSymbol("check", fontSize = 16.sp)
                         }
@@ -280,9 +284,10 @@ fun TodayAnytimeTray(
                         1.dp,
                         MaterialTheme.colorScheme.outline,
                     ),
+                onClick = onAddAnytime,
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {

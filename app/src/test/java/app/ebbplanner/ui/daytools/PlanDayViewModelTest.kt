@@ -53,6 +53,7 @@ class PlanDayViewModelTest {
                 database.subtaskDao(),
                 mockk(relaxed = true),
                 prefs,
+                mockk(relaxed = true),
             )
         clock = MutableEbbClock(Instant.parse("2026-11-17T10:00:00Z"))
         useCase = DayPlanningUseCase(repository, clock)

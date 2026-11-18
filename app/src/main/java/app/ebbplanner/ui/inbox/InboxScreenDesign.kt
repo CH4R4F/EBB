@@ -50,12 +50,17 @@ import app.ebbplanner.ui.theme.EbbTypography
 fun InboxScreenDesign(
     state: InboxPresentationState,
     modifier: Modifier = Modifier,
+    showBottomNav: Boolean = false,
     onFabClick: () -> Unit = {},
     onTaskClick: (String) -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        bottomBar = { EbbBottomNavigation(selected = MainTab.Inbox) },
+        bottomBar = {
+            if (showBottomNav) {
+                EbbBottomNavigation(selected = MainTab.Inbox)
+            }
+        },
         floatingActionButton = {
             if (state.showFab) {
                 FloatingActionButton(
@@ -425,6 +430,6 @@ fun InboxAppPreview(
     state: InboxPresentationState,
 ) {
     app.ebbplanner.ui.onboarding.OnboardingAppPreview(darkTheme = darkTheme) {
-        InboxScreenDesign(state = state)
+        InboxScreenDesign(state = state, showBottomNav = true)
     }
 }

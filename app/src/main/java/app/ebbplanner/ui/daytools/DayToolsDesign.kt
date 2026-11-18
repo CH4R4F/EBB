@@ -97,7 +97,6 @@ fun ShiftTheRestDesign(
         modifier = modifier,
         onDoneClick = onApplyShift,
         onCancelClick = onCancel,
-        backgroundState = backgroundState,
     ) {
         ShiftAmountChips(selected = chipIndex, onSelected = onChipSelected)
         if (chipIndex == 5) {
@@ -153,7 +152,6 @@ fun OverlapHelperDesign(
         modifier = modifier,
         onDoneClick = onApply,
         onCancelClick = onCancel,
-        backgroundState = backgroundState,
     ) {
         if (situation != null) {
             OverlapTimelineCard(
@@ -207,7 +205,6 @@ fun MakeItFitDesign(
         modifier = modifier,
         onDoneClick = onApply,
         onCancelClick = onCancel,
-        backgroundState = backgroundState,
     ) {
         FitMeterRow(
             "Planned",

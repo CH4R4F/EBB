@@ -5,6 +5,7 @@ package app.ebbplanner.ui.onboarding
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -288,9 +289,11 @@ fun OnboardingPreferencesScreen(
     state: OnboardingUiState,
     onBreatherSelect: (Int) -> Unit,
     onCelebrationSelect: (CelebrationStyle) -> Unit,
+    onWeekStartSelect: (Int) -> Unit = {},
     onContinue: () -> Unit,
     onSkip: () -> Unit,
 ) {
+    var weekPickerOpen by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     OnboardingScreenScaffold(
         topBar = { OnboardingTopBar(activeSteps = 3, showSkip = true, onSkip = onSkip) },
         bottomBar = {
@@ -388,12 +391,16 @@ fun OnboardingPreferencesScreen(
                     Modifier
                         .fillMaxWidth()
                         .height(EbbSpacing.touchBig)
-                        .padding(top = EbbSpacing.s2),
+                        .padding(top = EbbSpacing.s2)
+                        .clickable { weekPickerOpen = true },
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column {
-                    Text(stringResource(R.string.onboarding_week_starts_value), style = EbbTypography.titleM)
+                    Text(
+                        app.ebbplanner.ui.components.weekStartDayLabel(state.weekStartDay),
+                        style = EbbTypography.titleM,
+                    )
                     Text(
                         stringResource(R.string.onboarding_week_starts_hint),
                         style = EbbTypography.bodyM,
@@ -403,6 +410,12 @@ fun OnboardingPreferencesScreen(
                 EbbSymbol("chevron_right", fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
+        app.ebbplanner.ui.components.WeekStartDayPickerSheet(
+            visible = weekPickerOpen,
+            selected = state.weekStartDay,
+            onSelect = onWeekStartSelect,
+            onDismiss = { weekPickerOpen = false },
+        )
         Row(
             modifier = Modifier.padding(top = EbbSpacing.s4),
             horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
@@ -979,6 +992,7 @@ fun OnboardingPreferencesRoute(
         state = state,
         onBreatherSelect = viewModel::setBreatherMinutes,
         onCelebrationSelect = viewModel::setCelebrationStyle,
+        onWeekStartSelect = viewModel::setWeekStartDay,
         onContinue = onContinue,
         onSkip = onSkip,
     )

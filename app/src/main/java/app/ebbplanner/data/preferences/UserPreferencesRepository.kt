@@ -61,6 +61,11 @@ class UserPreferencesRepository
                 prefs[KEY_BREATHER_MINUTES] ?: 5
             }
 
+        val weekStartDay: Flow<Int> =
+            dataStore.data.map { prefs ->
+                prefs[KEY_WEEK_START_DAY] ?: WEEK_START_USE_LOCALE
+            }
+
         suspend fun setOnboardingComplete(complete: Boolean) {
             dataStore.edit { prefs -> prefs[KEY_ONBOARDING_COMPLETE] = complete }
         }
@@ -93,7 +98,12 @@ class UserPreferencesRepository
             dataStore.edit { prefs -> prefs[KEY_CELEBRATION_STYLE] = style }
         }
 
+        suspend fun setWeekStartDay(day: Int) {
+            dataStore.edit { prefs -> prefs[KEY_WEEK_START_DAY] = day }
+        }
+
         companion object {
+            const val WEEK_START_USE_LOCALE = 0
             private val KEY_ONBOARDING_COMPLETE = booleanPreferencesKey("onboarding_complete")
             private val KEY_DAY_WAKE_MINUTES = intPreferencesKey("day_wake_minutes")
             private val KEY_DAY_BED_MINUTES = intPreferencesKey("day_bed_minutes")
@@ -102,6 +112,7 @@ class UserPreferencesRepository
             private val KEY_REMINDERS_DEFAULT = booleanPreferencesKey("reminders_default")
             private val KEY_BREATHER_MINUTES = intPreferencesKey("breather_minutes")
             private val KEY_CELEBRATION_STYLE = stringPreferencesKey("celebration_style")
+            private val KEY_WEEK_START_DAY = intPreferencesKey("week_start_day")
             const val DEFAULT_WAKE_MINUTES = 7 * 60
             const val DEFAULT_BED_MINUTES = 23 * 60
         }

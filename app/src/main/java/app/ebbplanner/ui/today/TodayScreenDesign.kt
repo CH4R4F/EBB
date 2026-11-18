@@ -41,6 +41,7 @@ fun TodayScreenDesign(
     onSettings: () -> Unit = {},
     onAnytimeClick: (String) -> Unit = {},
     onAnytimeDone: (String) -> Unit = {},
+    onAddAnytimeCapture: () -> Unit = {},
     onTaskClick: (String) -> Unit = {},
     onTaskLongPress: (String) -> Unit = {},
     onMarkTaskDone: (String) -> Unit = {},
@@ -96,6 +97,7 @@ fun TodayScreenDesign(
                         chips = state.anytimeChips,
                         onChipClick = onAnytimeClick,
                         onChipDone = onAnytimeDone,
+                        onAddAnytime = onAddAnytimeCapture,
                     )
                 }
                 Column(

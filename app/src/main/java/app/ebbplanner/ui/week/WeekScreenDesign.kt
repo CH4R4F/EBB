@@ -55,6 +55,7 @@ import app.ebbplanner.ui.theme.EbbTypography
 fun WeekScreenDesign(
     state: WeekPresentationState,
     modifier: Modifier = Modifier,
+    showBottomNav: Boolean = false,
     onPreviousWeek: () -> Unit = {},
     onNextWeek: () -> Unit = {},
     onThisWeek: () -> Unit = {},
@@ -63,7 +64,11 @@ fun WeekScreenDesign(
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        bottomBar = { EbbBottomNavigation(selected = MainTab.Week) },
+        bottomBar = {
+            if (showBottomNav) {
+                EbbBottomNavigation(selected = MainTab.Week)
+            }
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onFabClick,
@@ -331,6 +336,6 @@ fun WeekAppPreview(
     state: WeekPresentationState,
 ) {
     app.ebbplanner.ui.onboarding.OnboardingAppPreview(darkTheme = darkTheme) {
-        WeekScreenDesign(state = state)
+        WeekScreenDesign(state = state, showBottomNav = true)
     }
 }

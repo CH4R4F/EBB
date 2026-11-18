@@ -89,7 +89,7 @@ class DayPlanningUseCaseTest {
                     ),
                 ),
             )
-            assertTrue(useCase.resolveFirstOverlapPushLater(date))
+            assertTrue(useCase.resolveFirstOverlapPushLater(date, UserPreferencesRepository.DEFAULT_BED_MINUTES))
             assertEquals("11:00", repository.getTask(b)?.startLocalTime)
         }
 
@@ -122,11 +122,13 @@ class DayPlanningUseCaseTest {
                     ),
                 ),
             )
-            val situation = useCase.analyzeOverlap(date)
+            val situation = useCase.analyzeOverlap(date, UserPreferencesRepository.DEFAULT_BED_MINUTES)
             requireNotNull(situation)
             assertEquals("Alpha", situation.firstTitle)
             assertEquals("Beta", situation.secondTitle)
-            assertTrue(useCase.applyOverlap(date, OverlapResolutionType.SHORTEN_EARLIER))
+            assertTrue(
+                useCase.applyOverlap(date, OverlapResolutionType.SHORTEN_EARLIER, UserPreferencesRepository.DEFAULT_BED_MINUTES),
+            )
         }
 
     @Test

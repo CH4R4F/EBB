@@ -30,6 +30,20 @@ class TodayPresentationMapperTest {
     }
 
     @Test
+    fun from_expandsTimelineBeforeNineWhenTasksStartEarly() {
+        val today = LocalDate.now()
+        val state =
+            TodayUiState(
+                date = today,
+                scheduledTasks = listOf(taskAt(today, "07:30", 45, "early")),
+                isLoading = false,
+            )
+        val mapped = TodayPresentationMapper.from(state, 8 * 60)
+        assertEquals(7, mapped.timelineStartHour)
+        assertEquals(17, mapped.timelineEndHour)
+    }
+
+    @Test
     fun from_anytimeChipsIncludeIds() {
         val today = LocalDate.now()
         val task =

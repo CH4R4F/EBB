@@ -34,6 +34,8 @@ object TodayPresentationMapper {
         val plannedRemaining = scheduled.filter { it.status != TaskEntity.STATUS_DONE }.sumOf { it.durationMin }
         val overfull = isToday(state.date) && plannedRemaining > minutesLeft
         val overlap = detectOverlap(blocks)
+        val events = state.calendarEvents.map { it.toPresentation() }
+        val timeline = computeTimelineWindow(blocks, events)
         return TodayPresentationState(
             dateLabel = state.dateLabel.ifBlank { state.date.format(dateFormatter) },
             timeLeftLabel = formatMinutesLong(minutesLeft),
@@ -48,7 +50,9 @@ object TodayPresentationMapper {
                 ),
             anytimeChips = state.anytimeTasks.map { TodayAnytimeChip(it.id, it.title) },
             blocks = blocks,
-            events = state.calendarEvents.map { it.toPresentation() },
+            events = events,
+            timelineStartHour = timeline.first,
+            timelineEndHour = timeline.second,
             nowMinutes = if (isToday(state.date)) nowMinutes else null,
             showNowLine = isToday(state.date),
             bannerMessage = if (overfull) "Fuller than the time left · Make it fit" else null,
@@ -60,6 +64,26 @@ object TodayPresentationMapper {
                     else -> TodayVisualMode.Normal
                 },
         )
+    }
+
+    private const val TIMELINE_MIN_START_HOUR = 9
+    private const val TIMELINE_MIN_END_HOUR = 17
+
+    private fun computeTimelineWindow(
+        blocks: List<TodayScheduledBlock>,
+        events: List<TodayCalendarEvent>,
+    ): Pair<Int, Int> {
+        val starts = blocks.map { it.startMinutes } + events.map { it.startMinutes }
+        val ends =
+            blocks.map { it.startMinutes + it.durationMin } +
+                events.map { it.startMinutes + it.durationMin }
+        val earliest = starts.minOrNull()
+        val latest = ends.maxOrNull()
+        val startHour =
+            earliest?.let { minOf(TIMELINE_MIN_START_HOUR, it / 60) } ?: TIMELINE_MIN_START_HOUR
+        val endHour =
+            latest?.let { maxOf(TIMELINE_MIN_END_HOUR, (it + 59) / 60) } ?: TIMELINE_MIN_END_HOUR
+        return startHour.coerceAtLeast(0) to endHour.coerceAtMost(24).coerceAtLeast(startHour + 1)
     }
 
     private fun detectOverlap(blocks: List<TodayScheduledBlock>): Boolean {

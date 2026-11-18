@@ -5,6 +5,8 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import app.ebbplanner.data.local.EbbDatabase
 import app.ebbplanner.data.local.entity.RoutineEntity
+import app.ebbplanner.domain.routines.RoutineInstanceGenerator
+import io.mockk.mockk
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -28,7 +30,7 @@ class RoutineRepositoryTest {
             Room.inMemoryDatabaseBuilder(context, EbbDatabase::class.java)
                 .allowMainThreadQueries()
                 .build()
-        repository = RoutineRepository(database.routineDao())
+        repository = RoutineRepository(database.routineDao(), mockk<RoutineInstanceGenerator>(relaxed = true))
     }
 
     @After

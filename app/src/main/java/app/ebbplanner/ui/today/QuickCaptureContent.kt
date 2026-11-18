@@ -4,6 +4,7 @@ package app.ebbplanner.ui.today
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -19,6 +23,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.res.stringResource
@@ -27,6 +33,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.ebbplanner.R
+import app.ebbplanner.domain.capture.QuickCaptureParser
 import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
@@ -56,22 +63,30 @@ fun QuickCaptureOverlay(
 fun QuickCaptureSheetContent(
     state: QuickCapturePresentationState,
     modifier: Modifier = Modifier,
+    showDragHandle: Boolean = true,
+    interactive: Boolean = false,
+    text: String = state.text,
+    onTextChange: (String) -> Unit = {},
+    onAdd: () -> Unit = {},
+    onAppendEstimate: (String) -> Unit = {},
 ) {
     Column(modifier = modifier.padding(bottom = EbbSpacing.s4)) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = EbbSpacing.s3, vertical = EbbSpacing.s2),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
+        if (showDragHandle) {
+            Row(
                 modifier =
                     Modifier
-                        .padding(top = 6.dp)
-                        .size(width = 40.dp, height = 4.dp)
-                        .background(MaterialTheme.colorScheme.outline, EbbShapes.full),
-            )
+                        .fillMaxWidth()
+                        .padding(horizontal = EbbSpacing.s3, vertical = EbbSpacing.s2),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier =
+                        Modifier
+                            .padding(top = 6.dp)
+                            .size(width = 40.dp, height = 4.dp)
+                            .background(MaterialTheme.colorScheme.outline, EbbShapes.full),
+                )
+            }
         }
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = EbbSpacing.s3),
@@ -82,9 +97,6 @@ fun QuickCaptureSheetContent(
                 style = EbbTypography.titleL,
                 modifier = Modifier.weight(1f),
             )
-            IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
-                EbbSymbol("open_in_full", fontSize = 22.sp)
-            }
         }
         if (state.draftRestored) {
             Text(
@@ -99,7 +111,6 @@ fun QuickCaptureSheetContent(
                 modifier = Modifier.fillMaxWidth().padding(EbbSpacing.s3),
                 shape = EbbShapes.md,
                 color = MaterialTheme.colorScheme.surfaceVariant,
-                onClick = {},
             ) {
                 Text(
                     stringResource(R.string.quick_capture_paste_prompt),
@@ -108,6 +119,7 @@ fun QuickCaptureSheetContent(
                 )
             }
         }
+        val highlights = if (interactive) QuickCaptureParser.parse(text).highlights else state.highlights
         Row(
             modifier =
                 Modifier
@@ -116,7 +128,7 @@ fun QuickCaptureSheetContent(
             horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
             verticalAlignment = Alignment.Top,
         ) {
-            val fieldFocused = state.text.isNotEmpty() || state.mode == QuickCaptureMode.Typing
+            val fieldFocused = text.isNotEmpty() || state.mode == QuickCaptureMode.Typing
             Box(
                 modifier =
                     Modifier
@@ -136,15 +148,35 @@ fun QuickCaptureSheetContent(
                                 strokeWidth = if (fieldFocused) 2.dp.toPx() else 1.dp.toPx(),
                             )
                         }
-                        .padding(EbbSpacing.s3),
+                        .padding(EbbSpacing.s3)
+                        .testTag(QUICK_CAPTURE_TEXT_FIELD_TAG),
             ) {
-                val display =
-                    if (state.text.isEmpty()) {
-                        stringResource(R.string.quick_capture_hint)
-                    } else {
-                        state.text
-                    }
-                if (state.highlights.isEmpty() || state.text.isEmpty()) {
+                if (interactive) {
+                    BasicTextField(
+                        value = text,
+                        onValueChange = onTextChange,
+                        textStyle = EbbTypography.bodyL.copy(color = MaterialTheme.colorScheme.onSurface),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { onAdd() }),
+                        modifier = Modifier.fillMaxWidth(),
+                        decorationBox = { inner ->
+                            if (text.isEmpty()) {
+                                Text(
+                                    stringResource(R.string.quick_capture_hint),
+                                    style = EbbTypography.bodyL,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            inner()
+                        },
+                    )
+                } else if (highlights.isEmpty() || state.text.isEmpty()) {
+                    val display =
+                        if (state.text.isEmpty()) {
+                            stringResource(R.string.quick_capture_hint)
+                        } else {
+                            state.text
+                        }
                     Text(
                         display,
                         style = EbbTypography.bodyL,
@@ -159,7 +191,7 @@ fun QuickCaptureSheetContent(
                     Text(
                         buildAnnotatedString {
                             append(state.text)
-                            state.highlights.forEach { span ->
+                            highlights.forEach { span ->
                                 addStyle(
                                     SpanStyle(color = MaterialTheme.colorScheme.primary),
                                     span.start,
@@ -171,31 +203,34 @@ fun QuickCaptureSheetContent(
                     )
                 }
             }
-            IconButton(
-                onClick = {},
-                modifier = Modifier.size(48.dp),
-            ) {
-                Surface(shape = EbbShapes.md, color = MaterialTheme.colorScheme.surfaceVariant) {
-                    EbbSymbol(
-                        "mic",
-                        fontSize = 22.sp,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(12.dp),
-                    )
-                }
-            }
         }
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = EbbSpacing.s4),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            CaptureAssistChip("timer", stringResource(R.string.quick_capture_estimate))
-            CaptureAssistChip("event", stringResource(R.string.quick_capture_inbox))
-            CaptureAssistChip("bolt", stringResource(R.string.quick_capture_energy))
-            CaptureAssistChip("palette", stringResource(R.string.quick_capture_color))
+        if (interactive) {
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = EbbSpacing.s4),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                CaptureAssistChip(
+                    "timer",
+                    stringResource(R.string.quick_capture_estimate),
+                    onClick = { onAppendEstimate("30min") },
+                )
+            }
+        } else {
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = EbbSpacing.s4),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                CaptureAssistChip("timer", stringResource(R.string.quick_capture_estimate))
+                CaptureAssistChip("event", stringResource(R.string.quick_capture_inbox))
+                CaptureAssistChip("bolt", stringResource(R.string.quick_capture_energy))
+                CaptureAssistChip("palette", stringResource(R.string.quick_capture_color))
+            }
         }
         Row(
             modifier =
@@ -211,9 +246,11 @@ fun QuickCaptureSheetContent(
                 modifier = Modifier.weight(1f),
             )
             Surface(
-                onClick = {},
+                onClick = onAdd,
                 shape = EbbShapes.full,
                 color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.testTag(QUICK_CAPTURE_ADD_BUTTON_TAG),
+                enabled = !interactive || text.isNotBlank(),
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
@@ -236,16 +273,9 @@ fun QuickCaptureSheetContent(
 private fun CaptureAssistChip(
     icon: String,
     label: String,
+    onClick: (() -> Unit)? = null,
 ) {
-    Surface(
-        shape = EbbShapes.full,
-        color = MaterialTheme.colorScheme.surface,
-        border =
-            androidx.compose.foundation.BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outline,
-            ),
-    ) {
+  val content: @Composable () -> Unit = {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -258,6 +288,30 @@ private fun CaptureAssistChip(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+    if (onClick != null) {
+        Surface(
+            shape = EbbShapes.full,
+            color = MaterialTheme.colorScheme.surface,
+            border =
+                androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outline,
+                ),
+            onClick = onClick,
+            content = content,
+        )
+    } else {
+        Surface(
+            shape = EbbShapes.full,
+            color = MaterialTheme.colorScheme.surface,
+            border =
+                androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outline,
+                ),
+            content = content,
+        )
     }
 }
 

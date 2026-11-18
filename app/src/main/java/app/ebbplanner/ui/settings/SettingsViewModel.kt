@@ -3,6 +3,7 @@ package app.ebbplanner.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ebbplanner.data.preferences.UserPreferencesRepository
+import app.ebbplanner.ui.components.weekStartDayLabel
 import app.ebbplanner.ui.time.ClockFormat
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,6 +18,8 @@ data class SettingsUiState(
     val remindersDefault: Boolean = true,
     val wakeLabel: String = "",
     val bedLabel: String = "",
+    val weekStartDay: Int = UserPreferencesRepository.WEEK_START_USE_LOCALE,
+    val weekStartLabel: String = "",
 )
 
 @HiltViewModel
@@ -31,12 +34,15 @@ class SettingsViewModel
                 preferences.remindersDefault,
                 preferences.dayWakeMinutes,
                 preferences.dayBedMinutes,
-            ) { materialYou, reminders, wake, bed ->
+                preferences.weekStartDay,
+            ) { materialYou, reminders, wake, bed, weekStart ->
                 SettingsUiState(
                     materialYou = materialYou,
                     remindersDefault = reminders,
                     wakeLabel = ClockFormat.minutesToClock(wake),
                     bedLabel = ClockFormat.minutesToClock(bed),
+                    weekStartDay = weekStart,
+                    weekStartLabel = weekStartDayLabel(weekStart),
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
@@ -46,5 +52,9 @@ class SettingsViewModel
 
         fun setRemindersDefault(enabled: Boolean) {
             viewModelScope.launch { preferences.setRemindersDefault(enabled) }
+        }
+
+        fun setWeekStartDay(day: Int) {
+            viewModelScope.launch { preferences.setWeekStartDay(day) }
         }
     }
