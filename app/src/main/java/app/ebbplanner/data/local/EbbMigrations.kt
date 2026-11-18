@@ -104,12 +104,15 @@ val MIGRATION_9_10 =
     object : Migration(9, 10) {
         override fun migrate(db: SupportSQLiteDatabase) {
             RoutineOccurrenceRepair.deduplicateLiveOccurrenceKeysForIndex(db)
-            db.execSQL(
-                """
-                CREATE UNIQUE INDEX IF NOT EXISTS index_tasks_routine_occurrence_live
-                ON tasks(sourceRoutineId, routineOccurrenceDate)
-                WHERE deletedAt IS NULL AND routineOccurrenceDate IS NOT NULL
-                """.trimIndent(),
-            )
+        }
+    }
+
+val MIGRATION_10_11 =
+    object : Migration(10, 11) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            RoutineOccurrenceTriggers.dropPartialUniqueIndexIfExists(db)
+            RoutineOccurrenceRepair.deduplicateLiveOccurrenceKeysForIndex(db)
+            RoutineOccurrenceRepair.ensureMetaTable(db)
+            RoutineOccurrenceTriggers.ensureInstalled(db)
         }
     }

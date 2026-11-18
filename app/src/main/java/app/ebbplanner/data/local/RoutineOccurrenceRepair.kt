@@ -43,7 +43,6 @@ internal object RoutineOccurrenceRepair {
     }
 
     fun executeRepair(db: SupportSQLiteDatabase) {
-        ensureMetaTable(db)
         val routines = loadRoutines(db)
         if (routines.isEmpty()) return
         purgeFutureSkipsWithoutEvidence(db, routines)
@@ -64,7 +63,7 @@ internal object RoutineOccurrenceRepair {
     }
 
     fun isPendingInMeta(db: SupportSQLiteDatabase): Boolean {
-        ensureMetaTable(db)
+        if (!metaTableExists(db)) return false
         db.query(
             "SELECT value FROM $META_TABLE WHERE key = ? LIMIT 1",
             arrayOf(META_KEY_PENDING),
@@ -72,6 +71,13 @@ internal object RoutineOccurrenceRepair {
             if (!c.moveToFirst()) return false
             return c.getString(0) == "1"
         }
+    }
+
+    private fun metaTableExists(db: SupportSQLiteDatabase): Boolean {
+        db.query(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1",
+            arrayOf(META_TABLE),
+        ).use { return it.moveToFirst() }
     }
 
     fun setPendingInMeta(db: SupportSQLiteDatabase) {
@@ -208,6 +214,11 @@ internal object RoutineOccurrenceRepair {
             if (hasValidOccurrenceKey(task, routine, scheduled)) {
                 return@forEach
             }
+            val occurrenceKey = scheduled.toString()
+            if (liveTaskHoldsOccurrenceKey(db, task.routineId, occurrenceKey, task.id)) {
+                markDetachedPreservingValidKey(db, task.id, routines)
+                return@forEach
+            }
             db.execSQL(
                 """
                 UPDATE tasks
@@ -215,12 +226,31 @@ internal object RoutineOccurrenceRepair {
                 WHERE id = ?
                 """.trimIndent(),
                 arrayOf(
-                    scheduled.toString(),
+                    occurrenceKey,
                     if (task.detached) 1 else 0,
                     task.id,
                 ),
             )
         }
+    }
+
+    private fun liveTaskHoldsOccurrenceKey(
+        db: SupportSQLiteDatabase,
+        routineId: String,
+        occurrenceKey: String,
+        excludeTaskId: String,
+    ): Boolean {
+        db.query(
+            """
+            SELECT 1 FROM tasks
+            WHERE sourceRoutineId = ?
+            AND routineOccurrenceDate = ?
+            AND deletedAt IS NULL
+            AND id != ?
+            LIMIT 1
+            """.trimIndent(),
+            arrayOf(routineId, occurrenceKey, excludeTaskId),
+        ).use { return it.moveToFirst() }
     }
 
     private fun detachStrictUntouchedDuplicates(

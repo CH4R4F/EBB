@@ -23,30 +23,61 @@ class RoutineOccurrenceRepairRunner
             generationGate.withExclusive {
                 val prefsPending = repairPreferences.repairPending.first()
                 val metaPending =
-                    RoutineOccurrenceRepair.isPendingInMeta(database.openHelper.writableDatabase)
-                val pending = prefsPending || metaPending
+                    RoutineOccurrenceRepair.isPendingInMeta(database.openHelper.readableDatabase)
+                var pending = prefsPending || metaPending
                 if (pending) {
-                    try {
-                        database.withTransaction {
-                            val db = database.openHelper.writableDatabase
-                            RoutineOccurrenceRepair.executeRepair(db)
-                            RoutineOccurrenceRepair.clearPendingInMeta(db)
+                    val priorAttempts = repairPreferences.repairAttempts.first()
+                    if (priorAttempts >= MAX_REPAIR_ATTEMPTS) {
+                        abandonPendingRepair(priorAttempts)
+                        pending = false
+                    } else {
+                        try {
+                            database.withTransaction {
+                                val db = database.openHelper.writableDatabase
+                                RoutineOccurrenceRepair.executeRepair(db)
+                                RoutineOccurrenceRepair.clearPendingInMeta(db)
+                            }
+                            repairPreferences.setRepairPending(false)
+                            repairPreferences.resetRepairAttempts()
+                            pending = false
+                        } catch (t: Throwable) {
+                            val attempts = repairPreferences.incrementRepairAttempts()
+                            Log.e(TAG, "Routine occurrence repair failed at app start (attempt $attempts).", t)
+                            RoutineOccurrenceRepair.setPendingInMeta(database.openHelper.writableDatabase)
+                            repairPreferences.setRepairPending(true)
+                            if (attempts >= MAX_REPAIR_ATTEMPTS) {
+                                abandonPendingRepair(attempts, t)
+                                pending = false
+                            } else {
+                                return@withExclusive
+                            }
                         }
-                        repairPreferences.setRepairPending(false)
-                    } catch (t: Throwable) {
-                        Log.e(TAG, "Routine occurrence repair failed at app start; will retry later.", t)
-                        RoutineOccurrenceRepair.setPendingInMeta(database.openHelper.writableDatabase)
-                        repairPreferences.setRepairPending(true)
-                        return@withExclusive
                     }
                 }
-                if (!repairState.isRepairPending()) {
+                if (!pending && !repairState.isRepairPending()) {
                     routineInstanceGenerator.ensureRollingWindowLocked()
                 }
             }
         }
 
+        private suspend fun abandonPendingRepair(
+            attempts: Int,
+            cause: Throwable? = null,
+        ) {
+            Log.e(
+                TAG,
+                "Abandoning routine repair after $attempts failed attempts; allowing generation to proceed.",
+                cause,
+            )
+            database.withTransaction {
+                RoutineOccurrenceRepair.clearPendingInMeta(database.openHelper.writableDatabase)
+            }
+            repairPreferences.setRepairPending(false)
+            repairPreferences.resetRepairAttempts()
+        }
+
         companion object {
             private const val TAG = "RoutineOccurrenceRepairRunner"
+            const val MAX_REPAIR_ATTEMPTS = 3
         }
     }

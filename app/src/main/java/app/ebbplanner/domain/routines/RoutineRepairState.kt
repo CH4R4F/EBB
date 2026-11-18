@@ -17,7 +17,7 @@ class RoutineRepairState
         suspend fun isRepairPending(): Boolean {
             val prefsPending = repairPreferences.repairPending.first()
             val metaPending =
-                RoutineOccurrenceRepair.isPendingInMeta(database.openHelper.writableDatabase)
+                RoutineOccurrenceRepair.isPendingInMeta(database.openHelper.readableDatabase)
             return prefsPending || metaPending
         }
     }

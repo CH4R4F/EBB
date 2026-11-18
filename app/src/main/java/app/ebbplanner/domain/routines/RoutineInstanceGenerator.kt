@@ -80,9 +80,10 @@ class RoutineInstanceGenerator
                         updatedAt = now,
                     )
                 val rowId = taskDao.insertRoutineInstanceIfAbsent(task)
-                if (rowId != -1L) {
-                    reminderSync.syncTask(task.id)
+                if (rowId == -1L) {
+                    return@forEach
                 }
+                reminderSync.syncTask(task.id)
             }
         }
 
