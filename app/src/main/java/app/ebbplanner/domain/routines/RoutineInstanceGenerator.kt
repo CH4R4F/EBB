@@ -7,6 +7,7 @@ import app.ebbplanner.data.repository.updateRoutineTask
 import app.ebbplanner.data.local.entity.RoutineEntity
 import app.ebbplanner.data.local.entity.RoutineSkipEntity
 import app.ebbplanner.data.local.entity.TaskEntity
+import app.ebbplanner.data.preferences.RoutineDeferredWorkPreferences
 import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.reminders.TaskReminderSync
 import kotlinx.coroutines.flow.first
@@ -26,11 +27,13 @@ class RoutineInstanceGenerator
         private val userPreferencesRepository: UserPreferencesRepository,
         private val generationGate: RoutineGenerationGate,
         private val repairState: RoutineRepairState,
+        private val deferredWorkPreferences: RoutineDeferredWorkPreferences,
     ) {
         suspend fun ensureRollingWindow(daysAhead: Int = DEFAULT_WINDOW_DAYS) {
             if (repairState.isRepairPending()) return
             generationGate.withExclusive {
                 if (repairState.isRepairPending()) return@withExclusive
+                applyDeferredRoutineWorkLocked()
                 ensureRollingWindowLocked(daysAhead)
             }
         }
@@ -114,15 +117,38 @@ class RoutineInstanceGenerator
             routine: RoutineEntity,
             linkTaskId: String?,
             linkOnSave: Boolean,
-        ) {
+        ): Boolean {
+            var deferred = false
             generationGate.withExclusive {
                 upsertRoutine()
-                if (repairState.isRepairPending()) return@withExclusive
+                if (repairState.isRepairPending()) {
+                    deferred = true
+                    if (linkTaskId != null && linkOnSave) {
+                        deferredWorkPreferences.enqueuePendingLink(routine.id, linkTaskId)
+                    } else {
+                        deferredWorkPreferences.enqueuePendingSync(routine.id)
+                    }
+                    return@withExclusive
+                }
                 if (linkTaskId != null && linkOnSave) {
                     linkExistingTaskLocked(linkTaskId, routine)
                 } else {
                     syncFutureInstancesLocked(routine)
                 }
+            }
+            return deferred
+        }
+
+        suspend fun applyDeferredRoutineWorkLocked() {
+            val links = deferredWorkPreferences.takePendingLinks()
+            links.forEach { (routineId, taskId) ->
+                val routine = routineDao.getById(routineId) ?: return@forEach
+                linkExistingTaskLocked(taskId, routine)
+            }
+            val syncIds = deferredWorkPreferences.takePendingSyncRoutineIds()
+            syncIds.forEach { routineId ->
+                val routine = routineDao.getById(routineId) ?: return@forEach
+                syncFutureInstancesLocked(routine)
             }
         }
 

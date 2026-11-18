@@ -111,7 +111,7 @@ class RoutineEditorViewModel
             _state.value = _state.value.copy(durationMin = minutes)
         }
 
-        fun save(onSaved: () -> Unit) {
+        fun save(onSaved: (deferredInstanceWork: Boolean) -> Unit) {
             viewModelScope.launch {
                 val draft = _state.value
                 if (draft.repeatRule == RoutineEntity.REPEAT_WEEKLY && draft.weeklyDays.isEmpty()) {
@@ -140,13 +140,14 @@ class RoutineEditorViewModel
                         createdAt = existing?.createdAt ?: now,
                         updatedAt = now,
                     )
-                routineInstanceGenerator.persistRoutineAndSyncInstances(
-                    upsertRoutine = { routineRepository.upsert(entity) },
-                    routine = entity,
-                    linkTaskId = linkTaskId,
-                    linkOnSave = draft.isNew,
-                )
-                onSaved()
+                val deferred =
+                    routineInstanceGenerator.persistRoutineAndSyncInstances(
+                        upsertRoutine = { routineRepository.upsert(entity) },
+                        routine = entity,
+                        linkTaskId = linkTaskId,
+                        linkOnSave = draft.isNew,
+                    )
+                onSaved(deferred)
             }
         }
 
