@@ -30,6 +30,8 @@ import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,6 +58,8 @@ import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTypography
+import app.ebbplanner.ui.today.QUICK_CAPTURE_FAB_TAG
+import app.ebbplanner.ui.today.QUICK_CAPTURE_SNACKBAR_HOST_TAG
 
 @Composable
 fun WeekScreenDesign(
@@ -67,10 +71,19 @@ fun WeekScreenDesign(
     onThisWeek: () -> Unit = {},
     onFabClick: () -> Unit = {},
     onDaySelected: (java.time.LocalDate) -> Unit = {},
+    snackbarHostState: SnackbarHostState? = null,
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0),
+        snackbarHost = {
+            snackbarHostState?.let { host ->
+                SnackbarHost(
+                    hostState = host,
+                    modifier = Modifier.testTag(QUICK_CAPTURE_SNACKBAR_HOST_TAG),
+                )
+            }
+        },
         bottomBar = {
             if (showBottomNav) {
                 EbbBottomNavigation(selected = MainTab.Week)
@@ -79,6 +92,7 @@ fun WeekScreenDesign(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onFabClick,
+                modifier = Modifier.testTag(QUICK_CAPTURE_FAB_TAG),
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),

@@ -29,18 +29,21 @@ import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import app.ebbplanner.R
 import androidx.compose.ui.unit.sp
+import app.ebbplanner.R
 import app.ebbplanner.ui.components.EbbBottomNavigation
 import app.ebbplanner.ui.navigation.MainTab
 import app.ebbplanner.ui.theme.EbbShapes
@@ -48,6 +51,8 @@ import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTaskColors
 import app.ebbplanner.ui.theme.EbbTypography
+import app.ebbplanner.ui.today.QUICK_CAPTURE_FAB_TAG
+import app.ebbplanner.ui.today.QUICK_CAPTURE_SNACKBAR_HOST_TAG
 
 @Composable
 fun InboxScreenDesign(
@@ -59,10 +64,19 @@ fun InboxScreenDesign(
     onSearchToggle: () -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {},
     onFilterSelected: (Int) -> Unit = {},
+    snackbarHostState: SnackbarHostState? = null,
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0),
+        snackbarHost = {
+            snackbarHostState?.let { host ->
+                SnackbarHost(
+                    hostState = host,
+                    modifier = Modifier.testTag(QUICK_CAPTURE_SNACKBAR_HOST_TAG),
+                )
+            }
+        },
         bottomBar = {
             if (showBottomNav) {
                 EbbBottomNavigation(selected = MainTab.Inbox)
@@ -72,6 +86,7 @@ fun InboxScreenDesign(
             if (state.showFab) {
                 FloatingActionButton(
                     onClick = onFabClick,
+                    modifier = Modifier.testTag(QUICK_CAPTURE_FAB_TAG),
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),

@@ -7,10 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Quick capture snackbar** — save confirmation uses a short-lived snackbar hosted on the same Scaffold as the FAB, so Show never covers add and a tap after save opens a new capture.
+- **Next free slot** — the first gap at least as long as the selected duration is used, and the slot is recomputed when duration changes while Next free slot is active.
+- **Day-tool sheets** — Shift, Overlap and Make it fit keep Save/Cancel pinned and tappable at large font scales; wrap-content sheets scroll the body instead of clipping actions.
+- **Quick capture IME** — Enter saves, clears the field and keeps the sheet open for another capture.
+- **Quick capture date** — opening capture from Today or Week on a non-today day uses that day for the destination and the saved date.
+- **Routine editor** — save no longer stays on Saving… while instance sync finishes; the editor closes after the routine is persisted.
+
 ### Changed
 
 - **Quick capture** — optional Start time and Duration controls (15/30/45/60/90 min plus custom), live preview chip of parsed times, and a destination line (`Timeline, today 18:00` / `Anytime (no time set)` / `Inbox`). From Today, Now and Next free slot chips make it easy to land on the timeline; no time still saves to Anytime. Placeholder hint: `Try: gym 18:00 45m`. After save, a snackbar says where the task went, with Show to open it.
-- **Sheet actions** — shared `EbbSheetActions` filled Save and outlined Cancel (48dp touch target, stacked at large font scales) used on Quick capture, task sheets, estimate/color pickers, routine editor, onboarding time dialogs, and other sheet/dialog confirm rows. No plain TextButton for primary sheet actions.
+- **Sheet actions** — shared `EbbSheetActions` filled Save and outlined Cancel (48dp touch target, stacked at large font scales) used on Quick capture, task sheets, estimate/color pickers, routine editor, onboarding time dialogs, and other sheet/dialog confirm rows. No plain TextButton for primary sheet actions. Hardcoded Done/Cancel, Add step, Use selection and Shift +N min now come from string resources (with plurals for the shift label).
+- **Routine editor** — Daily / Weekdays / Weekly are FilterChips.
+- **Schedule sheet** — date and time chips show the picked values before Use selection.
+- **Today multiselect** — Done is a filled action button.
 
 ## [0.1.1] - 2026-11-18
 

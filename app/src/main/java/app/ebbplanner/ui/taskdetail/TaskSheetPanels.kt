@@ -206,7 +206,7 @@ private fun BreakDownSheetPanel(
             singleLine = true,
         )
         EbbSheetActions(
-            confirmLabel = "Add step",
+            confirmLabel = stringResource(R.string.action_add_step),
             onConfirm = { if (draft.isNotBlank()) onAdd(draft.trim()) },
             onCancel = onCancel,
             confirmEnabled = draft.isNotBlank(),
@@ -297,18 +297,30 @@ private fun ScheduleSheetPanel(
             verticalArrangement = Arrangement.spacedBy(EbbSpacing.s1),
         ) {
             FilterChip(
-                selected = false,
+                selected = true,
                 onClick = { showDatePicker = true },
-                label = { Text("Pick date", maxLines = 1, style = EbbTypography.labelM) },
+                label = {
+                    Text(
+                        pickedDate.format(java.time.format.DateTimeFormatter.ofPattern("d MMM")),
+                        maxLines = 1,
+                        style = EbbTypography.labelM,
+                    )
+                },
             )
             FilterChip(
-                selected = false,
+                selected = true,
                 onClick = { showTimePicker = true },
-                label = { Text("Pick time", maxLines = 1, style = EbbTypography.labelM) },
+                label = {
+                    Text(
+                        ClockFormat.minutesToClock(pickedTimeMinutes),
+                        maxLines = 1,
+                        style = EbbTypography.labelM,
+                    )
+                },
             )
         }
         EbbSheetActions(
-            confirmLabel = "Use selection",
+            confirmLabel = stringResource(R.string.action_use_selection),
             onConfirm = {
                 onSave(
                     TaskEntity.PLACEMENT_SCHEDULED,

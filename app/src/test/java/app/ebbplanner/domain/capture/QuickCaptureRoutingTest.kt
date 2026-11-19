@@ -92,4 +92,37 @@ class QuickCaptureRoutingTest {
         val slot = nextFreeSlotMinutes(10 * 60, listOf(10 * 60 to 45), durationMin = 15)
         assertEquals(10 * 60 + 45, slot)
     }
+
+    @Test
+    fun nextFreeSlot_respectsSelectedDuration() {
+        val occupied =
+            listOf(
+                10 * 60 to 60,
+                11 * 60 + 15 to 30,
+                12 * 60 + 20 to 30,
+            )
+        val slot = nextFreeSlotMinutes(10 * 60, occupied, durationMin = 45)
+        assertEquals(12 * 60 + 50, slot)
+    }
+
+    @Test
+    fun nextFreeSlot_exactFitGap() {
+        val occupied = listOf(10 * 60 + 45 to 15)
+        val slot = nextFreeSlotMinutes(10 * 60, occupied, durationMin = 45)
+        assertEquals(10 * 60, slot)
+    }
+
+    @Test
+    fun nextFreeSlot_endOfDayWhenLastGapTooShort() {
+        val occupied = listOf(22 * 60 to 60)
+        val slot = nextFreeSlotMinutes(22 * 60, occupied, durationMin = 90)
+        assertEquals(24 * 60 - 90, slot)
+    }
+
+    @Test
+    fun nextFreeSlot_noGapReturnsLatestStartInWindow() {
+        val occupied = listOf(0 to 24 * 60)
+        val slot = nextFreeSlotMinutes(9 * 60, occupied, durationMin = 30)
+        assertEquals(24 * 60 - 30, slot)
+    }
 }

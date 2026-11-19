@@ -4,15 +4,19 @@ import android.util.Log
 import app.ebbplanner.data.local.dao.RoutineDao
 import app.ebbplanner.data.local.dao.RoutineSkipDao
 import app.ebbplanner.data.local.dao.TaskDao
-import app.ebbplanner.data.repository.updateRoutineTask
 import app.ebbplanner.data.local.entity.RoutineEntity
 import app.ebbplanner.data.local.entity.RoutineSkipEntity
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.preferences.RoutineDeferredWorkPreferences
 import app.ebbplanner.data.preferences.UserPreferencesRepository
+import app.ebbplanner.data.repository.updateRoutineTask
 import app.ebbplanner.reminders.TaskReminderSync
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
@@ -32,6 +36,7 @@ class RoutineInstanceGenerator
         private val deferredWorkPreferences: RoutineDeferredWorkPreferences,
     ) {
         private var applyingDeferredQueue = false
+        private val persistScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
         suspend fun ensureRollingWindow(daysAhead: Int = DEFAULT_WINDOW_DAYS) {
             if (repairState.isRepairPending()) return
@@ -133,32 +138,48 @@ class RoutineInstanceGenerator
                 upsertRoutine()
                 if (repairState.isRepairPending()) {
                     deferred = true
-                    if (linkTaskId != null && linkOnSave) {
-                        deferredWorkPreferences.enqueuePendingLink(routine.id, linkTaskId)
-                    } else {
-                        deferredWorkPreferences.enqueuePendingSync(routine.id)
-                    }
-                    return@withExclusive
-                }
-                drainDeferredQueueBeforeGenerationLocked()
-                try {
-                    if (linkTaskId != null && linkOnSave) {
-                        linkExistingTaskLocked(linkTaskId, routine)
-                    } else {
-                        syncFutureInstancesLocked(routine)
-                    }
-                } catch (t: Throwable) {
-                    if (t is CancellationException) throw t
-                    Log.e(TAG, "Routine save could not apply link/sync; queueing for retry", t)
-                    if (linkTaskId != null && linkOnSave) {
-                        deferredWorkPreferences.enqueuePendingLink(routine.id, linkTaskId)
-                    } else {
-                        deferredWorkPreferences.enqueuePendingSync(routine.id)
-                    }
-                    deferred = true
+                    enqueueDeferredWork(routine.id, linkTaskId, linkOnSave)
                 }
             }
-            return deferred
+            if (deferred) return true
+            persistScope.launch {
+                try {
+                    generationGate.withExclusive {
+                        if (repairState.isRepairPending()) {
+                            enqueueDeferredWork(routine.id, linkTaskId, linkOnSave)
+                            return@withExclusive
+                        }
+                        drainDeferredQueueBeforeGenerationLocked()
+                        try {
+                            if (linkTaskId != null && linkOnSave) {
+                                linkExistingTaskLocked(linkTaskId, routine)
+                            } else {
+                                syncFutureInstancesLocked(routine)
+                            }
+                        } catch (t: Throwable) {
+                            if (t is CancellationException) throw t
+                            Log.e(TAG, "Routine save could not apply link/sync; queueing for retry", t)
+                            enqueueDeferredWork(routine.id, linkTaskId, linkOnSave)
+                        }
+                    }
+                } catch (t: Throwable) {
+                    if (t is CancellationException) return@launch
+                    Log.e(TAG, "Background routine instance sync failed", t)
+                }
+            }
+            return false
+        }
+
+        private suspend fun enqueueDeferredWork(
+            routineId: String,
+            linkTaskId: String?,
+            linkOnSave: Boolean,
+        ) {
+            if (linkTaskId != null && linkOnSave) {
+                deferredWorkPreferences.enqueuePendingLink(routineId, linkTaskId)
+            } else {
+                deferredWorkPreferences.enqueuePendingSync(routineId)
+            }
         }
 
         /** No-op while [applyDeferredRoutineWorkLocked] is already running (avoids recursion). */

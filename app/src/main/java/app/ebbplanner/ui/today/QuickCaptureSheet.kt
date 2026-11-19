@@ -23,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import app.ebbplanner.R
 import app.ebbplanner.domain.capture.QuickCaptureDraft
 import app.ebbplanner.domain.capture.formatClockHm
+import app.ebbplanner.domain.capture.nextFreeSlotMinutes
 import app.ebbplanner.domain.capture.resolveQuickCapture
 import app.ebbplanner.ui.components.EbbCancelButton
 import app.ebbplanner.ui.components.EbbConfirmButton
@@ -50,7 +51,7 @@ fun QuickCaptureSheet(
     defaultText: String = "",
     saveTarget: QuickCaptureSaveTarget = QuickCaptureSaveTarget.Today,
     nowMinutes: Int? = null,
-    nextFreeSlotMinutes: Int? = null,
+    occupied: List<Pair<Int, Int>> = emptyList(),
 ) {
     if (!visible) return
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -63,7 +64,7 @@ fun QuickCaptureSheet(
             defaultText = defaultText,
             saveTarget = saveTarget,
             nowMinutes = nowMinutes,
-            nextFreeSlotMinutes = nextFreeSlotMinutes,
+            occupied = occupied,
             onSave = onSave,
             onCancel = onDismiss,
         )
@@ -79,13 +80,14 @@ fun QuickCaptureEditor(
     defaultText: String = "",
     saveTarget: QuickCaptureSaveTarget = QuickCaptureSaveTarget.Today,
     nowMinutes: Int? = null,
-    nextFreeSlotMinutes: Int? = null,
+    occupied: List<Pair<Int, Int>> = emptyList(),
 ) {
     var title by remember(defaultText) { mutableStateOf(defaultText) }
     var startOverride by remember { mutableStateOf<LocalTime?>(null) }
     var startOverridden by remember { mutableStateOf(false) }
     var durationOverride by remember { mutableStateOf<Int?>(null) }
     var durationOverridden by remember { mutableStateOf(false) }
+    var nextFreeActive by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var showCustomDuration by remember { mutableStateOf(false) }
 
@@ -98,10 +100,32 @@ fun QuickCaptureEditor(
             durationOverridden = durationOverridden,
         )
     val resolved = remember(draft, defaultDate, saveTarget) { resolveQuickCapture(draft, defaultDate, saveTarget) }
-    val preview = quickCapturePreviewLabel(resolved, defaultDate)
-    val destination = quickCaptureDestinationLabel(resolved, defaultDate)
+    val calendarToday = LocalDate.now()
+    val preview = quickCapturePreviewLabel(resolved, calendarToday)
+    val destination = quickCaptureDestinationLabel(resolved, calendarToday)
     val startLabel = resolved.startTime?.let { formatClockHm(it) }
     val showShortcuts = saveTarget == QuickCaptureSaveTarget.Today && resolved.startTime == null
+    val resolvedNowMinutes = nowMinutes ?: (LocalTime.now().hour * 60 + LocalTime.now().minute)
+
+    val applyNextFree: (Int) -> Unit = { durationMin ->
+        val minutes = nextFreeSlotMinutes(resolvedNowMinutes, occupied, durationMin)
+        startOverride = LocalTime.of((minutes / 60).coerceIn(0, 23), minutes % 60)
+        startOverridden = true
+        nextFreeActive = true
+    }
+
+    val persistDraft: (Boolean) -> Unit = { dismiss ->
+        if (title.isNotBlank()) {
+            onSave(draft)
+            title = ""
+            startOverride = null
+            startOverridden = false
+            durationOverride = null
+            durationOverridden = false
+            nextFreeActive = false
+            if (dismiss) onCancel()
+        }
+    }
 
     Box(Modifier.fillMaxWidth()) {
         QuickCaptureSheetContent(
@@ -122,32 +146,25 @@ fun QuickCaptureEditor(
             interactive = true,
             text = title,
             onTextChange = { title = it },
-            onAdd = {
-                if (title.isNotBlank()) {
-                    onSave(draft)
-                    title = ""
-                    onCancel()
-                }
-            },
+            onAdd = { persistDraft(true) },
+            onImeDone = { persistDraft(false) },
             onCancel = onCancel,
             onPickStart = { showTimePicker = true },
             onClearStart = {
                 startOverride = null
                 startOverridden = true
+                nextFreeActive = false
             },
             onNow = {
-                val minutes = nowMinutes ?: (LocalTime.now().hour * 60 + LocalTime.now().minute)
-                startOverride = LocalTime.of((minutes / 60).coerceIn(0, 23), minutes % 60)
+                startOverride = LocalTime.of((resolvedNowMinutes / 60).coerceIn(0, 23), resolvedNowMinutes % 60)
                 startOverridden = true
+                nextFreeActive = false
             },
-            onNextFree = {
-                val minutes = nextFreeSlotMinutes ?: nowMinutes ?: (LocalTime.now().hour * 60 + LocalTime.now().minute)
-                startOverride = LocalTime.of((minutes / 60).coerceIn(0, 23), minutes % 60)
-                startOverridden = true
-            },
+            onNextFree = { applyNextFree(resolved.durationMin) },
             onSelectDuration = { minutes ->
                 durationOverride = minutes
                 durationOverridden = true
+                if (nextFreeActive) applyNextFree(minutes)
             },
             onCustomDuration = { showCustomDuration = true },
         )
@@ -168,6 +185,7 @@ fun QuickCaptureEditor(
                         onClick = {
                             startOverride = LocalTime.of(pickerState.hour, pickerState.minute)
                             startOverridden = true
+                            nextFreeActive = false
                             showTimePicker = false
                         },
                     )
@@ -195,6 +213,7 @@ fun QuickCaptureEditor(
                             customText.toIntOrNull()?.let {
                                 durationOverride = it
                                 durationOverridden = true
+                                if (nextFreeActive) applyNextFree(it)
                             }
                             showCustomDuration = false
                         },

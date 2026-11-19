@@ -88,6 +88,7 @@ fun QuickCaptureSheetContent(
     text: String = state.text,
     onTextChange: (String) -> Unit = {},
     onAdd: () -> Unit = {},
+    onImeDone: () -> Unit = onAdd,
     onCancel: () -> Unit = {},
     onAppendEstimate: (String) -> Unit = {},
     onPickStart: () -> Unit = {},
@@ -154,7 +155,7 @@ fun QuickCaptureSheetContent(
             interactive = interactive,
             focused = text.isNotEmpty() || state.mode == QuickCaptureMode.Typing,
             onTextChange = onTextChange,
-            onImeDone = onAdd,
+            onImeDone = onImeDone,
         )
         val previewCd = stringResource(R.string.quick_capture_preview_cd)
         val destCdPrefix = stringResource(R.string.quick_capture_dest_cd)

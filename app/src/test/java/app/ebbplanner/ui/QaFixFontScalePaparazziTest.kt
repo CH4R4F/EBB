@@ -3,8 +3,8 @@ package app.ebbplanner.ui
 import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import app.ebbplanner.data.preferences.UserPreferencesRepository
-import app.ebbplanner.domain.day.MakeItFitPlan
 import app.ebbplanner.domain.day.FitMoveSuggestion
+import app.ebbplanner.domain.day.MakeItFitPlan
 import app.ebbplanner.ui.daytools.MakeItFitDesign
 import app.ebbplanner.ui.daytools.ShiftTheRestDesign
 import app.ebbplanner.ui.onboarding.OnboardingAppPreview
@@ -104,4 +104,19 @@ class QaFixFontScalePaparazziTest {
     ) {
         paparazzi.snapshot(name, content)
     }
+}
+
+class QaFixFontScale130PaparazziTest {
+    @get:Rule
+    val paparazzi =
+        Paparazzi(
+            deviceConfig = DeviceConfig.PIXEL_6.copy(fontScale = 1.3f),
+            renderingMode = SessionParams.RenderingMode.SHRINK,
+        )
+
+    @Test
+    fun qa_shift_sheet_font_scale_130() =
+        paparazzi.snapshot("qa_shift_sheet_font_scale_130") {
+            ShiftTheRestDesign(onApplyShift = {}, onCancel = {})
+        }
 }

@@ -2,9 +2,7 @@
 
 package app.ebbplanner.ui.week
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
@@ -14,7 +12,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -24,6 +21,7 @@ import app.ebbplanner.R
 import app.ebbplanner.ui.today.QuickCaptureSaveTarget
 import app.ebbplanner.ui.today.QuickCaptureSheet
 import app.ebbplanner.ui.today.quickCaptureSavedMessage
+import app.ebbplanner.ui.today.showQuickCaptureSavedSnackbar
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 
@@ -40,18 +38,16 @@ fun WeekScreen(
     val showLabel = stringResource(R.string.action_show)
     val resources = LocalContext.current.resources
 
-    Box(modifier.fillMaxSize()) {
-        WeekScreenDesign(
-            state = state,
-            modifier = Modifier.fillMaxSize(),
-            onPreviousWeek = viewModel::previousWeek,
-            onNextWeek = viewModel::nextWeek,
-            onThisWeek = viewModel::jumpToThisWeek,
-            onFabClick = { showCapture = true },
-            onDaySelected = viewModel::selectDay,
-        )
-        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
-    }
+    WeekScreenDesign(
+        state = state,
+        modifier = modifier.fillMaxSize(),
+        snackbarHostState = snackbarHostState,
+        onPreviousWeek = viewModel::previousWeek,
+        onNextWeek = viewModel::nextWeek,
+        onThisWeek = viewModel::jumpToThisWeek,
+        onFabClick = { showCapture = true },
+        onDaySelected = viewModel::selectDay,
+    )
 
     QuickCaptureSheet(
         visible = showCapture,
@@ -62,7 +58,7 @@ fun WeekScreen(
             viewModel.captureTask(draft) { task, resolved ->
                 scope.launch {
                     val result =
-                        snackbarHostState.showSnackbar(
+                        snackbarHostState.showQuickCaptureSavedSnackbar(
                             message = quickCaptureSavedMessage(resources, resolved),
                             actionLabel = showLabel,
                         )

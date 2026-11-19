@@ -3,10 +3,10 @@
 package app.ebbplanner.ui.today
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -16,10 +16,13 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.ebbplanner.ui.theme.EbbSpacing
@@ -46,11 +49,20 @@ fun TodayScreenDesign(
     onTaskClick: (String) -> Unit = {},
     onTaskLongPress: (String) -> Unit = {},
     onMarkTaskDone: (String) -> Unit = {},
+    snackbarHostState: SnackbarHostState? = null,
 ) {
     val dimmed = state.visualMode == TodayVisualMode.Drag
     Scaffold(
         modifier = modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0),
+        snackbarHost = {
+            snackbarHostState?.let { host ->
+                SnackbarHost(
+                    hostState = host,
+                    modifier = Modifier.testTag(QUICK_CAPTURE_SNACKBAR_HOST_TAG),
+                )
+            }
+        },
         bottomBar = {
             if (showBottomNav) {
                 TodayBottomNavPreview()
@@ -60,6 +72,7 @@ fun TodayScreenDesign(
             if (state.showFab && state.quickCapture == null) {
                 FloatingActionButton(
                     onClick = onFabClick,
+                    modifier = Modifier.testTag(QUICK_CAPTURE_FAB_TAG),
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),

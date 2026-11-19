@@ -108,6 +108,12 @@
     <string name="action_done">Done</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_show">Show</string>
+    <string name="action_add_step">Add step</string>
+    <string name="action_use_selection">Use selection</string>
+    <plurals name="shift_plus_minutes">
+        <item quantity="one">Shift +%d min</item>
+        <item quantity="other">Shift +%d min</item>
+    </plurals>
 
     <string name="tab_today">Today</string>
     <string name="tab_inbox">Inbox</string>

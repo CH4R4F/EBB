@@ -64,20 +64,19 @@ fun RoutineEditorScreen(
             singleLine = true,
         )
         Text("Repeat", style = EbbTypography.labelL, modifier = Modifier.padding(top = EbbSpacing.s2))
-        listOf(
-            RoutineEntity.REPEAT_DAILY to "Daily",
-            RoutineEntity.REPEAT_WEEKDAYS to "Weekdays",
-            RoutineEntity.REPEAT_WEEKLY to "Weekly",
-        ).forEach { (rule, label) ->
-            TextButton(onClick = { viewModel.setRepeatRule(rule) }) {
-                Text(
-                    label,
-                    color =
-                        if (state.repeatRule == rule) {
-                            androidx.compose.material3.MaterialTheme.colorScheme.primary
-                        } else {
-                            androidx.compose.material3.MaterialTheme.colorScheme.onSurface
-                        },
+        FlowRow(
+            modifier = Modifier.fillMaxWidth().padding(vertical = EbbSpacing.s1),
+            horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
+        ) {
+            listOf(
+                RoutineEntity.REPEAT_DAILY to "Daily",
+                RoutineEntity.REPEAT_WEEKDAYS to "Weekdays",
+                RoutineEntity.REPEAT_WEEKLY to "Weekly",
+            ).forEach { (rule, label) ->
+                FilterChip(
+                    selected = state.repeatRule == rule,
+                    onClick = { viewModel.setRepeatRule(rule) },
+                    label = { Text(label) },
                 )
             }
         }

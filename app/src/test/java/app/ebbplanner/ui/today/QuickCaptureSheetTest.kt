@@ -19,12 +19,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import app.ebbplanner.data.local.entity.TaskEntity
@@ -247,20 +249,70 @@ class QuickCaptureSheetTest {
         }
     }
 
+    @Test
+    fun imeEnter_savesClearsAndKeepsSheetOpen() {
+        val captured = mutableListOf<QuickCaptureResolved>()
+        mountEditor(onResolved = { captured += it })
+        composeRule.onNodeWithTag(QUICK_CAPTURE_TEXT_FIELD_TAG, useUnmergedTree = true).performTextInput("gym")
+        composeRule.onNodeWithTag(QUICK_CAPTURE_TEXT_FIELD_TAG, useUnmergedTree = true).performImeAction()
+        composeRule.waitForIdle()
+        assertEquals(1, captured.size)
+        assertEquals("gym", captured.single().title)
+        composeRule.onNodeWithTag(QUICK_CAPTURE_TEXT_FIELD_TAG, useUnmergedTree = true).assertIsDisplayed()
+        composeRule.onNodeWithTag(QUICK_CAPTURE_TEXT_FIELD_TAG, useUnmergedTree = true).assertTextEquals("")
+        composeRule.onNodeWithTag(QUICK_CAPTURE_ADD_BUTTON_TAG).assertIsNotEnabled()
+    }
+
+    @Test
+    fun nextFreeSlot_recomputesWhenDurationChanges() {
+        mountEditor(
+            nowMinutes = 10 * 60,
+            occupied =
+                listOf(
+                    10 * 60 to 60,
+                    11 * 60 + 15 to 30,
+                    12 * 60 + 20 to 30,
+                ),
+        )
+        composeRule.onNodeWithTag(QUICK_CAPTURE_TEXT_FIELD_TAG, useUnmergedTree = true).performTextInput("gym")
+        tapTag(QUICK_CAPTURE_NEXT_FREE_TAG)
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Timeline, today 11:00").assertIsDisplayed()
+        tapTag(quickCaptureDurationTag(45))
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Timeline, today 12:50").assertIsDisplayed()
+    }
+
+    @Test
+    fun nonTodayDate_usedForDestinationAndSave() {
+        val viewed = LocalDate.of(2027, 3, 15)
+        val captured = mutableListOf<QuickCaptureResolved>()
+        mountEditor(defaultDate = viewed, onResolved = { captured += it })
+        composeRule.onNodeWithTag(QUICK_CAPTURE_TEXT_FIELD_TAG, useUnmergedTree = true).performTextInput("gym 18:00")
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Timeline, 15 Mar 18:00").assertIsDisplayed()
+        tapTag(QUICK_CAPTURE_ADD_BUTTON_TAG)
+        composeRule.waitForIdle()
+        assertEquals(viewed, captured.single().date)
+        assertEquals("18:00", captured.single().startLocalTime)
+    }
+
     private fun mountEditor(
         saveTarget: QuickCaptureSaveTarget = QuickCaptureSaveTarget.Today,
         nowMinutes: Int = 10 * 60,
+        defaultDate: LocalDate = today,
+        occupied: List<Pair<Int, Int>> = emptyList(),
         onResolved: (QuickCaptureResolved) -> Unit = {},
     ) {
         composeRule.setContent {
             EbbTheme {
                 QuickCaptureEditor(
-                    defaultDate = today,
+                    defaultDate = defaultDate,
                     saveTarget = saveTarget,
                     nowMinutes = nowMinutes,
-                    nextFreeSlotMinutes = nowMinutes + 30,
+                    occupied = occupied,
                     onSave = { draft ->
-                        onResolved(resolveQuickCapture(draft, today, saveTarget))
+                        onResolved(resolveQuickCapture(draft, defaultDate, saveTarget))
                     },
                     onCancel = {},
                 )

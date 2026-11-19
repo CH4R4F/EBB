@@ -77,6 +77,7 @@ data class TodayAnytimeChip(
 )
 
 data class TodayPresentationState(
+    val date: java.time.LocalDate = java.time.LocalDate.now(),
     val dateLabel: String = "Mon 16 Nov",
     val dayKind: TodayDayKind = TodayDayKind.Today,
     val timeLeftLabel: String = "12 h 18 min left",

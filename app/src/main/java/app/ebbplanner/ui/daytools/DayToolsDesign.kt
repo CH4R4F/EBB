@@ -37,10 +37,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
 import app.ebbplanner.R
 import app.ebbplanner.domain.day.DayGapScheduler
@@ -93,7 +94,7 @@ fun ShiftTheRestDesign(
     EbbSheetScaffold(
         title = "Running behind? No problem.",
         subtitle = "Move everything after now, together.",
-        doneLabel = "Shift +$shiftMinutes min",
+        doneLabel = pluralStringResource(R.plurals.shift_plus_minutes, shiftMinutes, shiftMinutes),
         doneLeadingIcon = "more_time",
         sheetTopInset = DAY_TOOL_SHEET_TOP_INSET,
         sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,

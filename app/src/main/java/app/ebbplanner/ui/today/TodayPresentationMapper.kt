@@ -17,6 +17,7 @@ object TodayPresentationMapper {
     ): TodayPresentationState {
         if (state.isLoading) {
             return TodayPresentationState(
+                date = state.date,
                 dateLabel = state.dateLabel.ifBlank { state.date.format(dateFormatter) },
                 visualMode = TodayVisualMode.Loading,
                 showNowLine = false,
@@ -25,6 +26,7 @@ object TodayPresentationMapper {
         val scheduled = state.scheduledTasks
         if (scheduled.isEmpty() && state.anytimeTasks.isEmpty()) {
             return todayEmpty().copy(
+                date = state.date,
                 dateLabel = state.dateLabel.ifBlank { state.date.format(dateFormatter) },
                 dayMeta = "today · bedtime ${formatBed(state.bedMinutes)} · 0 done",
                 timeLeftLabel = formatTimeLeft(state.bedMinutes, nowMinutes),
@@ -41,6 +43,7 @@ object TodayPresentationMapper {
         val events = state.calendarEvents.map { it.toPresentation() }
         val timeline = computeTimelineWindow(blocks, events)
         return TodayPresentationState(
+            date = state.date,
             dateLabel = state.dateLabel.ifBlank { state.date.format(dateFormatter) },
             timeLeftLabel = formatMinutesLong(minutesLeft),
             dayMeta =

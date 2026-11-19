@@ -4,11 +4,13 @@ package app.ebbplanner.ui.sheets
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -23,7 +25,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import app.ebbplanner.R
 import app.ebbplanner.ui.components.EbbSheetActions
 import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
@@ -35,31 +39,32 @@ fun EbbSheetScaffold(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
-    doneLabel: String = "Done",
+    doneLabel: String = stringResource(R.string.action_done),
     doneLeadingIcon: String? = null,
     sheetMinHeight: androidx.compose.ui.unit.Dp = 560.dp,
     sheetTopInset: androidx.compose.ui.unit.Dp = 0.dp,
     sheetContainerColor: Color = Color.Unspecified,
     showBottomActions: Boolean = true,
     sheetWrapContent: Boolean = false,
-    cancelLabel: String = "Cancel",
+    cancelLabel: String = stringResource(R.string.action_cancel),
     onDoneClick: () -> Unit = {},
     onCancelClick: () -> Unit = {},
     doneEnabled: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         Box(
             Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background),
         )
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f)))
+        val maxSheetHeight = (maxHeight - sheetTopInset).coerceAtLeast(0.dp)
         val sheetModifier =
             if (sheetTopInset > 0.dp) {
                 val base = Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = sheetTopInset)
                 if (sheetWrapContent) {
-                    base.wrapContentHeight()
+                    base.wrapContentHeight().heightIn(max = maxSheetHeight)
                 } else {
                     base.fillMaxHeight()
                 }
@@ -80,7 +85,14 @@ fun EbbSheetScaffold(
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             color = containerColor,
         ) {
-            Column(if (sheetWrapContent) Modifier.wrapContentHeight() else Modifier.fillMaxSize()) {
+            Column(
+                modifier =
+                    if (sheetWrapContent) {
+                        Modifier.wrapContentHeight().heightIn(max = maxSheetHeight)
+                    } else {
+                        Modifier.fillMaxSize()
+                    },
+            ) {
                 SheetGrabber()
                 Text(title, style = EbbTypography.titleL, modifier = Modifier.padding(horizontal = EbbSpacing.s4))
                 subtitle?.let {
@@ -91,22 +103,14 @@ fun EbbSheetScaffold(
                         modifier = Modifier.padding(horizontal = EbbSpacing.s4, vertical = 4.dp),
                     )
                 }
-                if (sheetWrapContent) {
-                    Column(
-                        modifier = Modifier.padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s2),
-                    ) {
-                        content()
-                    }
-                } else {
-                    Column(
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .verticalScroll(rememberScrollState())
-                                .padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s2),
-                    ) {
-                        content()
-                    }
+                Column(
+                    modifier =
+                        Modifier
+                            .weight(1f, fill = !sheetWrapContent)
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s2),
+                ) {
+                    content()
                 }
                 if (showBottomActions) {
                     SheetActions(
@@ -133,9 +137,9 @@ private fun SheetGrabber() {
 @Composable
 @Suppress("UNUSED_PARAMETER")
 fun SheetActions(
-    doneLabel: String = "Done",
+    doneLabel: String = stringResource(R.string.action_done),
     doneLeadingIcon: String? = null,
-    cancelLabel: String = "Cancel",
+    cancelLabel: String = stringResource(R.string.action_cancel),
     onDoneClick: () -> Unit = {},
     onCancelClick: () -> Unit = {},
     doneEnabled: Boolean = true,
