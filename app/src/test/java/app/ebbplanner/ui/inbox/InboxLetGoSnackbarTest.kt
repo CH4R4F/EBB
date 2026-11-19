@@ -1,6 +1,10 @@
 package app.ebbplanner.ui.inbox
 
 import android.content.Context
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -132,5 +136,26 @@ class InboxLetGoSnackbarTest {
                 assertEquals("Dentist", repository.getTask(second.id)?.title)
             }
         }
+    }
+
+    @Test
+    fun letGoSnackbar_longDuration_autoDismisses() {
+        val host = SnackbarHostState()
+        composeRule.setContent {
+            EbbTheme {
+                SnackbarHost(hostState = host)
+            }
+            LaunchedEffect(Unit) {
+                host.showLetGoSnackbar("Let go 1 task", "Undo")
+            }
+        }
+        composeRule.waitForIdle()
+        assertEquals(SnackbarDuration.Long, host.currentSnackbarData!!.visuals.duration)
+        composeRule.onNodeWithText("Let go 1 task").assertIsDisplayed()
+        composeRule.mainClock.autoAdvance = true
+        composeRule.mainClock.advanceTimeBy(10_500)
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Let go 1 task").assertDoesNotExist()
+        assertEquals(null, host.currentSnackbarData)
     }
 }

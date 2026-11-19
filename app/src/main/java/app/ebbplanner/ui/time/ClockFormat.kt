@@ -85,6 +85,28 @@ object ClockFormat {
         return normalized / 60
     }
 
+    fun hourGutterLabel(
+        hour: Int,
+        is24Hour: Boolean,
+        withMeridian: Boolean,
+    ): String {
+        val h = ((hour % 24) + 24) % 24
+        if (is24Hour) {
+            return if (withMeridian) minutesToClock(h * 60) else h.toString()
+        }
+        val h12 = hour12(h)
+        return if (withMeridian) "$h12 ${meridian(h)}" else h12.toString()
+    }
+
+    fun hourGutterLabelCandidates(
+        hour: Int,
+        is24Hour: Boolean,
+    ): List<String> =
+        listOf(
+            hourGutterLabel(hour, is24Hour, withMeridian = true),
+            hourGutterLabel(hour, is24Hour, withMeridian = false),
+        ).distinct()
+
     private fun hour12(hour24: Int): Int =
         when {
             hour24 == 0 -> 12

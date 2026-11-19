@@ -3,6 +3,7 @@
 package app.ebbplanner.ui.inbox
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
@@ -25,6 +26,16 @@ import app.ebbplanner.ui.today.quickCaptureSavedMessage
 import app.ebbplanner.ui.today.showQuickCaptureSavedSnackbar
 import kotlinx.coroutines.launch
 import java.time.LocalTime
+
+internal suspend fun SnackbarHostState.showLetGoSnackbar(
+    message: String,
+    undoLabel: String,
+): SnackbarResult =
+    showSnackbar(
+        message = message,
+        actionLabel = undoLabel,
+        duration = SnackbarDuration.Long,
+    )
 
 @Composable
 fun InboxScreen(
@@ -69,9 +80,9 @@ fun InboxScreen(
                         ids.size,
                     )
                 val result =
-                    snackbarHostState.showSnackbar(
+                    snackbarHostState.showLetGoSnackbar(
                         message = message,
-                        actionLabel = resources.getString(R.string.action_undo),
+                        undoLabel = resources.getString(R.string.action_undo),
                     )
                 if (result == SnackbarResult.ActionPerformed) {
                     viewModel.undoLetGo(ids)

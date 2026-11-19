@@ -77,6 +77,7 @@ internal fun minutesToTimelineY(
 internal fun durationToHeight(minutes: Int): Dp = timelineDpPerMinute * minutes
 
 internal const val TIMELINE_NOW_BADGE_TAG = "timeline_now_badge"
+internal const val TIMELINE_HOUR_LABEL_TAG = "timeline_hour_label"
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -106,6 +107,9 @@ fun TodayTimeline(
     val is24Hour = ClockFormat.isSystem24Hour(LocalContext.current)
     val compactRail = state.compactHourRail || largeText
     val hourRail = rememberTimelineHourRailWidth(compactRail, fontScale, is24Hour)
+    val hourLabelMeasurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val hourLabelDensity = androidx.compose.ui.platform.LocalDensity.current
+    val hourLabelMaxWidth = hourRail - EbbSpacing.s1
     val badgeHeight = nowBadgeHeightDp(layoutMetrics)
     val trackStart = hourRail + 4.dp
     val trackEnd = 8.dp
@@ -155,10 +159,14 @@ fun TodayTimeline(
             val label =
                 if (hideHourLabel) {
                     null
-                } else if (compactRail) {
-                    hour.toString()
                 } else {
-                    ClockFormat.minutesToClockCompact(hour * 60, is24Hour)
+                    pickHourGutterLabel(
+                        hourLabelMeasurer,
+                        hourLabelDensity,
+                        hour,
+                        is24Hour,
+                        hourLabelMaxWidth,
+                    )
                 }
             HourRule(
                 label = label,
@@ -394,6 +402,7 @@ private fun HourRule(
     y: Dp,
     hourRail: Dp,
 ) {
+    val overflowReports = LocalTextOverflowReports.current
     Box(
         modifier =
             Modifier
@@ -409,11 +418,20 @@ private fun HourRule(
                     Modifier
                         .width(hourRail)
                         .padding(end = EbbSpacing.s1)
-                        .align(Alignment.TopStart),
+                        .align(Alignment.TopStart)
+                        .testTag(TIMELINE_HOUR_LABEL_TAG),
                 textAlign = TextAlign.End,
                 maxLines = 1,
                 softWrap = false,
-                overflow = TextOverflow.Ellipsis,
+                overflow = TextOverflow.Clip,
+                onTextLayout = { layout ->
+                    overflowReports?.let { reports ->
+                        reports[TIMELINE_HOUR_LABEL_TAG] =
+                            reports[TIMELINE_HOUR_LABEL_TAG] == true ||
+                            layout.didOverflowWidth ||
+                            layout.isLineEllipsized(0)
+                    }
+                },
             )
         }
         Box(

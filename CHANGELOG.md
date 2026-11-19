@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Let go snackbar** — Undo uses a long (timed) snackbar so later messages are not stuck behind an indefinite one.
+- **Today hour gutter** — 12h mode uses compact 12h hour labels at every font scale (`1 PM` / `1`), and the rail is sized from those real labels.
 - **Inbox multiselect bar** — actions use equal weight, icon-over-label, wrap-content height and a 48dp minimum. Let go (and Estimate/Energy at large font) sit in a ⋮ menu so every control stays tappable at f100–f200 × 360dp. System back clears the selection. Let go shows an Undo snackbar and confirms when more than one task is selected.
 - **12h time ranges** — shared ranges drop a duplicate AM/PM (`10:45–11:30 PM`) and fall back to the start time when the block is too tight. The now badge uses compact 12h (`8:05`) and the hour rail is sized from real labels.
 - **Clock leftovers** — Shift/Overlap rails, routine and onboarding pickers, and Try it celebration times follow the system 12/24h formatter.

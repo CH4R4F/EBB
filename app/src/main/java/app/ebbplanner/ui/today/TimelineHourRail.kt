@@ -31,17 +31,33 @@ fun timelineBadgeLabelSamples(is24Hour: Boolean): List<String> =
         )
     }.distinct()
 
-fun timelineHourLabelSamples(
-    compactHourLabels: Boolean,
+fun timelineHourLabelSamples(is24Hour: Boolean): List<String> =
+    (0..23).flatMap { hour -> ClockFormat.hourGutterLabelCandidates(hour, is24Hour) }.distinct()
+
+fun pickHourGutterLabel(
+    textMeasurer: TextMeasurer,
+    density: Density,
+    hour: Int,
     is24Hour: Boolean,
-): List<String> =
-    if (compactHourLabels) {
-        (0..23).map { it.toString() }
-    } else {
-        (0..23).map { hour ->
-            ClockFormat.minutesToClockCompact(hour * 60, is24Hour)
-        }
-    }
+    maxTextWidth: Dp,
+    style: TextStyle = timelineHourLabelTextStyle(),
+): String {
+    val candidates = ClockFormat.hourGutterLabelCandidates(hour, is24Hour)
+    if (maxTextWidth <= 0.dp) return candidates.last()
+    val maxPx = with(density) { maxTextWidth.toPx() }
+    return candidates.firstOrNull { candidate ->
+        val layout =
+            textMeasurer.measure(
+                text = candidate,
+                style = style,
+                constraints = Constraints(maxWidth = maxPx.toInt().coerceAtLeast(0)),
+                maxLines = 1,
+                softWrap = false,
+                density = density,
+            )
+        !layout.didOverflowWidth && !layout.isLineEllipsized(0)
+    } ?: candidates.last()
+}
 
 fun timelineNowBadgeTextStyle(): TextStyle =
     EbbTypography.labelS.copy(fontFeatureSettings = "tnum")
@@ -75,6 +91,7 @@ fun maxBadgeTextWidthDp(
         measureTimelineTextWidthDp(textMeasurer, density, sample, style)
     }
 
+@Suppress("UNUSED_PARAMETER")
 fun measureTimelineHourRailWidthDp(
     textMeasurer: TextMeasurer,
     density: Density,
@@ -95,7 +112,7 @@ fun measureTimelineHourRailWidthDp(
             BADGE_START_PADDING_DP.dp
 
     val hourTextWidth =
-        timelineHourLabelSamples(compactHourLabels, is24Hour).maxOf { sample ->
+        timelineHourLabelSamples(is24Hour).maxOf { sample ->
             measureTimelineTextWidthDp(textMeasurer, scaledDensity, sample, hourStyle)
         }
     val hourRail = hourTextWidth + EbbSpacing.s1

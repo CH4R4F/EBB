@@ -29,6 +29,17 @@ class ClockFormatTest {
     }
 
     @Test
+    fun hourGutterLabel_12h_prefersMeridianThenHour() {
+        assertEquals("1 PM", ClockFormat.hourGutterLabel(13, is24Hour = false, withMeridian = true))
+        assertEquals("1", ClockFormat.hourGutterLabel(13, is24Hour = false, withMeridian = false))
+        assertEquals("12 AM", ClockFormat.hourGutterLabel(0, is24Hour = false, withMeridian = true))
+        assertEquals("12 PM", ClockFormat.hourGutterLabel(12, is24Hour = false, withMeridian = true))
+        assertEquals("9 AM", ClockFormat.hourGutterLabel(9, is24Hour = false, withMeridian = true))
+        assertEquals("13:00", ClockFormat.hourGutterLabel(13, is24Hour = true, withMeridian = true))
+        assertEquals("13", ClockFormat.hourGutterLabel(13, is24Hour = true, withMeridian = false))
+    }
+
+    @Test
     fun minutesToClockCompact_12h_dropsAmPm() {
         assertEquals("8:05", ClockFormat.minutesToClockCompact(8 * 60 + 5, is24Hour = false))
         assertEquals("8:05", ClockFormat.minutesToClockCompact(20 * 60 + 5, is24Hour = false))
