@@ -1,5 +1,6 @@
 package app.ebbplanner.ui.today
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ebbplanner.data.calendar.CalendarEventsReader
@@ -9,7 +10,9 @@ import app.ebbplanner.data.repository.TaskRepository
 import app.ebbplanner.domain.capture.QuickCaptureDraft
 import app.ebbplanner.domain.capture.QuickCaptureResolved
 import app.ebbplanner.domain.capture.resolveQuickCapture
+import app.ebbplanner.ui.time.ClockFormat
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -38,12 +41,14 @@ data class TodayUiState(
     val tomorrowEvents: List<TodayCalendarEventUi> = emptyList(),
     val minutesPlanned: Int = 0,
     val isLoading: Boolean = true,
+    val is24Hour: Boolean = true,
 )
 
 @HiltViewModel
 class TodayViewModel
     @Inject
     constructor(
+        @ApplicationContext private val context: Context,
         private val taskRepository: TaskRepository,
         private val userPreferencesRepository: UserPreferencesRepository,
         private val calendarEventsReader: CalendarEventsReader,
@@ -94,6 +99,7 @@ class TodayViewModel
                     tomorrowEvents = tomorrowEvents,
                     minutesPlanned = scheduled.sumOf { it.durationMin },
                     isLoading = false,
+                    is24Hour = ClockFormat.isSystem24Hour(context),
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
 

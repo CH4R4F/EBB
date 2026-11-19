@@ -114,6 +114,64 @@ class TaskScheduleSheetTest {
     }
 
     @Test
+    fun suggestionRow_24h_matchesChip() {
+        setClock24Hour(true)
+        val minutes = 20 * 60 + 5
+        val clock = ClockFormat.minutesToClockDisplay(minutes, is24Hour = true)
+        composeRule.setContent {
+            EbbTheme {
+                ScheduleSheetPanel(
+                    taskTitle = "Call",
+                    suggestions =
+                        listOf(
+                            ScheduleSuggestion(
+                                label = "Today · $clock",
+                                subtitle = "Next free slot",
+                                placement = TaskEntity.PLACEMENT_SCHEDULED,
+                                date = LocalDate.of(2026, 3, 15),
+                                startLocalTime = "20:05",
+                            ),
+                        ),
+                    existingDate = LocalDate.of(2026, 3, 15),
+                    existingStartLocalTime = "20:05",
+                    onSave = { _, _, _ -> },
+                )
+            }
+        }
+        composeRule.onNodeWithText("Today · 20:05").assertIsDisplayed()
+        composeRule.onNodeWithText("20:05").assertIsDisplayed()
+    }
+
+    @Test
+    fun suggestionRow_12h_matchesChip() {
+        setClock24Hour(false)
+        val minutes = 20 * 60 + 5
+        val clock = ClockFormat.minutesToClockDisplay(minutes, is24Hour = false)
+        composeRule.setContent {
+            EbbTheme {
+                ScheduleSheetPanel(
+                    taskTitle = "Call",
+                    suggestions =
+                        listOf(
+                            ScheduleSuggestion(
+                                label = "Today · $clock",
+                                subtitle = "Next free slot",
+                                placement = TaskEntity.PLACEMENT_SCHEDULED,
+                                date = LocalDate.of(2026, 3, 15),
+                                startLocalTime = "20:05",
+                            ),
+                        ),
+                    existingDate = LocalDate.of(2026, 3, 15),
+                    existingStartLocalTime = "20:05",
+                    onSave = { _, _, _ -> },
+                )
+            }
+        }
+        composeRule.onNodeWithText("Today · 8:05 PM").assertIsDisplayed()
+        composeRule.onNodeWithText("8:05 PM").assertIsDisplayed()
+    }
+
+    @Test
     fun useSelection_withoutChanges_keepsReminderEnabledAndAlarm() {
         val context: Context = ApplicationProvider.getApplicationContext()
         val database =

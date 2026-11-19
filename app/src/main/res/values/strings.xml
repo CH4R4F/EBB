@@ -147,6 +147,19 @@
         <item quantity="one">%d thought</item>
         <item quantity="other">%d thoughts</item>
     </plurals>
+    <plurals name="inbox_selected_count">
+        <item quantity="one">%d selected</item>
+        <item quantity="other">%d selected</item>
+    </plurals>
+    <string name="inbox_action_today">Today</string>
+    <string name="inbox_action_tomorrow">Tomorrow</string>
+    <string name="inbox_action_estimate">Estimate</string>
+    <string name="inbox_action_energy">Energy</string>
+    <string name="inbox_action_let_go">Let go</string>
+    <string name="inbox_select_all">Select all</string>
+    <string name="inbox_energy_low">Low</string>
+    <string name="inbox_energy_med">Med</string>
+    <string name="inbox_energy_high">High</string>
 
     <string name="quick_capture_title">Quick capture</string>
     <string name="quick_capture_hint">Try: gym 18:00 45m</string>

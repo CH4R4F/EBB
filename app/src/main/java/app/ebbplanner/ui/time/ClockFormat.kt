@@ -51,4 +51,21 @@ object ClockFormat {
             "%d:%02d %s".format(hour12, m, suffix)
         }
     }
+
+    fun localTimeToClockDisplay(
+        value: String,
+        is24Hour: Boolean,
+    ): String {
+        val minutes = parseMinutes(value) ?: return value
+        return minutesToClockDisplay(minutes, is24Hour)
+    }
+
+    fun rangeDisplay(
+        startMinutes: Int,
+        endMinutes: Int,
+        is24Hour: Boolean,
+    ): String = "${minutesToClockDisplay(startMinutes, is24Hour)}–${minutesToClockDisplay(endMinutes, is24Hour)}"
+
+    fun isSystem24Hour(context: android.content.Context): Boolean =
+        android.text.format.DateFormat.is24HourFormat(context)
 }

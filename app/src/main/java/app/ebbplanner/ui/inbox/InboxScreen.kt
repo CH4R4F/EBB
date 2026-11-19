@@ -40,15 +40,26 @@ fun InboxScreen(
     val showLabel = stringResource(R.string.action_show)
     val resources = LocalContext.current.resources
 
+    val multiselect = presentation.visualMode == InboxVisualMode.Multiselect
     InboxScreenDesign(
         state = presentation,
         modifier = modifier.fillMaxSize(),
         snackbarHostState = snackbarHostState,
         onFabClick = { showCapture = true },
-        onTaskClick = onOpenTask,
+        onTaskClick = { id ->
+            if (multiselect) viewModel.toggleSelected(id) else onOpenTask(id)
+        },
+        onTaskLongPress = viewModel::enterMultiselect,
         onSearchToggle = viewModel::toggleSearch,
         onSearchQueryChange = viewModel::setSearchQuery,
         onFilterSelected = viewModel::setFilterIndex,
+        onMultiselectDone = viewModel::clearMultiselect,
+        onSelectAll = viewModel::selectAllVisible,
+        onMoveToToday = viewModel::moveSelectedToToday,
+        onMoveToTomorrow = viewModel::moveSelectedToTomorrow,
+        onLetGo = viewModel::letGoSelected,
+        onSetDuration = viewModel::setSelectedDuration,
+        onSetEnergy = viewModel::setSelectedEnergy,
     )
 
     QuickCaptureSheet(

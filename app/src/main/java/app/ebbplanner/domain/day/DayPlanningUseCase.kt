@@ -20,6 +20,7 @@ class DayPlanningUseCase
         suspend fun analyzeOverlap(
             date: LocalDate,
             bedMinutes: Int,
+            is24Hour: Boolean = true,
         ): OverlapSituation? {
             val withStarts = tasksWithStartMinutes(scheduledOpenTasks(date))
             val pair = firstOverlappingPair(withStarts) ?: return null
@@ -61,7 +62,7 @@ class DayPlanningUseCase
                     OverlapOption(
                         OverlapResolutionType.PUSH_LATER,
                         "Push later",
-                        "${laterTask.title} starts ${ClockFormat.minutesToClock(pushStart)}",
+                        "${laterTask.title} starts ${ClockFormat.minutesToClockDisplay(pushStart, is24Hour)}",
                     )
             }
             if (!earlierTask.pinned) {
@@ -77,7 +78,7 @@ class DayPlanningUseCase
                     OverlapOption(
                         OverlapResolutionType.NEXT_FREE_SLOT,
                         "Next free slot",
-                        freeSlot?.let { "Move ${laterTask.title} to ${ClockFormat.minutesToClock(it)}" }
+                        freeSlot?.let { "Move ${laterTask.title} to ${ClockFormat.minutesToClockDisplay(it, is24Hour)}" }
                             ?: "No slot found",
                     )
             }

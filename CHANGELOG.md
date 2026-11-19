@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Clock format** — schedule suggestion rows use the same system 12/24h formatter as the time chip (`h:mm a` / `HH:mm`). Other user-facing clocks (timeline, settings, focus, overlap/shift rails) follow it too.
+- **Inbox multiselect** — long-press on an Inbox row enters multiselect; Done/close exits. Actions: Today, Tomorrow, Estimate, Energy, Let go.
 - **Schedule reminders** — Use selection on an already-scheduled task keeps `reminderEnabled` and the TaskStart alarm. The reminders default applies only when moving unscheduled → scheduled. Same date/time is a no-op; a time change reschedules the alarm.
 - **Schedule sheet** — date and time chips open on the task’s existing schedule; Use selection with no edits leaves the task unchanged. Times follow the system 12/24h setting (`h:mm a` / `HH:mm`).
 - **Next free slot** — returns no slot instead of an overlapping end-of-day time. Capture shows `No free slot today` and a one-tap `Tomorrow, <first free slot>` using tomorrow’s occupancy in the wake–bed window (hidden when tomorrow has no fit). Changing duration while Next free is active recomputes; if the slot no longer fits, the no-slot/tomorrow state is shown.

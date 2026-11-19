@@ -2,6 +2,7 @@ package app.ebbplanner.ui.taskdetail
 
 import android.content.Context
 import android.os.Looper
+import android.provider.Settings
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import app.ebbplanner.MainDispatcherRule
@@ -39,7 +40,14 @@ class TaskDetailViewModelTest {
     private lateinit var prefs: app.ebbplanner.data.preferences.UserPreferencesRepository
     private lateinit var clock: EbbClock
 
-    private fun createViewModel(): TaskDetailViewModel = TaskDetailViewModel(repository, prefs, planningUseCase, clock)
+    private fun createViewModel(): TaskDetailViewModel =
+        TaskDetailViewModel(
+            ApplicationProvider.getApplicationContext(),
+            repository,
+            prefs,
+            planningUseCase,
+            clock,
+        )
 
     @Before
     fun setUp() {
@@ -114,6 +122,46 @@ class TaskDetailViewModelTest {
         }
 
     @Test
+    fun scheduleSuggestions_24h_zeroPadsNextFree() =
+        runBlocking {
+            setClock24Hour(true)
+            every { clock.nowMinutes() } returns 20 * 60 + 5
+            val task =
+                repository.addQuickCapture(
+                    "Call",
+                    LocalDate.now(),
+                    TaskEntity.PLACEMENT_INBOX,
+                )
+            val vm = createViewModel()
+            vm.load(task.id)
+            waitUntil { vm.uiState.value.scheduleSuggestions.any { it.label.startsWith("Today ·") } }
+            assertEquals(
+                "Today · 20:05",
+                vm.uiState.value.scheduleSuggestions.single { it.subtitle == "Next free slot" }.label,
+            )
+        }
+
+    @Test
+    fun scheduleSuggestions_12h_usesUnpaddedClock() =
+        runBlocking {
+            setClock24Hour(false)
+            every { clock.nowMinutes() } returns 20 * 60 + 5
+            val task =
+                repository.addQuickCapture(
+                    "Call",
+                    LocalDate.now(),
+                    TaskEntity.PLACEMENT_INBOX,
+                )
+            val vm = createViewModel()
+            vm.load(task.id)
+            waitUntil { vm.uiState.value.scheduleSuggestions.any { it.label.startsWith("Today ·") } }
+            assertEquals(
+                "Today · 8:05 PM",
+                vm.uiState.value.scheduleSuggestions.single { it.subtitle == "Next free slot" }.label,
+            )
+        }
+
+    @Test
     fun saveSchedule_sameDateTime_keepsReminderEnabledAndRow() =
         runBlocking {
             every { prefs.remindersDefault } returns kotlinx.coroutines.flow.flowOf(false)
@@ -172,6 +220,14 @@ class TaskDetailViewModelTest {
             val after = database.reminderDao().getAll().single { it.taskId == task.id }
             assertTrue(after.fireAtEpochMillis > before.fireAtEpochMillis)
         }
+
+    private fun setClock24Hour(enabled: Boolean) {
+        Settings.System.putString(
+            ApplicationProvider.getApplicationContext<Context>().contentResolver,
+            Settings.System.TIME_12_24,
+            if (enabled) "24" else "12",
+        )
+    }
 
     private suspend fun waitUntil(
         timeoutMs: Long = 5_000,

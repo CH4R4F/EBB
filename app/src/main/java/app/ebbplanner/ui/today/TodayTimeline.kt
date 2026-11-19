@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -188,7 +189,12 @@ fun TodayTimeline(
                 (timeMapping.y(event.startMinutes + event.durationMin) - y).coerceAtLeast(52.dp)
             CalendarEventBlock(
                 title = event.title,
-                timeRange = formatRange(event.startMinutes, event.durationMin),
+                timeRange =
+                    formatRange(
+                        event.startMinutes,
+                        event.durationMin,
+                        ClockFormat.isSystem24Hour(LocalContext.current),
+                    ),
                 durationLabel = formatDurationLabel(event.durationMin),
                 calendarLabel = event.calendarLabel,
                 pinned = event.pinned,
@@ -301,7 +307,7 @@ fun TodayTimeline(
 
         if (state.showNowLine && state.nowMinutes != null) {
             NowLineTimeBadge(
-                label = formatClock(state.nowMinutes),
+                label = ClockFormat.minutesToClock(state.nowMinutes),
                 y = timeMapping.y(state.nowMinutes),
                 hourRail = hourRail,
                 badgeHeight = badgeHeight,
@@ -1179,14 +1185,13 @@ private fun CalendarEventBlock(
     }
 }
 
-private fun formatClock(minutes: Int): String = ClockFormat.minutesToClock(minutes)
-
 private fun formatRange(
     startMinutes: Int,
     durationMin: Int,
+    is24Hour: Boolean,
 ): String {
     val end = startMinutes + durationMin
-    return "${formatClock(startMinutes)}–${formatClock(end)}"
+    return ClockFormat.rangeDisplay(startMinutes, end, is24Hour)
 }
 
 private fun formatDurationLabel(durationMin: Int): String =

@@ -1,11 +1,13 @@
 package app.ebbplanner.ui.settings
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.ui.components.weekStartDayLabel
 import app.ebbplanner.ui.time.ClockFormat
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -26,6 +28,7 @@ data class SettingsUiState(
 class SettingsViewModel
     @Inject
     constructor(
+        @ApplicationContext private val context: Context,
         private val preferences: UserPreferencesRepository,
     ) : ViewModel() {
         val uiState: StateFlow<SettingsUiState> =
@@ -36,11 +39,12 @@ class SettingsViewModel
                 preferences.dayBedMinutes,
                 preferences.weekStartDay,
             ) { materialYou, reminders, wake, bed, weekStart ->
+                val is24Hour = ClockFormat.isSystem24Hour(context)
                 SettingsUiState(
                     materialYou = materialYou,
                     remindersDefault = reminders,
-                    wakeLabel = ClockFormat.minutesToClock(wake),
-                    bedLabel = ClockFormat.minutesToClock(bed),
+                    wakeLabel = ClockFormat.minutesToClockDisplay(wake, is24Hour),
+                    bedLabel = ClockFormat.minutesToClockDisplay(bed, is24Hour),
                     weekStartDay = weekStart,
                     weekStartLabel = weekStartDayLabel(weekStart),
                 )

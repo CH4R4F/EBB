@@ -31,7 +31,7 @@ object TodayPresentationMapper {
             return todayEmpty().copy(
                 date = state.date,
                 dateLabel = state.dateLabel.ifBlank { state.date.format(dateFormatter) },
-                dayMeta = "today · bedtime ${formatBed(state.bedMinutes)} · 0 done",
+                dayMeta = "today · bedtime ${formatBed(state.bedMinutes, state.is24Hour)} · 0 done",
                 timeLeftLabel = formatTimeLeft(state.bedMinutes, nowMinutes),
                 wakeMinutes = state.wakeMinutes,
                 bedMinutes = state.bedMinutes,
@@ -40,7 +40,7 @@ object TodayPresentationMapper {
         }
         val blocks =
             applyOverlapMetadata(
-                scheduled.mapNotNull { task -> task.toBlock(nowMinutes) },
+                scheduled.mapNotNull { task -> task.toBlock(nowMinutes, state.is24Hour) },
             )
         val minutesLeft = (state.bedMinutes - nowMinutes).coerceAtLeast(0)
         val plannedRemaining = scheduled.filter { it.status != TaskEntity.STATUS_DONE }.sumOf { it.durationMin }
@@ -53,7 +53,7 @@ object TodayPresentationMapper {
             dateLabel = state.dateLabel.ifBlank { state.date.format(dateFormatter) },
             timeLeftLabel = formatMinutesLong(minutesLeft),
             dayMeta =
-                "today · bedtime ${formatBed(state.bedMinutes)} · " +
+                "today · bedtime ${formatBed(state.bedMinutes, state.is24Hour)} · " +
                     "${scheduled.count { it.status == TaskEntity.STATUS_DONE }} done",
             progressPercent =
                 progressPercent(
@@ -117,7 +117,10 @@ object TodayPresentationMapper {
         return startHour.coerceAtLeast(0) to endHour.coerceAtMost(24).coerceAtLeast(startHour + 1)
     }
 
-    private fun TaskEntity.toBlock(nowMinutes: Int): TodayScheduledBlock? {
+    private fun TaskEntity.toBlock(
+        nowMinutes: Int,
+        is24Hour: Boolean,
+    ): TodayScheduledBlock? {
         val start = startLocalTime?.let { ClockFormat.parseMinutes(it) } ?: return null
         val isDone = status == TaskEntity.STATUS_DONE
         val end = start + durationMin
@@ -134,7 +137,7 @@ object TodayPresentationMapper {
             short = durationMin < 20,
             pinned = pinned,
             hasReminder = reminderEnabled,
-            metaTimeRange = "${ClockFormat.minutesToClock(start)}–${ClockFormat.minutesToClock(end)}",
+            metaTimeRange = ClockFormat.rangeDisplay(start, end, is24Hour),
             metaDuration = "$durationMin min",
             minutesLeftLabel =
                 if (!isDone && start <= nowMinutes && end > nowMinutes) {
@@ -152,7 +155,10 @@ object TodayPresentationMapper {
         return now.hour * 60 + now.minute
     }
 
-    private fun formatBed(minutes: Int): String = ClockFormat.minutesToClock(minutes)
+    private fun formatBed(
+        minutes: Int,
+        is24Hour: Boolean,
+    ): String = ClockFormat.minutesToClockDisplay(minutes, is24Hour)
 
     private fun formatTimeLeft(
         bed: Int,

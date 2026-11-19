@@ -1,5 +1,6 @@
 package app.ebbplanner.ui.daytools
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ebbplanner.data.local.entity.TaskEntity
@@ -12,7 +13,9 @@ import app.ebbplanner.domain.time.EbbClock
 import app.ebbplanner.ui.today.TodayPresentationMapper
 import app.ebbplanner.ui.today.TodayPresentationState
 import app.ebbplanner.ui.today.TodayUiState
+import app.ebbplanner.ui.time.ClockFormat
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,6 +34,7 @@ data class OverlapUiState(
 class OverlapHelperViewModel
     @Inject
     constructor(
+        @ApplicationContext private val context: Context,
         private val dayPlanning: DayPlanningUseCase,
         private val taskRepository: TaskRepository,
         private val userPreferencesRepository: UserPreferencesRepository,
@@ -63,7 +67,12 @@ class OverlapHelperViewModel
                     ),
                     clock.nowMinutes(),
                 )
-            val situation = dayPlanning.analyzeOverlap(clock.today(), bed)
+            val situation =
+                dayPlanning.analyzeOverlap(
+                    clock.today(),
+                    bed,
+                    ClockFormat.isSystem24Hour(context),
+                )
             val defaultOption =
                 situation?.options?.firstOrNull()?.type ?: OverlapResolutionType.KEEP_BOTH
             _uiState.value =

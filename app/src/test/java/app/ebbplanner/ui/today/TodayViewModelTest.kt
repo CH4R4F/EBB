@@ -91,6 +91,7 @@ class TodayViewModelTest {
             val context: Context = ApplicationProvider.getApplicationContext()
             val viewModel =
                 TodayViewModel(
+                    context,
                     taskRepository,
                     preferencesRepository,
                     CalendarEventsReader(context),

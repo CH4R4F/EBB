@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -203,11 +204,22 @@ fun OverlapHelperDesign(
         onCancelClick = onCancel,
     ) {
         if (situation != null) {
+            val is24Hour = app.ebbplanner.ui.time.ClockFormat.isSystem24Hour(LocalContext.current)
             OverlapTimelineCard(
                 firstTitle = situation.firstTitle,
                 secondTitle = situation.secondTitle,
-                firstRange = DayGapScheduler.formatRange(situation.firstStartMinutes, situation.firstDurationMin),
-                secondRange = DayGapScheduler.formatRange(situation.secondStartMinutes, situation.secondDurationMin),
+                firstRange =
+                    DayGapScheduler.formatRange(
+                        situation.firstStartMinutes,
+                        situation.firstDurationMin,
+                        is24Hour,
+                    ),
+                secondRange =
+                    DayGapScheduler.formatRange(
+                        situation.secondStartMinutes,
+                        situation.secondDurationMin,
+                        is24Hour,
+                    ),
                 firstStartMinutes = situation.firstStartMinutes,
                 firstDurationMin = situation.firstDurationMin,
                 secondStartMinutes = situation.secondStartMinutes,
@@ -673,11 +685,15 @@ private fun RowScope.ShiftPreviewColumn(
         Row(Modifier.padding(top = 8.dp)) {
             val timelineStart = blocks.minOfOrNull { it.startMinutes } ?: (9 * 60)
             val hourStep = SHIFT_TIMELINE_HEIGHT / 6
+            val is24Hour = app.ebbplanner.ui.time.ClockFormat.isSystem24Hour(LocalContext.current)
             val hourLabels =
                 (0..6).map { index ->
-                    app.ebbplanner.ui.time.ClockFormat.minutesToClock(
-                        timelineStart + (SHIFT_TIMELINE_MINUTES * index / 6).toInt(),
-                    )
+                    val minutes = timelineStart + (SHIFT_TIMELINE_MINUTES * index / 6).toInt()
+                    if (is24Hour) {
+                        app.ebbplanner.ui.time.ClockFormat.minutesToClock(minutes)
+                    } else {
+                        app.ebbplanner.ui.time.ClockFormat.minutesToClockDisplay(minutes, is24Hour = false)
+                    }
                 }
             val hourStyle = timelineHourLabelTextStyle()
             val hourRail = rememberHourRailWidth(hourLabels, hourStyle)
@@ -825,9 +841,15 @@ private fun OverlapTimelineCard(
         return (fraction * railHeight.value).coerceAtLeast(24f).dp
     }
 
+    val is24Hour = app.ebbplanner.ui.time.ClockFormat.isSystem24Hour(LocalContext.current)
     val railLabels =
         listOf(0, 1, 2).map { index ->
-            app.ebbplanner.ui.time.ClockFormat.minutesToClock(windowStart + (windowSpan * index / 2))
+            val minutes = windowStart + (windowSpan * index / 2)
+            if (is24Hour) {
+                app.ebbplanner.ui.time.ClockFormat.minutesToClock(minutes)
+            } else {
+                app.ebbplanner.ui.time.ClockFormat.minutesToClockDisplay(minutes, is24Hour = false)
+            }
         }
     val overlapTop = minutesToY(maxOf(firstStartMinutes, secondStartMinutes))
     val overlapBottom = minutesToY(minOf(firstEnd, secondEnd))

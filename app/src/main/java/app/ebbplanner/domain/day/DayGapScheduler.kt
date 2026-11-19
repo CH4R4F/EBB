@@ -80,8 +80,9 @@ object DayGapScheduler {
     fun formatRange(
         start: Int,
         duration: Int,
+        is24Hour: Boolean = true,
     ): String {
         val end = start + duration
-        return "${ClockFormat.minutesToClock(start)}–${ClockFormat.minutesToClock(end)}"
+        return ClockFormat.rangeDisplay(start, end, is24Hour)
     }
 }

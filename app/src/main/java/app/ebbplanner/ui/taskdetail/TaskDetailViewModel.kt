@@ -2,6 +2,7 @@
 
 package app.ebbplanner.ui.taskdetail
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ebbplanner.data.local.entity.SubtaskEntity
@@ -14,6 +15,7 @@ import app.ebbplanner.domain.day.DayPlanningUseCase
 import app.ebbplanner.domain.time.EbbClock
 import app.ebbplanner.ui.time.ClockFormat
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +29,7 @@ import javax.inject.Inject
 class TaskDetailViewModel
     @Inject
     constructor(
+        @ApplicationContext private val context: Context,
         private val taskRepository: TaskRepository,
         private val userPreferencesRepository: UserPreferencesRepository,
         private val dayPlanningUseCase: DayPlanningUseCase,
@@ -275,7 +278,7 @@ class TaskDetailViewModel
                     startLocalTime = null,
                 )
             freeStart?.let { start ->
-                val clockLabel = ClockFormat.minutesToClock(start)
+                val clockLabel = ClockFormat.minutesToClockDisplay(start, ClockFormat.isSystem24Hour(context))
                 suggestions +=
                     ScheduleSuggestion(
                         label = "Today · $clockLabel",
@@ -330,15 +333,16 @@ class TaskDetailViewModel
                     else -> {
                         val timeLine =
                             startLocalTime?.let { start ->
-                                val endMin = (ClockFormat.parseMinutes(start) ?: 0) + durationMin
-                                "${ClockFormat.localTimeToClock(start)}–${ClockFormat.minutesToClock(endMin)}"
+                                val is24Hour = ClockFormat.isSystem24Hour(context)
+                                val startMin = ClockFormat.parseMinutes(start) ?: 0
+                                ClockFormat.rangeDisplay(startMin, startMin + durationMin, is24Hour)
                             }
                         (relativeWhen ?: "Scheduled") to (timeLine ?: "Scheduled")
                     }
                 }
             val scheduleText =
                 startLocalTime?.let { start ->
-                    "${ClockFormat.localTimeToClock(start)} · $durationMin min"
+                    "${ClockFormat.localTimeToClockDisplay(start, ClockFormat.isSystem24Hour(context))} · $durationMin min"
                 } ?: "$durationMin min"
             val breatherSubtitle =
                 if (breatherBufferMin > 0) {

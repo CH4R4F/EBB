@@ -1,17 +1,19 @@
-@file:Suppress("LongMethod", "MaxLineLength", "NewLineAtEndOfFile")
+@file:Suppress("LongMethod", "LongParameterList", "MaxLineLength", "NewLineAtEndOfFile")
 
 package app.ebbplanner.ui.inbox
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,6 +26,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.IconButton
@@ -34,6 +38,10 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
@@ -45,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.ebbplanner.R
 import app.ebbplanner.ui.components.EbbBottomNavigation
+import app.ebbplanner.ui.components.EbbCancelButton
 import app.ebbplanner.ui.navigation.MainTab
 import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
@@ -54,6 +63,18 @@ import app.ebbplanner.ui.theme.EbbTypography
 import app.ebbplanner.ui.today.QUICK_CAPTURE_FAB_TAG
 import app.ebbplanner.ui.today.QUICK_CAPTURE_SNACKBAR_HOST_TAG
 
+const val INBOX_TASK_TAG_PREFIX = "inbox_task_"
+const val INBOX_MULTISELECT_DONE_TAG = "inbox_multiselect_done"
+const val INBOX_MULTISELECT_SELECT_ALL_TAG = "inbox_multiselect_select_all"
+const val INBOX_MULTISELECT_TODAY_TAG = "inbox_multiselect_today"
+const val INBOX_MULTISELECT_TOMORROW_TAG = "inbox_multiselect_tomorrow"
+const val INBOX_MULTISELECT_ESTIMATE_TAG = "inbox_multiselect_estimate"
+const val INBOX_MULTISELECT_ENERGY_TAG = "inbox_multiselect_energy"
+const val INBOX_MULTISELECT_LET_GO_TAG = "inbox_multiselect_let_go"
+
+fun inboxTaskTestTag(taskId: String): String = INBOX_TASK_TAG_PREFIX + taskId
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun InboxScreenDesign(
     state: InboxPresentationState,
@@ -61,11 +82,22 @@ fun InboxScreenDesign(
     showBottomNav: Boolean = false,
     onFabClick: () -> Unit = {},
     onTaskClick: (String) -> Unit = {},
+    onTaskLongPress: (String) -> Unit = {},
     onSearchToggle: () -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {},
     onFilterSelected: (Int) -> Unit = {},
+    onMultiselectDone: () -> Unit = {},
+    onSelectAll: () -> Unit = {},
+    onMoveToToday: () -> Unit = {},
+    onMoveToTomorrow: () -> Unit = {},
+    onLetGo: () -> Unit = {},
+    onSetDuration: (Int) -> Unit = {},
+    onSetEnergy: (Int) -> Unit = {},
     snackbarHostState: SnackbarHostState? = null,
 ) {
+    val multiselect = state.visualMode == InboxVisualMode.Multiselect
+    var showEstimateDialog by remember { mutableStateOf(false) }
+    var showEnergyDialog by remember { mutableStateOf(false) }
     Scaffold(
         modifier = modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0),
@@ -78,7 +110,15 @@ fun InboxScreenDesign(
             }
         },
         bottomBar = {
-            if (showBottomNav) {
+            if (multiselect) {
+                InboxMultiselectActionBar(
+                    onToday = onMoveToToday,
+                    onTomorrow = onMoveToTomorrow,
+                    onEstimate = { showEstimateDialog = true },
+                    onEnergy = { showEnergyDialog = true },
+                    onLetGo = onLetGo,
+                )
+            } else if (showBottomNav) {
                 EbbBottomNavigation(selected = MainTab.Inbox)
             }
         },
@@ -102,7 +142,15 @@ fun InboxScreenDesign(
                     .fillMaxSize()
                     .padding(padding),
         ) {
-            InboxTopBar(title = state.title, onSearchToggle = onSearchToggle)
+            if (multiselect) {
+                InboxMultiselectTopBar(
+                    title = state.title,
+                    onDone = onMultiselectDone,
+                    onSelectAll = onSelectAll,
+                )
+            } else {
+                InboxTopBar(title = state.title, onSearchToggle = onSearchToggle)
+            }
             if (state.searchVisible) {
                 androidx.compose.material3.OutlinedTextField(
                     value = state.searchQuery,
@@ -115,24 +163,28 @@ fun InboxScreenDesign(
                     singleLine = true,
                 )
             }
-            Text(
-                state.subtitle,
-                style = EbbTypography.bodyM,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier =
-                    Modifier
-                        .padding(horizontal = EbbSpacing.s4)
-                        .offset(y = (-8).dp),
-            )
+            if (!multiselect) {
+                Text(
+                    state.subtitle,
+                    style = EbbTypography.bodyM,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier =
+                        Modifier
+                            .padding(horizontal = EbbSpacing.s4)
+                            .offset(y = (-8).dp),
+                )
+            }
             state.dragToTodayHint?.let {
                 InboxHintBanner(it)
             }
-            InboxFilterRow(
-                filters = state.filters,
-                selected = state.selectedFilter,
-                onFilterSelected = onFilterSelected,
-                modifier = Modifier.padding(top = EbbSpacing.s2, bottom = EbbSpacing.s2),
-            )
+            if (!multiselect) {
+                InboxFilterRow(
+                    filters = state.filters,
+                    selected = state.selectedFilter,
+                    onFilterSelected = onFilterSelected,
+                    modifier = Modifier.padding(top = EbbSpacing.s2, bottom = EbbSpacing.s2),
+                )
+            }
             when (state.visualMode) {
                 InboxVisualMode.Loading -> InboxLoadingSkeleton()
                 InboxVisualMode.Empty, InboxVisualMode.FilteredEmpty -> InboxEmptyBody(state.emptyMessage)
@@ -152,11 +204,30 @@ fun InboxScreenDesign(
                                 task = task,
                                 swipeReveal = swipe,
                                 onClick = { onTaskClick(task.id) },
+                                onLongClick = { onTaskLongPress(task.id) },
                             )
                         }
                     }
             }
         }
+    }
+    if (showEstimateDialog) {
+        InboxEstimateDialog(
+            onDismiss = { showEstimateDialog = false },
+            onSelect = { minutes ->
+                onSetDuration(minutes)
+                showEstimateDialog = false
+            },
+        )
+    }
+    if (showEnergyDialog) {
+        InboxEnergyDialog(
+            onDismiss = { showEnergyDialog = false },
+            onSelect = { level ->
+                onSetEnergy(level)
+                showEnergyDialog = false
+            },
+        )
     }
 }
 
@@ -177,6 +248,152 @@ private fun InboxHintBanner(message: String) {
             color = MaterialTheme.colorScheme.onPrimaryContainer,
         )
     }
+}
+
+@Composable
+private fun InboxMultiselectTopBar(
+    title: String,
+    onDone: () -> Unit,
+    onSelectAll: () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(horizontal = EbbSpacing.s1),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(
+            onClick = onDone,
+            modifier = Modifier.size(48.dp).testTag(INBOX_MULTISELECT_DONE_TAG),
+        ) {
+            EbbSymbol("close", fontSize = 22.sp)
+        }
+        Text(title, style = EbbTypography.headlineM, modifier = Modifier.weight(1f), maxLines = 1)
+        IconButton(
+            onClick = onSelectAll,
+            modifier = Modifier.size(48.dp).testTag(INBOX_MULTISELECT_SELECT_ALL_TAG),
+        ) {
+            EbbSymbol("select_all", fontSize = 22.sp)
+        }
+    }
+}
+
+@Composable
+private fun InboxMultiselectActionBar(
+    onToday: () -> Unit,
+    onTomorrow: () -> Unit,
+    onEstimate: () -> Unit,
+    onEnergy: () -> Unit,
+    onLetGo: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shadowElevation = 3.dp,
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .padding(horizontal = EbbSpacing.s2),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            InboxActionButton(INBOX_MULTISELECT_TODAY_TAG, "today", stringResource(R.string.inbox_action_today), onToday)
+            InboxActionButton(INBOX_MULTISELECT_TOMORROW_TAG, "event", stringResource(R.string.inbox_action_tomorrow), onTomorrow)
+            InboxActionButton(INBOX_MULTISELECT_ESTIMATE_TAG, "schedule", stringResource(R.string.inbox_action_estimate), onEstimate)
+            InboxActionButton(INBOX_MULTISELECT_ENERGY_TAG, "battery_horiz_050", stringResource(R.string.inbox_action_energy), onEnergy)
+            InboxActionButton(INBOX_MULTISELECT_LET_GO_TAG, "spa", stringResource(R.string.inbox_action_let_go), onLetGo)
+        }
+    }
+}
+
+@Composable
+private fun InboxActionButton(
+    tag: String,
+    icon: String,
+    label: String,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier =
+            Modifier
+                .clickable(onClick = onClick)
+                .testTag(tag)
+                .padding(horizontal = 4.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        EbbSymbol(icon, fontSize = 22.sp)
+        Text(label, style = EbbTypography.labelM, maxLines = 1)
+    }
+}
+
+@Composable
+private fun InboxEstimateDialog(
+    onDismiss: () -> Unit,
+    onSelect: (Int) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            EbbCancelButton(label = stringResource(R.string.action_cancel), onClick = onDismiss)
+        },
+        title = { Text(stringResource(R.string.inbox_action_estimate)) },
+        text = {
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
+            ) {
+                listOf(15, 30, 45, 60, 90).forEach { minutes ->
+                    FilterChip(
+                        selected = false,
+                        onClick = { onSelect(minutes) },
+                        label = { Text("$minutes min") },
+                    )
+                }
+            }
+        },
+    )
+}
+
+@Composable
+private fun InboxEnergyDialog(
+    onDismiss: () -> Unit,
+    onSelect: (Int) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            EbbCancelButton(label = stringResource(R.string.action_cancel), onClick = onDismiss)
+        },
+        title = { Text(stringResource(R.string.inbox_action_energy)) },
+        text = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
+            ) {
+                FilterChip(
+                    selected = false,
+                    onClick = { onSelect(1) },
+                    label = { Text(stringResource(R.string.inbox_energy_low)) },
+                )
+                FilterChip(
+                    selected = false,
+                    onClick = { onSelect(2) },
+                    label = { Text(stringResource(R.string.inbox_energy_med)) },
+                )
+                FilterChip(
+                    selected = false,
+                    onClick = { onSelect(3) },
+                    label = { Text(stringResource(R.string.inbox_energy_high)) },
+                )
+            }
+        },
+    )
 }
 
 @Composable
@@ -239,10 +456,12 @@ private fun InboxFilterRow(
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 private fun InboxTaskCard(
     task: InboxTaskRow,
     swipeReveal: InboxSwipeReveal?,
     onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {},
 ) {
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     Box(modifier = Modifier.fillMaxWidth()) {
@@ -285,7 +504,8 @@ private fun InboxTaskCard(
                 Modifier
                     .fillMaxWidth()
                     .offset(x = shiftX)
-                    .clickable(onClick = onClick),
+                    .testTag(inboxTaskTestTag(task.id))
+                    .combinedClickable(onClick = onClick, onLongClick = onLongClick),
             shape = EbbShapes.md,
             color = MaterialTheme.colorScheme.surfaceContainer,
         ) {

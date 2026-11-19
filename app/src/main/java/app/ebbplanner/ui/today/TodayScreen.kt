@@ -172,6 +172,7 @@ fun TodayScreenContent(
     modifier: Modifier = Modifier,
 ) {
     val fontScale = androidx.compose.ui.platform.LocalConfiguration.current.fontScale
-    val presentation = TodayPresentationMapper.from(state, fontScale = fontScale)
+    val is24Hour = app.ebbplanner.ui.time.ClockFormat.isSystem24Hour(LocalContext.current)
+    val presentation = TodayPresentationMapper.from(state.copy(is24Hour = is24Hour), fontScale = fontScale)
     TodayScreenDesign(state = presentation, modifier = modifier, showBottomNav = false)
 }

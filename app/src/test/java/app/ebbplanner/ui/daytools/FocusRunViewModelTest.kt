@@ -1,6 +1,9 @@
 package app.ebbplanner.ui.daytools
 
 import androidx.lifecycle.SavedStateHandle
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.repository.TaskRepository
 import app.ebbplanner.domain.focus.FocusTickDelayer
@@ -31,6 +34,8 @@ import java.time.LocalDate
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [28])
 class FocusRunViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val clock = MutableEbbClock(Instant.parse("2026-11-17T10:00:00Z"))
@@ -83,6 +88,7 @@ class FocusRunViewModelTest {
             val vm =
                 FocusRunViewModel(
                     SavedStateHandle(mapOf("taskId" to id)),
+                    androidx.test.core.app.ApplicationProvider.getApplicationContext(),
                     taskRepo,
                     clock,
                     notifier,
@@ -109,6 +115,7 @@ class FocusRunViewModelTest {
             val vm =
                 FocusRunViewModel(
                     SavedStateHandle(mapOf("taskId" to id)),
+                    androidx.test.core.app.ApplicationProvider.getApplicationContext(),
                     taskRepo,
                     clock,
                     notifier,
@@ -132,6 +139,7 @@ class FocusRunViewModelTest {
             val vm =
                 FocusRunViewModel(
                     SavedStateHandle(mapOf("taskId" to id)),
+                    androidx.test.core.app.ApplicationProvider.getApplicationContext(),
                     taskRepo,
                     clock,
                     notifier,

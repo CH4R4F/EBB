@@ -1,5 +1,6 @@
 package app.ebbplanner.ui.daytools
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -21,6 +22,7 @@ import app.ebbplanner.ui.focus.FocusStepRow
 import app.ebbplanner.ui.focus.FocusVisualMode
 import app.ebbplanner.ui.time.ClockFormat
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,6 +38,7 @@ class FocusRunViewModel
     @Inject
     constructor(
         savedStateHandle: SavedStateHandle,
+        @ApplicationContext private val context: Context,
         private val taskRepository: TaskRepository,
         private val clock: EbbClock,
         private val focusNotifier: FocusNotifier,
@@ -154,7 +157,7 @@ class FocusRunViewModel
                     task.startLocalTime?.let { start ->
                         val startMin = ClockFormat.parseMinutes(start) ?: 0
                         val end = startMin + task.durationMin
-                        append("${ClockFormat.minutesToClock(startMin)}–${ClockFormat.minutesToClock(end)}")
+                        append(ClockFormat.rangeDisplay(startMin, end, ClockFormat.isSystem24Hour(context)))
                     } ?: append("${task.durationMin} min")
                     if (steps.isNotEmpty()) append(" · steps $doneSteps/${steps.size}")
                 }
@@ -192,10 +195,11 @@ class FocusRunViewModel
                         val startMin = ClockFormat.parseMinutes(startLocalTime) ?: clock.nowMinutes()
                         val endMin = startMin + blockDuration
                         val remaining = (endMin - clock.nowMinutes()).coerceAtLeast(0)
+                        val endLabel = ClockFormat.minutesToClockDisplay(endMin, ClockFormat.isSystem24Hour(context))
                         if (remaining > 0) {
-                            "$remaining min left · ends ${ClockFormat.minutesToClock(endMin)}"
+                            "$remaining min left · ends $endLabel"
                         } else {
-                            "Ends ${ClockFormat.minutesToClock(endMin)}"
+                            "Ends $endLabel"
                         }
                     }
                     else -> "${blockDuration} min"
