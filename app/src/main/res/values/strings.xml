@@ -166,6 +166,12 @@
     <string name="quick_capture_clear_time">Clear time</string>
     <string name="quick_capture_now">Now</string>
     <string name="quick_capture_next_free">Next free slot</string>
+    <string name="quick_capture_no_free_slot">No free slot today</string>
+    <string name="quick_capture_tomorrow_free">Tomorrow, %1$s</string>
+    <plurals name="quick_capture_saved_count">
+        <item quantity="one">Saved %d task</item>
+        <item quantity="other">Saved %d tasks</item>
+    </plurals>
     <string name="quick_capture_custom_duration">Custom</string>
     <string name="quick_capture_custom_duration_title">Duration (minutes)</string>
     <string name="quick_capture_duration_min">%1$d min</string>

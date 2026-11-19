@@ -25,6 +25,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 const val TODAY_DATE_HEADER_TAG = "today_date_header"
+const val TODAY_MULTISELECT_DONE_TAG = "today_multiselect_done"
 const val TODAY_TIMELINE_TAG = "today_timeline"
 const val TIMELINE_TASK_TAG_PREFIX = "timeline_task_"
 const val QUICK_CAPTURE_SNACKBAR_HOST_TAG = "quick_capture_snackbar_host"
@@ -33,12 +34,43 @@ const val QUICK_CAPTURE_FAB_TAG = "quick_capture_fab"
 suspend fun SnackbarHostState.showQuickCaptureSavedSnackbar(
     message: String,
     actionLabel: String,
-): SnackbarResult =
-    showSnackbar(
+): SnackbarResult {
+    currentSnackbarData?.dismiss()
+    return showSnackbar(
         message = message,
         actionLabel = actionLabel,
         duration = SnackbarDuration.Long,
     )
+}
+
+class QuickCaptureSaveNotifier {
+    var count: Int = 0
+        private set
+    var lastTaskId: String? = null
+        private set
+
+    fun record(taskId: String) {
+        count += 1
+        lastTaskId = taskId
+    }
+
+    fun message(
+        resources: android.content.res.Resources,
+        singleMessage: String,
+    ): String =
+        if (count <= 1) {
+            singleMessage
+        } else {
+            resources.getQuantityString(R.plurals.quick_capture_saved_count, count, count)
+        }
+
+    fun resetIfCurrent(expectedCount: Int) {
+        if (count == expectedCount) {
+            count = 0
+            lastTaskId = null
+        }
+    }
+}
 
 fun timelineTaskTestTag(taskId: String): String = TIMELINE_TASK_TAG_PREFIX + taskId
 
@@ -60,6 +92,7 @@ fun TodayScreen(
     var showCapture by rememberSaveable { mutableStateOf(false) }
     var capturePrefill by rememberSaveable { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
+    val saveNotifier = remember { QuickCaptureSaveNotifier() }
     val scope = rememberCoroutineScope()
     val showLabel = stringResource(R.string.action_show)
     val resources = LocalContext.current.resources
@@ -106,14 +139,20 @@ fun TodayScreen(
         onDismiss = { showCapture = false },
         onSave = { draft ->
             viewModel.captureTask(draft) { task, resolved ->
+                saveNotifier.record(task.id)
+                val countAtShow = saveNotifier.count
+                val message =
+                    saveNotifier.message(resources, quickCaptureSavedMessage(resources, resolved))
                 scope.launch {
                     val result =
                         snackbarHostState.showQuickCaptureSavedSnackbar(
-                            message = quickCaptureSavedMessage(resources, resolved),
+                            message = message,
                             actionLabel = showLabel,
                         )
-                    if (result == SnackbarResult.ActionPerformed) {
-                        onOpenTask(task.id)
+                    val taskId = saveNotifier.lastTaskId
+                    saveNotifier.resetIfCurrent(countAtShow)
+                    if (result == SnackbarResult.ActionPerformed && taskId != null) {
+                        onOpenTask(taskId)
                     }
                 }
             }

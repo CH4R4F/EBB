@@ -26,6 +26,8 @@ data class QuickCapturePresentationState(
     val startTimeLabel: String? = null,
     val selectedDurationMin: Int? = null,
     val showTodayShortcuts: Boolean = false,
+    val nextFreeEnabled: Boolean = true,
+    val tomorrowFreeLabel: String? = null,
     val saveEnabled: Boolean = false,
 )
 

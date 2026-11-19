@@ -33,13 +33,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,6 +61,7 @@ import app.ebbplanner.ui.components.EbbRadioDot
 import app.ebbplanner.ui.components.EbbSheetActions
 import app.ebbplanner.ui.onboarding.OnboardingAppPreview
 import app.ebbplanner.ui.sheets.EbbSheetScaffold
+import app.ebbplanner.ui.text.LocalTextOverflowReports
 import app.ebbplanner.ui.theme.EbbPalette
 import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
@@ -61,11 +69,35 @@ import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTaskColors
 import app.ebbplanner.ui.theme.EbbTypography
 import app.ebbplanner.ui.today.TodayScreenDesign
+import app.ebbplanner.ui.today.measureTimelineTextWidthDp
 import app.ebbplanner.ui.today.todayPopulatedDark
+import app.ebbplanner.ui.today.timelineHourLabelTextStyle
+
+const val SHIFT_HOUR_LABEL_TAG = "shift_hour_label"
+const val OVERLAP_HOUR_LABEL_TAG = "overlap_hour_label"
 
 private val DAY_TOOL_SHEET_TOP_INSET = 66.dp
 private val SHIFT_TIMELINE_HEIGHT = 250.dp
 private const val SHIFT_TIMELINE_MINUTES = 360.0
+
+@Composable
+private fun rememberHourRailWidth(
+    labels: List<String>,
+    style: TextStyle,
+    extra: Dp = 4.dp,
+): Dp {
+    val textMeasurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    return remember(labels, textMeasurer, density, style, extra) {
+        if (labels.isEmpty()) {
+            extra
+        } else {
+            labels.maxOf { label ->
+                measureTimelineTextWidthDp(textMeasurer, density, label, style)
+            } + extra
+        }
+    }
+}
 
 @Composable
 fun DayToolsAppPreview(
@@ -647,14 +679,31 @@ private fun RowScope.ShiftPreviewColumn(
                         timelineStart + (SHIFT_TIMELINE_MINUTES * index / 6).toInt(),
                     )
                 }
-            Box(Modifier.width(34.dp).height(SHIFT_TIMELINE_HEIGHT)) {
+            val hourStyle = timelineHourLabelTextStyle()
+            val hourRail = rememberHourRailWidth(hourLabels, hourStyle)
+            val overflow = LocalTextOverflowReports.current
+            Box(Modifier.width(hourRail).height(SHIFT_TIMELINE_HEIGHT)) {
                 hourLabels.forEachIndexed { index, hour ->
                     Text(
                         hour,
-                        style = EbbTypography.labelM,
+                        style = hourStyle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.align(Alignment.TopEnd).offset(y = hourStep * index - 10.dp),
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopEnd)
+                                .offset(y = hourStep * index - 10.dp)
+                                .testTag(SHIFT_HOUR_LABEL_TAG),
                         maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Clip,
+                        onTextLayout = { result ->
+                            overflow?.let { reports ->
+                                reports[SHIFT_HOUR_LABEL_TAG] =
+                                    reports[SHIFT_HOUR_LABEL_TAG] == true ||
+                                    result.hasVisualOverflow ||
+                                    (result.lineCount > 0 && result.isLineEllipsized(0))
+                            }
+                        },
                     )
                 }
             }
@@ -765,15 +814,18 @@ private fun OverlapTimelineCard(
     val windowEnd = maxOf(firstEnd, secondEnd) + 15
     val windowSpan = (windowEnd - windowStart).coerceAtLeast(45)
     val railHeight = 126.dp
+
     fun minutesToY(min: Int): Dp {
         val fraction = (min - windowStart).toFloat() / windowSpan
         return (fraction * railHeight.value).dp
     }
+
     fun minutesToHeight(duration: Int): Dp {
         val fraction = duration.toFloat() / windowSpan
         return (fraction * railHeight.value).coerceAtLeast(24f).dp
     }
-  val railLabels =
+
+    val railLabels =
         listOf(0, 1, 2).map { index ->
             app.ebbplanner.ui.time.ClockFormat.minutesToClock(windowStart + (windowSpan * index / 2))
         }
@@ -787,16 +839,28 @@ private fun OverlapTimelineCard(
         }
     Surface(Modifier.fillMaxWidth().height(150.dp), shape = EbbShapes.md, color = MaterialTheme.colorScheme.surface) {
         Row(Modifier.padding(12.dp)) {
-            val largeText = androidx.compose.ui.platform.LocalConfiguration.current.fontScale >= 1.75f
-            val railWidth = if (largeText) 52.dp else 44.dp
+            val largeText = LocalConfiguration.current.fontScale >= 1.75f
+            val hourStyle = if (largeText) EbbTypography.labelS else timelineHourLabelTextStyle()
+            val railWidth = rememberHourRailWidth(railLabels, hourStyle, extra = 8.dp)
+            val overflow = LocalTextOverflowReports.current
             Column(Modifier.width(railWidth).height(railHeight), verticalArrangement = Arrangement.SpaceBetween) {
                 railLabels.forEach { label ->
                     Text(
                         label,
-                        style = if (largeText) EbbTypography.labelS else EbbTypography.labelM,
+                        style = hourStyle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         softWrap = false,
+                        overflow = TextOverflow.Clip,
+                        modifier = Modifier.testTag(OVERLAP_HOUR_LABEL_TAG),
+                        onTextLayout = { result ->
+                            overflow?.let { reports ->
+                                reports[OVERLAP_HOUR_LABEL_TAG] =
+                                    reports[OVERLAP_HOUR_LABEL_TAG] == true ||
+                                    result.hasVisualOverflow ||
+                                    (result.lineCount > 0 && result.isLineEllipsized(0))
+                            }
+                        },
                     )
                 }
             }

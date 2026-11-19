@@ -60,6 +60,39 @@ class QuickCaptureSnackbarTest {
         }
 
     @Test
+    fun rapidSaves_replaceCurrentSnackbar() =
+        runTest {
+            val host = SnackbarHostState()
+            val job1 =
+                launch {
+                    host.showQuickCaptureSavedSnackbar("one", "Show")
+                }
+            testScheduler.runCurrent()
+            assertEquals("one", host.currentSnackbarData!!.visuals.message)
+            val job2 =
+                launch {
+                    host.showQuickCaptureSavedSnackbar("two", "Show")
+                }
+            testScheduler.runCurrent()
+            assertEquals("two", host.currentSnackbarData!!.visuals.message)
+            job1.cancel()
+            job2.cancel()
+        }
+
+    @Test
+    fun saveNotifier_coalescesCountMessage() {
+        val resources =
+            androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>().resources
+        val notifier = QuickCaptureSaveNotifier()
+        notifier.record("a")
+        assertEquals("Saved to Anytime", notifier.message(resources, "Saved to Anytime"))
+        notifier.record("b")
+        notifier.record("c")
+        assertEquals("Saved 3 tasks", notifier.message(resources, "Saved to Anytime"))
+        assertEquals("c", notifier.lastTaskId)
+    }
+
+    @Test
     fun savedSnackbar_dismissesOnItsOwn() {
         composeRule.mainClock.autoAdvance = false
         val hostState = SnackbarHostState()

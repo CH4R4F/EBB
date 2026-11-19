@@ -1,6 +1,7 @@
 package app.ebbplanner.ui.taskdetail
 
 import app.ebbplanner.data.local.entity.TaskEntity
+import java.time.LocalDate
 
 data class TaskSubtaskRow(
     val id: String = "",
@@ -33,6 +34,8 @@ data class TaskDetailPresentationState(
     val durationMin: Int = TaskEntity.DEFAULT_DURATION_MIN,
     val remindersEnabled: Boolean = false,
     val scheduleSuggestions: List<ScheduleSuggestion> = emptyList(),
+    val scheduledDate: LocalDate? = null,
+    val scheduledStartLocalTime: String? = null,
 )
 
 enum class TaskDetailMode {

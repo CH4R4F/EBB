@@ -113,16 +113,34 @@ class QuickCaptureRoutingTest {
     }
 
     @Test
-    fun nextFreeSlot_endOfDayWhenLastGapTooShort() {
+    fun nextFreeSlot_endOfDayWhenLastGapTooShort_returnsNull() {
         val occupied = listOf(22 * 60 to 60)
         val slot = nextFreeSlotMinutes(22 * 60, occupied, durationMin = 90)
-        assertEquals(24 * 60 - 90, slot)
+        assertNull(slot)
     }
 
     @Test
-    fun nextFreeSlot_noGapReturnsLatestStartInWindow() {
+    fun nextFreeSlot_noGapReturnsNullInsteadOfOverlap() {
         val occupied = listOf(0 to 24 * 60)
         val slot = nextFreeSlotMinutes(9 * 60, occupied, durationMin = 30)
-        assertEquals(24 * 60 - 30, slot)
+        assertNull(slot)
+    }
+
+    @Test
+    fun dateOverride_beatsParsedDate() {
+        val resolved =
+            resolveQuickCapture(
+                QuickCaptureDraft(
+                    "gym 18:00",
+                    startOverride = LocalTime.of(9, 0),
+                    startOverridden = true,
+                    dateOverride = today.plusDays(1),
+                    dateOverridden = true,
+                ),
+                today,
+                QuickCaptureSaveTarget.Today,
+            )
+        assertEquals(today.plusDays(1), resolved.date)
+        assertEquals("09:00", resolved.startLocalTime)
     }
 }

@@ -1,11 +1,15 @@
 package app.ebbplanner.ui.today
 
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.ui.theme.EbbTheme
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -50,5 +54,25 @@ class TodayScreenTest {
         composeRule.onNodeWithTag(TODAY_DATE_HEADER_TAG).assertIsDisplayed()
         composeRule.onNodeWithText("Mon 17 Nov").assertIsDisplayed()
         composeRule.onNodeWithTag(TODAY_TIMELINE_TAG).assertIsDisplayed()
+    }
+
+    @Test
+    fun multiselect_doneButtonExitsMultiselect() {
+        var done = false
+        composeRule.setContent {
+            EbbTheme {
+                TodayScreenDesign(
+                    state = todayMultiselect(),
+                    modifier = Modifier.fillMaxSize(),
+                    showBottomNav = false,
+                    onMultiselectDone = { done = true },
+                )
+            }
+        }
+        composeRule.onNodeWithTag(TODAY_MULTISELECT_DONE_TAG).assertIsDisplayed()
+        composeRule.onNodeWithText("Done").assertIsDisplayed()
+        composeRule.onNodeWithTag(TODAY_MULTISELECT_DONE_TAG).performClick()
+        composeRule.waitForIdle()
+        assertTrue(done)
     }
 }

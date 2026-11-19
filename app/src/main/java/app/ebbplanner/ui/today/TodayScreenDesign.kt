@@ -49,6 +49,7 @@ fun TodayScreenDesign(
     onTaskClick: (String) -> Unit = {},
     onTaskLongPress: (String) -> Unit = {},
     onMarkTaskDone: (String) -> Unit = {},
+    onMultiselectDone: () -> Unit = {},
     snackbarHostState: SnackbarHostState? = null,
 ) {
     val dimmed = state.visualMode == TodayVisualMode.Drag
@@ -100,6 +101,7 @@ fun TodayScreenDesign(
                     onSearch = null,
                     onSettings = onSettings,
                     onMore = {},
+                    onMultiselectDone = onMultiselectDone,
                 )
                 when {
                     state.bannerMessage != null ->

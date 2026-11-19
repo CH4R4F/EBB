@@ -1,5 +1,6 @@
 package app.ebbplanner.ui.daytools
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getBoundsInRoot
@@ -17,7 +18,9 @@ import app.ebbplanner.domain.day.ShiftPreviewBlock
 import app.ebbplanner.ui.WithFontScale
 import app.ebbplanner.ui.components.EBB_SHEET_CANCEL_TAG
 import app.ebbplanner.ui.components.EBB_SHEET_CONFIRM_TAG
+import app.ebbplanner.ui.text.LocalTextOverflowReports
 import app.ebbplanner.ui.theme.EbbTheme
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -60,7 +63,52 @@ class DayToolsSheetActionsTest {
     @Test
     fun makeItFit_actions_f200() = assertActions(2f, SheetKind.MakeItFit)
 
+    @Test
+    fun shift_hourLabels_noOverflow_f100() = assertHourLabels(1f, SheetKind.Shift)
+
+    @Test
+    fun shift_hourLabels_noOverflow_f130() = assertHourLabels(1.3f, SheetKind.Shift)
+
+    @Test
+    fun shift_hourLabels_noOverflow_f200() = assertHourLabels(2f, SheetKind.Shift)
+
+    @Test
+    fun overlap_hourLabels_noOverflow_f100() = assertHourLabels(1f, SheetKind.Overlap)
+
+    @Test
+    fun overlap_hourLabels_noOverflow_f130() = assertHourLabels(1.3f, SheetKind.Overlap)
+
+    @Test
+    fun overlap_hourLabels_noOverflow_f200() = assertHourLabels(2f, SheetKind.Overlap)
+
     private enum class SheetKind { Shift, Overlap, MakeItFit }
+
+    private fun assertHourLabels(
+        scale: Float,
+        kind: SheetKind,
+    ) {
+        val overflow = mutableMapOf<String, Boolean>()
+        val tag = if (kind == SheetKind.Shift) SHIFT_HOUR_LABEL_TAG else OVERLAP_HOUR_LABEL_TAG
+        composeRule.setContent {
+            CompositionLocalProvider(LocalTextOverflowReports provides overflow) {
+                WithFontScale(scale) {
+                    EbbTheme {
+                        when (kind) {
+                            SheetKind.Shift ->
+                                ShiftTheRestDesign(
+                                    previewBefore = shiftBlocks(),
+                                    previewAfter = shiftBlocks(offset = 15),
+                                )
+                            SheetKind.Overlap -> OverlapHelperDesign(situation = overlapSituation())
+                            SheetKind.MakeItFit -> error("no hour labels")
+                        }
+                    }
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        assertFalse("$tag overflow at f$scale × 360dp", overflow[tag] == true)
+    }
 
     private fun assertActions(
         scale: Float,

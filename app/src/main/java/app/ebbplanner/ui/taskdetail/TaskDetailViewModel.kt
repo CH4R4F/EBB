@@ -388,6 +388,8 @@ class TaskDetailViewModel
                     },
                 mode = if (status == TaskEntity.STATUS_DONE) TaskDetailMode.Done else TaskDetailMode.Existing,
                 scheduleSuggestions = scheduleSuggestions,
+                scheduledDate = taskDate,
+                scheduledStartLocalTime = startLocalTime,
             )
         }
 

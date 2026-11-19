@@ -12,6 +12,8 @@ data class QuickCaptureDraft(
     val durationOverride: Int? = null,
     val startOverridden: Boolean = false,
     val durationOverridden: Boolean = false,
+    val dateOverride: LocalDate? = null,
+    val dateOverridden: Boolean = false,
 )
 
 enum class QuickCaptureDestinationKind {
@@ -41,7 +43,12 @@ fun resolveQuickCapture(
     saveTarget: QuickCaptureSaveTarget,
 ): QuickCaptureResolved {
     val parsed = QuickCaptureParser.parse(draft.raw, today)
-    val date = parsed.targetDate ?: today
+    val date =
+        if (draft.dateOverridden) {
+            draft.dateOverride ?: today
+        } else {
+            parsed.targetDate ?: today
+        }
     val startTime =
         if (draft.startOverridden) {
             draft.startOverride
@@ -101,20 +108,25 @@ fun nextFreeSlotMinutes(
     durationMin: Int = TaskEntity.DEFAULT_DURATION_MIN,
     windowStart: Int = 0,
     windowEnd: Int = 24 * 60,
-): Int {
+): Int? {
+    if (durationMin <= 0) return null
+    val latestStart = windowEnd - durationMin
+    if (latestStart < windowStart) return null
     val roundedNow = ((nowMinutes + 4) / 5) * 5
     var cursor = maxOf(windowStart, roundedNow)
+    if (cursor > latestStart) return null
     val sorted = occupied.sortedBy { it.first }
     sorted.forEach { (start, length) ->
         val end = start + length
         if (start >= cursor + durationMin) {
-            return cursor.coerceAtMost(windowEnd - durationMin)
+            return cursor
         }
         if (end > cursor) {
             cursor = ((end + 4) / 5) * 5
         }
+        if (cursor > latestStart) return null
     }
-    return cursor.coerceIn(windowStart, (windowEnd - durationMin).coerceAtLeast(windowStart))
+    return if (cursor <= latestStart) cursor else null
 }
 
 fun formatClockHm(time: LocalTime): String = time.format(clockFormatter)

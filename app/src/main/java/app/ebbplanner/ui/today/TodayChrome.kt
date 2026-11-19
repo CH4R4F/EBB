@@ -59,7 +59,7 @@ fun TodayTopBar(
     onSearch: (() -> Unit)? = null,
     onSettings: () -> Unit = {},
     onMore: () -> Unit = {},
-    onMultiselectDone: (() -> Unit)? = null,
+    onMultiselectDone: () -> Unit = {},
 ) {
     Row(
         modifier =
@@ -75,10 +75,11 @@ fun TodayTopBar(
                 style = EbbTypography.titleM,
                 modifier = Modifier.weight(1f),
             )
-            onMultiselectDone?.let { done ->
-                Button(onClick = done) {
-                    Text(stringResource(R.string.action_done), style = EbbTypography.labelL)
-                }
+            Button(
+                onClick = onMultiselectDone,
+                modifier = Modifier.testTag(TODAY_MULTISELECT_DONE_TAG),
+            ) {
+                Text(stringResource(R.string.action_done), style = EbbTypography.labelL)
             }
         } else {
             Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {

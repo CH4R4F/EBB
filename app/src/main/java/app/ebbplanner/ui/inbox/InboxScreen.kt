@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.ebbplanner.R
+import app.ebbplanner.ui.today.QuickCaptureSaveNotifier
 import app.ebbplanner.ui.today.QuickCaptureSaveTarget
 import app.ebbplanner.ui.today.QuickCaptureSheet
 import app.ebbplanner.ui.today.quickCaptureSavedMessage
@@ -34,6 +35,7 @@ fun InboxScreen(
     val presentation by viewModel.presentation.collectAsStateWithLifecycle()
     var showCapture by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val saveNotifier = remember { QuickCaptureSaveNotifier() }
     val scope = rememberCoroutineScope()
     val showLabel = stringResource(R.string.action_show)
     val resources = LocalContext.current.resources
@@ -54,14 +56,20 @@ fun InboxScreen(
         onDismiss = { showCapture = false },
         onSave = { draft ->
             viewModel.captureToInbox(draft) { task, resolved ->
+                saveNotifier.record(task.id)
+                val countAtShow = saveNotifier.count
+                val message =
+                    saveNotifier.message(resources, quickCaptureSavedMessage(resources, resolved))
                 scope.launch {
                     val result =
                         snackbarHostState.showQuickCaptureSavedSnackbar(
-                            message = quickCaptureSavedMessage(resources, resolved),
+                            message = message,
                             actionLabel = showLabel,
                         )
-                    if (result == SnackbarResult.ActionPerformed) {
-                        onOpenTask(task.id)
+                    val taskId = saveNotifier.lastTaskId
+                    saveNotifier.resetIfCurrent(countAtShow)
+                    if (result == SnackbarResult.ActionPerformed && taskId != null) {
+                        onOpenTask(taskId)
                     }
                 }
             }

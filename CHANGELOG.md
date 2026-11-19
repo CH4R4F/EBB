@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Schedule sheet** — date and time chips open on the task’s existing schedule; Use selection with no edits leaves the task unchanged. Time uses the system 12/24h setting with zero padding (`09:00`).
+- **Next free slot** — returns no slot instead of an overlapping end-of-day time. Capture shows `No free slot today` and a one-tap `Tomorrow, <first free slot>` option.
+- **Shift / Overlap hour labels** — preview hour rails size to the measured text so labels are not clipped at large font scales.
+- **Today multiselect** — Done is wired and exits multiselect.
+- **Quick capture snackbar** — a new save dismisses the current snackbar (and coalesces to `Saved N tasks`) so Enter-saves do not stack for ~20s.
 - **Quick capture snackbar** — save confirmation uses a short-lived snackbar hosted on the same Scaffold as the FAB, so Show never covers add and a tap after save opens a new capture.
 - **Next free slot** — the first gap at least as long as the selected duration is used, and the slot is recomputed when duration changes while Next free slot is active.
 - **Day-tool sheets** — Shift, Overlap and Make it fit keep Save/Cancel pinned and tappable at large font scales; wrap-content sheets scroll the body instead of clipping actions.

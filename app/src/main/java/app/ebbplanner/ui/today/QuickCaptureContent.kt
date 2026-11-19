@@ -50,6 +50,7 @@ const val QUICK_CAPTURE_DESTINATION_TAG = "quick_capture_destination"
 const val QUICK_CAPTURE_START_CHIP_TAG = "quick_capture_start_chip"
 const val QUICK_CAPTURE_NOW_TAG = "quick_capture_now"
 const val QUICK_CAPTURE_NEXT_FREE_TAG = "quick_capture_next_free"
+const val QUICK_CAPTURE_TOMORROW_FREE_TAG = "quick_capture_tomorrow_free"
 const val QUICK_CAPTURE_CLEAR_TIME_TAG = "quick_capture_clear_time"
 const val QUICK_CAPTURE_DURATION_PREFIX = "quick_capture_duration_"
 const val QUICK_CAPTURE_CUSTOM_DURATION_TAG = "quick_capture_duration_custom"
@@ -95,6 +96,7 @@ fun QuickCaptureSheetContent(
     onClearStart: () -> Unit = {},
     onNow: () -> Unit = {},
     onNextFree: () -> Unit = {},
+    onTomorrowFree: () -> Unit = {},
     onSelectDuration: (Int) -> Unit = {},
     onCustomDuration: () -> Unit = {},
 ) {
@@ -162,6 +164,7 @@ fun QuickCaptureSheetContent(
         val startTimeLabelText = stringResource(R.string.quick_capture_start_time)
         val nowLabel = stringResource(R.string.quick_capture_now)
         val nextFreeLabel = stringResource(R.string.quick_capture_next_free)
+        val noFreeLabel = stringResource(R.string.quick_capture_no_free_slot)
         val customDurationLabel = stringResource(R.string.quick_capture_custom_duration)
         state.previewLabel?.let { preview ->
             SuggestionChip(
@@ -227,15 +230,28 @@ fun QuickCaptureSheetContent(
                             .testTag(QUICK_CAPTURE_NOW_TAG)
                             .semantics { contentDescription = nowLabel },
                 )
+                val nextFreeChipLabel = if (state.nextFreeEnabled) nextFreeLabel else noFreeLabel
                 FilterChip(
                     selected = false,
                     onClick = onNextFree,
-                    label = { Text(nextFreeLabel, maxLines = 1, style = EbbTypography.labelM) },
+                    enabled = state.nextFreeEnabled,
+                    label = { Text(nextFreeChipLabel, maxLines = 1, style = EbbTypography.labelM) },
                     modifier =
                         Modifier
                             .testTag(QUICK_CAPTURE_NEXT_FREE_TAG)
-                            .semantics { contentDescription = nextFreeLabel },
+                            .semantics { contentDescription = nextFreeChipLabel },
                 )
+                state.tomorrowFreeLabel?.let { tomorrowLabel ->
+                    FilterChip(
+                        selected = false,
+                        onClick = onTomorrowFree,
+                        label = { Text(tomorrowLabel, maxLines = 1, style = EbbTypography.labelM) },
+                        modifier =
+                            Modifier
+                                .testTag(QUICK_CAPTURE_TOMORROW_FREE_TAG)
+                                .semantics { contentDescription = tomorrowLabel },
+                    )
+                }
             }
             if (state.startTimeLabel != null) {
                 FilterChip(

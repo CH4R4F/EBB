@@ -88,6 +88,8 @@ fun QuickCaptureEditor(
     var durationOverride by remember { mutableStateOf<Int?>(null) }
     var durationOverridden by remember { mutableStateOf(false) }
     var nextFreeActive by remember { mutableStateOf(false) }
+    var dateOverride by remember { mutableStateOf<LocalDate?>(null) }
+    var dateOverridden by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var showCustomDuration by remember { mutableStateOf(false) }
 
@@ -98,6 +100,8 @@ fun QuickCaptureEditor(
             durationOverride = durationOverride,
             startOverridden = startOverridden,
             durationOverridden = durationOverridden,
+            dateOverride = dateOverride,
+            dateOverridden = dateOverridden,
         )
     val resolved = remember(draft, defaultDate, saveTarget) { resolveQuickCapture(draft, defaultDate, saveTarget) }
     val calendarToday = LocalDate.now()
@@ -106,12 +110,39 @@ fun QuickCaptureEditor(
     val startLabel = resolved.startTime?.let { formatClockHm(it) }
     val showShortcuts = saveTarget == QuickCaptureSaveTarget.Today && resolved.startTime == null
     val resolvedNowMinutes = nowMinutes ?: (LocalTime.now().hour * 60 + LocalTime.now().minute)
+    val todaySlot = nextFreeSlotMinutes(resolvedNowMinutes, occupied, resolved.durationMin)
+    val tomorrowSlot = nextFreeSlotMinutes(0, emptyList(), resolved.durationMin)
+    val tomorrowFreeLabel =
+        if (todaySlot == null && tomorrowSlot != null) {
+            val time = LocalTime.of((tomorrowSlot / 60).coerceIn(0, 23), tomorrowSlot % 60)
+            stringResource(R.string.quick_capture_tomorrow_free, formatClockHm(time))
+        } else {
+            null
+        }
+
+    fun minutesToStart(minutes: Int): LocalTime =
+        LocalTime.of((minutes / 60).coerceIn(0, 23), minutes % 60)
 
     val applyNextFree: (Int) -> Unit = { durationMin ->
         val minutes = nextFreeSlotMinutes(resolvedNowMinutes, occupied, durationMin)
-        startOverride = LocalTime.of((minutes / 60).coerceIn(0, 23), minutes % 60)
-        startOverridden = true
-        nextFreeActive = true
+        if (minutes != null) {
+            startOverride = minutesToStart(minutes)
+            startOverridden = true
+            dateOverride = null
+            dateOverridden = false
+            nextFreeActive = true
+        }
+    }
+
+    val applyTomorrowFree: (Int) -> Unit = { durationMin ->
+        val minutes = nextFreeSlotMinutes(0, emptyList(), durationMin)
+        if (minutes != null) {
+            startOverride = minutesToStart(minutes)
+            startOverridden = true
+            dateOverride = defaultDate.plusDays(1)
+            dateOverridden = true
+            nextFreeActive = true
+        }
     }
 
     val persistDraft: (Boolean) -> Unit = { dismiss ->
@@ -122,6 +153,8 @@ fun QuickCaptureEditor(
             startOverridden = false
             durationOverride = null
             durationOverridden = false
+            dateOverride = null
+            dateOverridden = false
             nextFreeActive = false
             if (dismiss) onCancel()
         }
@@ -139,6 +172,8 @@ fun QuickCaptureEditor(
                     startTimeLabel = startLabel,
                     selectedDurationMin = if (resolved.explicitDuration) resolved.durationMin else null,
                     showTodayShortcuts = showShortcuts,
+                    nextFreeEnabled = todaySlot != null,
+                    tomorrowFreeLabel = tomorrowFreeLabel,
                     saveEnabled = title.isNotBlank(),
                 ),
             modifier = Modifier.fillMaxWidth(),
@@ -153,18 +188,25 @@ fun QuickCaptureEditor(
             onClearStart = {
                 startOverride = null
                 startOverridden = true
+                dateOverride = null
+                dateOverridden = false
                 nextFreeActive = false
             },
             onNow = {
-                startOverride = LocalTime.of((resolvedNowMinutes / 60).coerceIn(0, 23), resolvedNowMinutes % 60)
+                startOverride = minutesToStart(resolvedNowMinutes)
                 startOverridden = true
+                dateOverride = null
+                dateOverridden = false
                 nextFreeActive = false
             },
             onNextFree = { applyNextFree(resolved.durationMin) },
+            onTomorrowFree = { applyTomorrowFree(resolved.durationMin) },
             onSelectDuration = { minutes ->
                 durationOverride = minutes
                 durationOverridden = true
-                if (nextFreeActive) applyNextFree(minutes)
+                if (nextFreeActive) {
+                    if (dateOverridden) applyTomorrowFree(minutes) else applyNextFree(minutes)
+                }
             },
             onCustomDuration = { showCustomDuration = true },
         )

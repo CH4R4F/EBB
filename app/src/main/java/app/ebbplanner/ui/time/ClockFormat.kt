@@ -30,4 +30,25 @@ object ClockFormat {
         val normalized = ((minutes % (24 * 60)) + (24 * 60)) % (24 * 60)
         return "%02d:%02d".format(normalized / 60, normalized % 60)
     }
+
+    fun minutesToClockDisplay(
+        minutes: Int,
+        is24Hour: Boolean,
+    ): String {
+        val normalized = ((minutes % (24 * 60)) + (24 * 60)) % (24 * 60)
+        val h = normalized / 60
+        val m = normalized % 60
+        return if (is24Hour) {
+            "%02d:%02d".format(h, m)
+        } else {
+            val hour12 =
+                when {
+                    h == 0 -> 12
+                    h > 12 -> h - 12
+                    else -> h
+                }
+            val suffix = if (h < 12) "AM" else "PM"
+            "%02d:%02d %s".format(hour12, m, suffix)
+        }
+    }
 }

@@ -34,6 +34,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,6 +52,9 @@ import app.ebbplanner.ui.theme.EbbTypography
 import app.ebbplanner.ui.time.ClockFormat
 import java.time.Instant
 import java.time.LocalDate
+
+const val SCHEDULE_DATE_CHIP_TAG = "schedule_date_chip"
+const val SCHEDULE_TIME_CHIP_TAG = "schedule_time_chip"
 
 private val durationPresets = listOf(5, 10, 15, 30, 45, 60, 90)
 private val colorOptions = listOf("slate", "lemon", "sky", "rose", "amber", "green")
@@ -103,6 +108,8 @@ fun TaskSheetHost(
                 ScheduleSheetPanel(
                     taskTitle = state.title,
                     suggestions = state.scheduleSuggestions,
+                    existingDate = state.scheduledDate,
+                    existingStartLocalTime = state.scheduledStartLocalTime,
                     onSave = { placement, date, time ->
                         onSaveSchedule(placement, date, time)
                         onDismiss()
@@ -216,16 +223,25 @@ private fun BreakDownSheetPanel(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-private fun ScheduleSheetPanel(
+internal fun ScheduleSheetPanel(
     taskTitle: String,
     suggestions: List<ScheduleSuggestion>,
+    existingDate: LocalDate? = null,
+    existingStartLocalTime: String? = null,
     onSave: (String, LocalDate?, String?) -> Unit,
     onCancel: () -> Unit = {},
 ) {
+    val fallbackMinutes =
+        suggestions.firstOrNull { it.subtitle == "Next free slot" }
+            ?.startLocalTime
+            ?.let { ClockFormat.parseMinutes(it) }
+            ?: (9 * 60)
+    val initialMinutes = existingStartLocalTime?.let { ClockFormat.parseMinutes(it) } ?: fallbackMinutes
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
-    var pickedDate by remember { mutableStateOf(LocalDate.now()) }
-    var pickedTimeMinutes by remember { mutableIntStateOf(9 * 60) }
+    var pickedDate by remember { mutableStateOf(existingDate ?: LocalDate.now()) }
+    var pickedTimeMinutes by remember { mutableIntStateOf(initialMinutes) }
+    val is24Hour = android.text.format.DateFormat.is24HourFormat(LocalContext.current)
     if (showDatePicker) {
         val dateState =
             rememberDatePickerState(
@@ -257,7 +273,7 @@ private fun ScheduleSheetPanel(
     if (showTimePicker) {
         val hour = pickedTimeMinutes / 60
         val minute = pickedTimeMinutes % 60
-        val timeState = rememberTimePickerState(initialHour = hour, initialMinute = minute, is24Hour = true)
+        val timeState = rememberTimePickerState(initialHour = hour, initialMinute = minute, is24Hour = is24Hour)
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showTimePicker = false },
             confirmButton = {
@@ -299,6 +315,7 @@ private fun ScheduleSheetPanel(
             FilterChip(
                 selected = true,
                 onClick = { showDatePicker = true },
+                modifier = Modifier.testTag(SCHEDULE_DATE_CHIP_TAG),
                 label = {
                     Text(
                         pickedDate.format(java.time.format.DateTimeFormatter.ofPattern("d MMM")),
@@ -310,9 +327,10 @@ private fun ScheduleSheetPanel(
             FilterChip(
                 selected = true,
                 onClick = { showTimePicker = true },
+                modifier = Modifier.testTag(SCHEDULE_TIME_CHIP_TAG),
                 label = {
                     Text(
-                        ClockFormat.minutesToClock(pickedTimeMinutes),
+                        ClockFormat.minutesToClockDisplay(pickedTimeMinutes, is24Hour),
                         maxLines = 1,
                         style = EbbTypography.labelM,
                     )

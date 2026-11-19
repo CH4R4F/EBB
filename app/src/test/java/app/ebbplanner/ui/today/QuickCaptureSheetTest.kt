@@ -72,6 +72,8 @@ class QuickCaptureSheetTest {
         }
         composeRule.onAllNodesWithTag(QUICK_CAPTURE_TEXT_FIELD_TAG).assertCountEquals(1)
         composeRule.onAllNodesWithTag(QUICK_CAPTURE_ADD_BUTTON_TAG).assertCountEquals(1)
+        composeRule.onNodeWithText("Save").assertIsDisplayed()
+        assertTrue(composeRule.onAllNodesWithText("Add").fetchSemanticsNodes().isEmpty())
     }
 
     @Test
@@ -281,6 +283,29 @@ class QuickCaptureSheetTest {
         tapTag(quickCaptureDurationTag(45))
         composeRule.waitForIdle()
         composeRule.onNodeWithText("Timeline, today 12:50").assertIsDisplayed()
+    }
+
+    @Test
+    fun noFreeSlot_showsDisabledChipAndTomorrowOption() {
+        val captured = mutableListOf<QuickCaptureResolved>()
+        mountEditor(
+            nowMinutes = 22 * 60,
+            occupied = listOf(22 * 60 to 60),
+            onResolved = { captured += it },
+        )
+        composeRule.onNodeWithTag(QUICK_CAPTURE_TEXT_FIELD_TAG, useUnmergedTree = true).performTextInput("gym")
+        tapTag(quickCaptureDurationTag(90))
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("No free slot today").assertIsDisplayed()
+        composeRule.onNodeWithTag(QUICK_CAPTURE_NEXT_FREE_TAG, useUnmergedTree = true).assertIsNotEnabled()
+        composeRule.onNodeWithTag(QUICK_CAPTURE_TOMORROW_FREE_TAG, useUnmergedTree = true).assertIsDisplayed()
+        tapTag(QUICK_CAPTURE_TOMORROW_FREE_TAG)
+        composeRule.waitForIdle()
+        tapTag(QUICK_CAPTURE_ADD_BUTTON_TAG)
+        composeRule.waitForIdle()
+        assertEquals(today.plusDays(1), captured.single().date)
+        assertEquals("00:00", captured.single().startLocalTime)
+        assertEquals(TaskEntity.PLACEMENT_SCHEDULED, captured.single().placement)
     }
 
     @Test
