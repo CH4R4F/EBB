@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -51,15 +50,12 @@ import app.ebbplanner.ui.theme.EbbTypography
 @Composable
 fun TodayTopBar(
     dateLabel: String,
-    multiselect: Boolean,
-    multiselectCount: Int,
     modifier: Modifier = Modifier,
     onPrevDay: () -> Unit = {},
     onNextDay: () -> Unit = {},
     onSearch: (() -> Unit)? = null,
     onSettings: () -> Unit = {},
     onMore: () -> Unit = {},
-    onMultiselectDone: () -> Unit = {},
 ) {
     Row(
         modifier =
@@ -69,45 +65,31 @@ fun TodayTopBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Spacer(modifier = Modifier.width(8.dp))
-        if (multiselect) {
+        Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onPrevDay, modifier = Modifier.size(48.dp)) {
+                EbbSymbol("chevron_left", fontSize = 24.sp)
+            }
             Text(
-                text = stringResource(R.string.today_multiselect_title, multiselectCount),
-                style = EbbTypography.titleM,
-                modifier = Modifier.weight(1f),
+                text = dateLabel,
+                style = EbbTypography.headlineM,
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .testTag(TODAY_DATE_HEADER_TAG),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
-            Button(
-                onClick = onMultiselectDone,
-                modifier = Modifier.testTag(TODAY_MULTISELECT_DONE_TAG),
-            ) {
-                Text(stringResource(R.string.action_done), style = EbbTypography.labelL)
+            IconButton(onClick = onNextDay, modifier = Modifier.size(48.dp)) {
+                EbbSymbol("chevron_right", fontSize = 24.sp)
             }
-        } else {
-            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onPrevDay, modifier = Modifier.size(48.dp)) {
-                    EbbSymbol("chevron_left", fontSize = 24.sp)
-                }
-                Text(
-                    text = dateLabel,
-                    style = EbbTypography.headlineM,
-                    modifier =
-                        Modifier
-                            .weight(1f)
-                            .testTag(TODAY_DATE_HEADER_TAG),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                IconButton(onClick = onNextDay, modifier = Modifier.size(48.dp)) {
-                    EbbSymbol("chevron_right", fontSize = 24.sp)
-                }
+        }
+        if (onSearch != null) {
+            IconButton(onClick = onSearch, modifier = Modifier.size(48.dp)) {
+                EbbSymbol("search", fontSize = 22.sp)
             }
-            if (onSearch != null) {
-                IconButton(onClick = onSearch, modifier = Modifier.size(48.dp)) {
-                    EbbSymbol("search", fontSize = 22.sp)
-                }
-            }
-            IconButton(onClick = onSettings, modifier = Modifier.size(48.dp)) {
-                EbbSymbol("settings", fontSize = 22.sp)
-            }
+        }
+        IconButton(onClick = onSettings, modifier = Modifier.size(48.dp)) {
+            EbbSymbol("settings", fontSize = 22.sp)
         }
     }
 }

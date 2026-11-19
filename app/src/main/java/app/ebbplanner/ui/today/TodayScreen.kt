@@ -25,7 +25,6 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 const val TODAY_DATE_HEADER_TAG = "today_date_header"
-const val TODAY_MULTISELECT_DONE_TAG = "today_multiselect_done"
 const val TODAY_TIMELINE_TAG = "today_timeline"
 const val TIMELINE_TASK_TAG_PREFIX = "timeline_task_"
 const val QUICK_CAPTURE_SNACKBAR_HOST_TAG = "quick_capture_snackbar_host"
@@ -161,6 +160,9 @@ fun TodayScreen(
         defaultText = capturePrefill,
         nowMinutes = nowMinutes,
         occupied = occupied,
+        occupiedTomorrow = presentation.tomorrowOccupied,
+        windowStart = presentation.wakeMinutes,
+        windowEnd = presentation.bedMinutes,
     )
 }
 

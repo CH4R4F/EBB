@@ -129,7 +129,6 @@
     <string name="today_anytime_empty">Drop tasks here when there\'s no set time.</string>
     <string name="today_timeline_title">Timeline</string>
     <string name="today_shift">Shift</string>
-    <string name="today_multiselect_title">%1$d selected</string>
     <string name="today_anytime_add">add</string>
     <string name="today_empty_title">Your day is open</string>
     <string name="today_empty_body">Drop something in, or plan the day when you\'re ready.</string>

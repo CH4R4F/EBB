@@ -26,7 +26,6 @@ PAIRS: dict[str, str] = {
     "m1_today_empty_dark.png": "10-m1-today-empty-dark.png",
     "m1_today_loading_dark.png": "10-m1-today-loading-dark.png",
     "m1_today_drag_dark.png": "10-m1-today-drag-dark.png",
-    "m1_today_multiselect_dark.png": "10-m1-today-multiselect-dark.png",
     "m1_today_reminders_banner_dark.png": "10-m1-today-reminders-banner-dark.png",
     "m1_today_overfull_dark.png": "10-m1-today-overfull-dark.png",
     "m1_today_overlap_dark.png": "10-m1-today-overlap-dark.png",

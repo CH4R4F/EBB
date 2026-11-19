@@ -9,10 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Schedule sheet** — date and time chips open on the task’s existing schedule; Use selection with no edits leaves the task unchanged. Time uses the system 12/24h setting with zero padding (`09:00`).
-- **Next free slot** — returns no slot instead of an overlapping end-of-day time. Capture shows `No free slot today` and a one-tap `Tomorrow, <first free slot>` option.
+- **Schedule reminders** — Use selection on an already-scheduled task keeps `reminderEnabled` and the TaskStart alarm. The reminders default applies only when moving unscheduled → scheduled. Same date/time is a no-op; a time change reschedules the alarm.
+- **Schedule sheet** — date and time chips open on the task’s existing schedule; Use selection with no edits leaves the task unchanged. Times follow the system 12/24h setting (`h:mm a` / `HH:mm`).
+- **Next free slot** — returns no slot instead of an overlapping end-of-day time. Capture shows `No free slot today` and a one-tap `Tomorrow, <first free slot>` using tomorrow’s occupancy in the wake–bed window (hidden when tomorrow has no fit). Changing duration while Next free is active recomputes; if the slot no longer fits, the no-slot/tomorrow state is shown.
 - **Shift / Overlap hour labels** — preview hour rails size to the measured text so labels are not clipped at large font scales.
-- **Today multiselect** — Done is wired and exits multiselect.
+- **Today multiselect** — removed unreachable UI. Long-press on a Today task still opens the schedule sheet.
 - **Quick capture snackbar** — a new save dismisses the current snackbar (and coalesces to `Saved N tasks`) so Enter-saves do not stack for ~20s.
 - **Quick capture snackbar** — save confirmation uses a short-lived snackbar hosted on the same Scaffold as the FAB, so Show never covers add and a tap after save opens a new capture.
 - **Next free slot** — the first gap at least as long as the selected duration is used, and the slot is recomputed when duration changes while Next free slot is active.
@@ -27,7 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Sheet actions** — shared `EbbSheetActions` filled Save and outlined Cancel (48dp touch target, stacked at large font scales) used on Quick capture, task sheets, estimate/color pickers, routine editor, onboarding time dialogs, and other sheet/dialog confirm rows. No plain TextButton for primary sheet actions. Hardcoded Done/Cancel, Add step, Use selection and Shift +N min now come from string resources (with plurals for the shift label).
 - **Routine editor** — Daily / Weekdays / Weekly are FilterChips.
 - **Schedule sheet** — date and time chips show the picked values before Use selection.
-- **Today multiselect** — Done is a filled action button.
 
 ## [0.1.1] - 2026-11-18
 

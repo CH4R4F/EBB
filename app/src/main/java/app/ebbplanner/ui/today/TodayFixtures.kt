@@ -191,16 +191,6 @@ fun todayDrag(): TodayPresentationState {
     )
 }
 
-fun todayMultiselect(): TodayPresentationState =
-    basePopulated().copy(
-        visualMode = TodayVisualMode.Multiselect,
-        multiselectCount = 2,
-        blocks =
-            populatedBlocks().map { block ->
-                block.copy(selected = block.id == "brief" || block.id == "poster")
-            },
-    )
-
 fun todayRemindersBanner(): TodayPresentationState =
     basePopulated().copy(
         visualMode = TodayVisualMode.RemindersBanner,

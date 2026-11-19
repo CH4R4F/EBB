@@ -6,7 +6,7 @@ import androidx.compose.ui.res.stringResource
 import app.ebbplanner.R
 import app.ebbplanner.domain.capture.QuickCaptureDestinationKind
 import app.ebbplanner.domain.capture.QuickCaptureResolved
-import app.ebbplanner.domain.capture.formatClockHm
+import app.ebbplanner.ui.time.ClockFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -28,9 +28,13 @@ fun quickCaptureDayLabel(
 fun quickCapturePreviewLabel(
     resolved: QuickCaptureResolved,
     today: LocalDate,
+    is24Hour: Boolean,
 ): String? {
     val day = quickCaptureDayLabel(resolved.date, today)
-    val time = resolved.startTime?.let { formatClockHm(it) }
+    val time =
+        resolved.startTime?.let {
+            ClockFormat.minutesToClockDisplay(it.hour * 60 + it.minute, is24Hour)
+        }
     return when {
         time != null && resolved.explicitDuration ->
             stringResource(R.string.quick_capture_preview_time_duration, day, time, resolved.durationMin)
@@ -44,8 +48,12 @@ fun quickCapturePreviewLabel(
 fun quickCaptureDestinationLabel(
     resolved: QuickCaptureResolved,
     today: LocalDate,
+    is24Hour: Boolean,
 ): String {
-    val time = resolved.startLocalTime.orEmpty()
+    val time =
+        resolved.startTime?.let {
+            ClockFormat.minutesToClockDisplay(it.hour * 60 + it.minute, is24Hour)
+        }.orEmpty()
     return when (resolved.kind) {
         QuickCaptureDestinationKind.Inbox -> stringResource(R.string.quick_capture_dest_inbox)
         QuickCaptureDestinationKind.Anytime -> stringResource(R.string.quick_capture_dest_anytime)

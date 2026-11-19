@@ -34,6 +34,8 @@ data class TodayUiState(
     val scheduledTasks: List<TaskEntity> = emptyList(),
     val anytimeTasks: List<TaskEntity> = emptyList(),
     val calendarEvents: List<TodayCalendarEventUi> = emptyList(),
+    val tomorrowScheduledTasks: List<TaskEntity> = emptyList(),
+    val tomorrowEvents: List<TodayCalendarEventUi> = emptyList(),
     val minutesPlanned: Int = 0,
     val isLoading: Boolean = true,
 )
@@ -52,19 +54,34 @@ class TodayViewModel
         @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
         val uiState: StateFlow<TodayUiState> =
             combine(
+                selectedDate.flatMapLatest { date ->
+                    combine(
+                        taskRepository.observeTasksForDate(date),
+                        taskRepository.observeTasksForDate(date.plusDays(1)),
+                        flowOf(
+                            calendarEventsReader.eventsForDay(date) to
+                                calendarEventsReader.eventsForDay(date.plusDays(1)),
+                        ),
+                    ) { todayTasks, tomorrowTasks, events ->
+                        Triple(todayTasks, tomorrowTasks, events)
+                    }
+                },
                 selectedDate,
-                selectedDate.flatMapLatest { taskRepository.observeTasksForDate(it) },
-                selectedDate.flatMapLatest { date -> flowOf(calendarEventsReader.eventsForDay(date)) },
                 userPreferencesRepository.dayWakeMinutes,
                 userPreferencesRepository.dayBedMinutes,
-            ) { date, tasks, calendarSnapshots, wake, bed ->
+            ) { dayData, date, wake, bed ->
+                val (tasks, tomorrowTasks, eventsPair) = dayData
                 val scheduled =
                     tasks.filter {
                         it.placement == TaskEntity.PLACEMENT_SCHEDULED && it.startLocalTime != null
                     }
                 val anytime = tasks.filter { it.placement == TaskEntity.PLACEMENT_ANYTIME }
-                val calendarEvents =
-                    calendarSnapshots.map { snapshot -> snapshot.toTodayUi() }
+                val calendarEvents = eventsPair.first.map { snapshot -> snapshot.toTodayUi() }
+                val tomorrowScheduled =
+                    tomorrowTasks.filter {
+                        it.placement == TaskEntity.PLACEMENT_SCHEDULED && it.startLocalTime != null
+                    }
+                val tomorrowEvents = eventsPair.second.map { snapshot -> snapshot.toTodayUi() }
                 TodayUiState(
                     date = date,
                     dateLabel = date.format(dateFormatter),
@@ -73,6 +90,8 @@ class TodayViewModel
                     scheduledTasks = scheduled,
                     anytimeTasks = anytime,
                     calendarEvents = calendarEvents,
+                    tomorrowScheduledTasks = tomorrowScheduled,
+                    tomorrowEvents = tomorrowEvents,
                     minutesPlanned = scheduled.sumOf { it.durationMin },
                     isLoading = false,
                 )

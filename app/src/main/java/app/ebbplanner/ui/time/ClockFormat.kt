@@ -48,7 +48,7 @@ object ClockFormat {
                     else -> h
                 }
             val suffix = if (h < 12) "AM" else "PM"
-            "%02d:%02d %s".format(hour12, m, suffix)
+            "%d:%02d %s".format(hour12, m, suffix)
         }
     }
 }

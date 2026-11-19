@@ -40,8 +40,6 @@ class TodayPaparazziTest {
 
     @Test fun m1_today_drag_dark() = snap("m1_today_drag_dark", true, todayDrag())
 
-    @Test fun m1_today_multiselect_dark() = snap("m1_today_multiselect_dark", true, todayMultiselect())
-
     @Test fun m1_today_reminders_banner_dark() = snap("m1_today_reminders_banner_dark", true, todayRemindersBanner())
 
     @Test fun m1_today_overfull_dark() = snap("m1_today_overfull_dark", true, todayOverfull())

@@ -49,7 +49,6 @@ fun TodayScreenDesign(
     onTaskClick: (String) -> Unit = {},
     onTaskLongPress: (String) -> Unit = {},
     onMarkTaskDone: (String) -> Unit = {},
-    onMultiselectDone: () -> Unit = {},
     snackbarHostState: SnackbarHostState? = null,
 ) {
     val dimmed = state.visualMode == TodayVisualMode.Drag
@@ -94,29 +93,24 @@ fun TodayScreenDesign(
             Column(modifier = Modifier.fillMaxSize()) {
                 TodayTopBar(
                     dateLabel = state.dateLabel,
-                    multiselect = state.visualMode == TodayVisualMode.Multiselect,
-                    multiselectCount = state.multiselectCount,
                     onPrevDay = onPrevDay,
                     onNextDay = onNextDay,
                     onSearch = null,
                     onSettings = onSettings,
                     onMore = {},
-                    onMultiselectDone = onMultiselectDone,
                 )
                 when {
                     state.bannerMessage != null ->
                         TodayBanner(state.bannerMessage, onClick = onOpenMakeItFit)
                 }
                 state.overlapHint?.let { TodayOverlapHint(it, onClick = onOpenOverlap) }
-                if (state.visualMode != TodayVisualMode.Multiselect) {
-                    TodayDayHead(state = state, onShiftClick = onShiftClick)
-                    TodayAnytimeTray(
-                        chips = state.anytimeChips,
-                        onChipClick = onAnytimeClick,
-                        onChipDone = onAnytimeDone,
-                        onAddAnytime = onAddAnytimeCapture,
-                    )
-                }
+                TodayDayHead(state = state, onShiftClick = onShiftClick)
+                TodayAnytimeTray(
+                    chips = state.anytimeChips,
+                    onChipClick = onAnytimeClick,
+                    onChipDone = onAnytimeDone,
+                    onAddAnytime = onAddAnytimeCapture,
+                )
                 Column(
                     modifier =
                         Modifier

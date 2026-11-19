@@ -394,9 +394,16 @@ class TaskRepository
             startLocalTime: String?,
         ) {
             val defaultReminders = userPreferencesRepository.remindersDefault.first()
-            val before = taskDao.getById(id)
+            val before = taskDao.getById(id) ?: return
             val newDate = date?.toString()
-            if (before?.sourceRoutineId != null) {
+            val sameSchedule =
+                before.placement == placement &&
+                    before.date == newDate &&
+                    before.startLocalTime == startLocalTime
+            if (sameSchedule) {
+                return
+            }
+            if (before.sourceRoutineId != null) {
                 val oldOccurrence = before.routineOccurrenceDate ?: before.date
                 if (oldOccurrence != null &&
                     newDate != null &&
@@ -408,11 +415,10 @@ class TaskRepository
             }
             updateTaskFields(id) { task ->
                 val wasScheduled = task.placement == TaskEntity.PLACEMENT_SCHEDULED && task.startLocalTime != null
-                val userDisabled = wasScheduled && !task.reminderEnabled
                 val enableReminders =
                     when {
                         placement != TaskEntity.PLACEMENT_SCHEDULED || startLocalTime == null -> false
-                        userDisabled -> false
+                        wasScheduled -> task.reminderEnabled
                         else -> defaultReminders
                     }
                 val priorOccurrence = task.routineOccurrenceDate ?: task.date

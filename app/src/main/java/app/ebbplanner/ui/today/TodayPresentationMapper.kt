@@ -21,6 +21,9 @@ object TodayPresentationMapper {
                 dateLabel = state.dateLabel.ifBlank { state.date.format(dateFormatter) },
                 visualMode = TodayVisualMode.Loading,
                 showNowLine = false,
+                wakeMinutes = state.wakeMinutes,
+                bedMinutes = state.bedMinutes,
+                tomorrowOccupied = occupancyPairs(state.tomorrowScheduledTasks, state.tomorrowEvents),
             )
         }
         val scheduled = state.scheduledTasks
@@ -30,6 +33,9 @@ object TodayPresentationMapper {
                 dateLabel = state.dateLabel.ifBlank { state.date.format(dateFormatter) },
                 dayMeta = "today · bedtime ${formatBed(state.bedMinutes)} · 0 done",
                 timeLeftLabel = formatTimeLeft(state.bedMinutes, nowMinutes),
+                wakeMinutes = state.wakeMinutes,
+                bedMinutes = state.bedMinutes,
+                tomorrowOccupied = occupancyPairs(state.tomorrowScheduledTasks, state.tomorrowEvents),
             )
         }
         val blocks =
@@ -64,6 +70,9 @@ object TodayPresentationMapper {
             showNowLine = isToday(state.date),
             bannerMessage = if (overfull) "Fuller than the time left · Make it fit" else null,
             overlapHint = if (overlap) "These overlap" else null,
+            wakeMinutes = state.wakeMinutes,
+            bedMinutes = state.bedMinutes,
+            tomorrowOccupied = occupancyPairs(state.tomorrowScheduledTasks, state.tomorrowEvents),
             visualMode =
                 when {
                     overlap -> TodayVisualMode.Overlap
@@ -71,6 +80,21 @@ object TodayPresentationMapper {
                     else -> TodayVisualMode.Normal
                 },
         )
+    }
+
+    private fun occupancyPairs(
+        tasks: List<TaskEntity>,
+        events: List<TodayCalendarEventUi>,
+    ): List<Pair<Int, Int>> {
+        val fromTasks =
+            tasks
+                .filter { it.status != TaskEntity.STATUS_DONE }
+                .mapNotNull { task ->
+                    val start = ClockFormat.parseMinutes(task.startLocalTime ?: return@mapNotNull null) ?: return@mapNotNull null
+                    start to task.durationMin
+                }
+        val fromEvents = events.map { it.startMinutes to it.durationMin }
+        return fromTasks + fromEvents
     }
 
     private const val TIMELINE_MIN_START_HOUR = 9

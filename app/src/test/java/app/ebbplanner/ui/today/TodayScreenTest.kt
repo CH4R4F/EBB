@@ -4,12 +4,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.ui.theme.EbbTheme
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -57,22 +58,24 @@ class TodayScreenTest {
     }
 
     @Test
-    fun multiselect_doneButtonExitsMultiselect() {
-        var done = false
+    fun longPressOnTask_opensScheduleNotMultiselect() {
+        var longPressedId: String? = null
         composeRule.setContent {
             EbbTheme {
                 TodayScreenDesign(
-                    state = todayMultiselect(),
+                    state = todayPopulatedDark(),
                     modifier = Modifier.fillMaxSize(),
                     showBottomNav = false,
-                    onMultiselectDone = { done = true },
+                    onTaskLongPress = { longPressedId = it },
                 )
             }
         }
-        composeRule.onNodeWithTag(TODAY_MULTISELECT_DONE_TAG).assertIsDisplayed()
-        composeRule.onNodeWithText("Done").assertIsDisplayed()
-        composeRule.onNodeWithTag(TODAY_MULTISELECT_DONE_TAG).performClick()
         composeRule.waitForIdle()
-        assertTrue(done)
+        composeRule
+            .onNodeWithTag(timelineTaskTestTag("brief"), useUnmergedTree = true)
+            .assertIsDisplayed()
+            .performTouchInput { longClick() }
+        composeRule.waitForIdle()
+        assertEquals("brief", longPressedId)
     }
 }

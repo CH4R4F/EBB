@@ -19,16 +19,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import app.ebbplanner.R
 import app.ebbplanner.domain.capture.QuickCaptureDraft
-import app.ebbplanner.domain.capture.formatClockHm
 import app.ebbplanner.domain.capture.nextFreeSlotMinutes
 import app.ebbplanner.domain.capture.resolveQuickCapture
 import app.ebbplanner.ui.components.EbbCancelButton
 import app.ebbplanner.ui.components.EbbConfirmButton
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbTypography
+import app.ebbplanner.ui.time.ClockFormat
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -52,6 +53,9 @@ fun QuickCaptureSheet(
     saveTarget: QuickCaptureSaveTarget = QuickCaptureSaveTarget.Today,
     nowMinutes: Int? = null,
     occupied: List<Pair<Int, Int>> = emptyList(),
+    occupiedTomorrow: List<Pair<Int, Int>> = emptyList(),
+    windowStart: Int = 0,
+    windowEnd: Int = 24 * 60,
 ) {
     if (!visible) return
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -65,6 +69,9 @@ fun QuickCaptureSheet(
             saveTarget = saveTarget,
             nowMinutes = nowMinutes,
             occupied = occupied,
+            occupiedTomorrow = occupiedTomorrow,
+            windowStart = windowStart,
+            windowEnd = windowEnd,
             onSave = onSave,
             onCancel = onDismiss,
         )
@@ -81,6 +88,9 @@ fun QuickCaptureEditor(
     saveTarget: QuickCaptureSaveTarget = QuickCaptureSaveTarget.Today,
     nowMinutes: Int? = null,
     occupied: List<Pair<Int, Int>> = emptyList(),
+    occupiedTomorrow: List<Pair<Int, Int>> = emptyList(),
+    windowStart: Int = 0,
+    windowEnd: Int = 24 * 60,
 ) {
     var title by remember(defaultText) { mutableStateOf(defaultText) }
     var startOverride by remember { mutableStateOf<LocalTime?>(null) }
@@ -105,17 +115,34 @@ fun QuickCaptureEditor(
         )
     val resolved = remember(draft, defaultDate, saveTarget) { resolveQuickCapture(draft, defaultDate, saveTarget) }
     val calendarToday = LocalDate.now()
-    val preview = quickCapturePreviewLabel(resolved, calendarToday)
-    val destination = quickCaptureDestinationLabel(resolved, calendarToday)
-    val startLabel = resolved.startTime?.let { formatClockHm(it) }
+    val is24Hour = android.text.format.DateFormat.is24HourFormat(LocalContext.current)
+    fun displayClock(time: LocalTime): String =
+        ClockFormat.minutesToClockDisplay(time.hour * 60 + time.minute, is24Hour)
+    val preview = quickCapturePreviewLabel(resolved, calendarToday, is24Hour)
+    val destination = quickCaptureDestinationLabel(resolved, calendarToday, is24Hour)
+    val startLabel = resolved.startTime?.let { displayClock(it) }
     val showShortcuts = saveTarget == QuickCaptureSaveTarget.Today && resolved.startTime == null
     val resolvedNowMinutes = nowMinutes ?: (LocalTime.now().hour * 60 + LocalTime.now().minute)
-    val todaySlot = nextFreeSlotMinutes(resolvedNowMinutes, occupied, resolved.durationMin)
-    val tomorrowSlot = nextFreeSlotMinutes(0, emptyList(), resolved.durationMin)
+    val todaySlot =
+        nextFreeSlotMinutes(
+            resolvedNowMinutes,
+            occupied,
+            resolved.durationMin,
+            windowStart = windowStart,
+            windowEnd = windowEnd,
+        )
+    val tomorrowSlot =
+        nextFreeSlotMinutes(
+            windowStart,
+            occupiedTomorrow,
+            resolved.durationMin,
+            windowStart = windowStart,
+            windowEnd = windowEnd,
+        )
     val tomorrowFreeLabel =
         if (todaySlot == null && tomorrowSlot != null) {
             val time = LocalTime.of((tomorrowSlot / 60).coerceIn(0, 23), tomorrowSlot % 60)
-            stringResource(R.string.quick_capture_tomorrow_free, formatClockHm(time))
+            stringResource(R.string.quick_capture_tomorrow_free, displayClock(time))
         } else {
             null
         }
@@ -123,25 +150,51 @@ fun QuickCaptureEditor(
     fun minutesToStart(minutes: Int): LocalTime =
         LocalTime.of((minutes / 60).coerceIn(0, 23), minutes % 60)
 
+    fun clearFreeSlot() {
+        startOverride = null
+        startOverridden = true
+        dateOverride = null
+        dateOverridden = false
+        nextFreeActive = false
+    }
+
     val applyNextFree: (Int) -> Unit = { durationMin ->
-        val minutes = nextFreeSlotMinutes(resolvedNowMinutes, occupied, durationMin)
+        val minutes =
+            nextFreeSlotMinutes(
+                resolvedNowMinutes,
+                occupied,
+                durationMin,
+                windowStart = windowStart,
+                windowEnd = windowEnd,
+            )
         if (minutes != null) {
             startOverride = minutesToStart(minutes)
             startOverridden = true
             dateOverride = null
             dateOverridden = false
             nextFreeActive = true
+        } else {
+            clearFreeSlot()
         }
     }
 
     val applyTomorrowFree: (Int) -> Unit = { durationMin ->
-        val minutes = nextFreeSlotMinutes(0, emptyList(), durationMin)
+        val minutes =
+            nextFreeSlotMinutes(
+                windowStart,
+                occupiedTomorrow,
+                durationMin,
+                windowStart = windowStart,
+                windowEnd = windowEnd,
+            )
         if (minutes != null) {
             startOverride = minutesToStart(minutes)
             startOverridden = true
             dateOverride = defaultDate.plusDays(1)
             dateOverridden = true
             nextFreeActive = true
+        } else {
+            clearFreeSlot()
         }
     }
 
@@ -217,7 +270,7 @@ fun QuickCaptureEditor(
                 rememberTimePickerState(
                     initialHour = initial.hour,
                     initialMinute = initial.minute,
-                    is24Hour = true,
+                    is24Hour = is24Hour,
                 )
             AlertDialog(
                 onDismissRequest = { showTimePicker = false },

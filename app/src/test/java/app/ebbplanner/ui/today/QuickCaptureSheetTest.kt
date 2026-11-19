@@ -2,6 +2,7 @@
 
 package app.ebbplanner.ui.today
 
+import android.provider.Settings
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.SnackbarHost
@@ -29,6 +30,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.test.core.app.ApplicationProvider
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.domain.capture.QuickCaptureResolved
 import app.ebbplanner.domain.capture.resolveQuickCapture
@@ -41,6 +43,7 @@ import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -57,6 +60,15 @@ class QuickCaptureSheetTest {
     val composeRule = createComposeRule()
 
     private val today = LocalDate.of(2026, 11, 19)
+
+    @Before
+    fun use24HourClock() {
+        Settings.System.putString(
+            ApplicationProvider.getApplicationContext<android.content.Context>().contentResolver,
+            Settings.System.TIME_12_24,
+            "24",
+        )
+    }
 
     @Test
     fun quickCapture_hasSingleFieldAndSaveButton() {
@@ -291,6 +303,9 @@ class QuickCaptureSheetTest {
         mountEditor(
             nowMinutes = 22 * 60,
             occupied = listOf(22 * 60 to 60),
+            occupiedTomorrow = listOf(7 * 60 to 60),
+            windowStart = 7 * 60,
+            windowEnd = 23 * 60,
             onResolved = { captured += it },
         )
         composeRule.onNodeWithTag(QUICK_CAPTURE_TEXT_FIELD_TAG, useUnmergedTree = true).performTextInput("gym")
@@ -298,14 +313,62 @@ class QuickCaptureSheetTest {
         composeRule.waitForIdle()
         composeRule.onNodeWithText("No free slot today").assertIsDisplayed()
         composeRule.onNodeWithTag(QUICK_CAPTURE_NEXT_FREE_TAG, useUnmergedTree = true).assertIsNotEnabled()
-        composeRule.onNodeWithTag(QUICK_CAPTURE_TOMORROW_FREE_TAG, useUnmergedTree = true).assertIsDisplayed()
+        composeRule.onNodeWithText("Tomorrow, 08:00").assertIsDisplayed()
         tapTag(QUICK_CAPTURE_TOMORROW_FREE_TAG)
         composeRule.waitForIdle()
         tapTag(QUICK_CAPTURE_ADD_BUTTON_TAG)
         composeRule.waitForIdle()
         assertEquals(today.plusDays(1), captured.single().date)
-        assertEquals("00:00", captured.single().startLocalTime)
+        assertEquals("08:00", captured.single().startLocalTime)
         assertEquals(TaskEntity.PLACEMENT_SCHEDULED, captured.single().placement)
+    }
+
+    @Test
+    fun tomorrowChip_hiddenWhenTomorrowHasNoFit() {
+        mountEditor(
+            nowMinutes = 22 * 60,
+            occupied = listOf(22 * 60 to 60),
+            occupiedTomorrow = listOf(7 * 60 to 16 * 60),
+            windowStart = 7 * 60,
+            windowEnd = 23 * 60,
+        )
+        composeRule.onNodeWithTag(QUICK_CAPTURE_TEXT_FIELD_TAG, useUnmergedTree = true).performTextInput("gym")
+        tapTag(quickCaptureDurationTag(90))
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("No free slot today").assertIsDisplayed()
+        assertTrue(composeRule.onAllNodesWithTag(QUICK_CAPTURE_TOMORROW_FREE_TAG).fetchSemanticsNodes().isEmpty())
+    }
+
+    @Test
+    fun nextFree_durationPastWindow_clearsSlotAndShowsTomorrow() {
+        mountEditor(
+            nowMinutes = 23 * 60,
+            occupied = emptyList(),
+            occupiedTomorrow = emptyList(),
+            windowStart = 7 * 60,
+            windowEnd = 24 * 60,
+        )
+        composeRule.onNodeWithTag(QUICK_CAPTURE_TEXT_FIELD_TAG, useUnmergedTree = true).performTextInput("gym")
+        tapTag(QUICK_CAPTURE_NEXT_FREE_TAG)
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Timeline, today 23:00").assertIsDisplayed()
+        tapTag(quickCaptureDurationTag(90))
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("No free slot today").assertIsDisplayed()
+        composeRule.onNodeWithText("Tomorrow, 07:00").assertIsDisplayed()
+    }
+
+    @Test
+    fun destination_12Hour_usesUnpaddedClock() {
+        Settings.System.putString(
+            ApplicationProvider.getApplicationContext<android.content.Context>().contentResolver,
+            Settings.System.TIME_12_24,
+            "12",
+        )
+        mountEditor()
+        composeRule.onNodeWithTag(QUICK_CAPTURE_TEXT_FIELD_TAG, useUnmergedTree = true).performTextInput("gym 18:00")
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Timeline, today 6:00 PM").assertIsDisplayed()
     }
 
     @Test
@@ -327,6 +390,9 @@ class QuickCaptureSheetTest {
         nowMinutes: Int = 10 * 60,
         defaultDate: LocalDate = today,
         occupied: List<Pair<Int, Int>> = emptyList(),
+        occupiedTomorrow: List<Pair<Int, Int>> = emptyList(),
+        windowStart: Int = 0,
+        windowEnd: Int = 24 * 60,
         onResolved: (QuickCaptureResolved) -> Unit = {},
     ) {
         composeRule.setContent {
@@ -336,6 +402,9 @@ class QuickCaptureSheetTest {
                     saveTarget = saveTarget,
                     nowMinutes = nowMinutes,
                     occupied = occupied,
+                    occupiedTomorrow = occupiedTomorrow,
+                    windowStart = windowStart,
+                    windowEnd = windowEnd,
                     onSave = { draft ->
                         onResolved(resolveQuickCapture(draft, defaultDate, saveTarget))
                     },

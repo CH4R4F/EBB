@@ -127,6 +127,32 @@ class QuickCaptureRoutingTest {
     }
 
     @Test
+    fun nextFreeSlot_skipsTomorrowOccupancyInsideWindow() {
+        val slot =
+            nextFreeSlotMinutes(
+                nowMinutes = 7 * 60,
+                occupied = listOf(0 to 30, 7 * 60 to 60),
+                durationMin = 90,
+                windowStart = 7 * 60,
+                windowEnd = 23 * 60,
+            )
+        assertEquals(8 * 60, slot)
+    }
+
+    @Test
+    fun nextFreeSlot_noFitInWindow_returnsNull() {
+        val slot =
+            nextFreeSlotMinutes(
+                nowMinutes = 7 * 60,
+                occupied = listOf(7 * 60 to 16 * 60),
+                durationMin = 90,
+                windowStart = 7 * 60,
+                windowEnd = 23 * 60,
+            )
+        assertNull(slot)
+    }
+
+    @Test
     fun dateOverride_beatsParsedDate() {
         val resolved =
             resolveQuickCapture(

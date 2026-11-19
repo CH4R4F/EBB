@@ -141,4 +141,135 @@ class TaskRepositoryTest {
             assertEquals(null, repository.getTask(task.id))
             coVerify { reminderSync.cancelTask(task.id) }
         }
+
+    @Test
+    fun scheduleTask_sameDateTime_keepsReminderEnabledAndAlarm() =
+        runTest {
+            val date = LocalDate.now().plusDays(1)
+            val (repo, _) = reminderAwareRepo(defaultReminders = false)
+            val task =
+                repo.addQuickCapture(
+                    title = "Call",
+                    date = date,
+                    placement = TaskEntity.PLACEMENT_SCHEDULED,
+                    startLocalTime = "21:40",
+                    reminderEnabled = true,
+                )
+            val before = database.reminderDao().getAll().single { it.taskId == task.id }
+            assertEquals(true, repo.getTask(task.id)?.reminderEnabled)
+            assertNotNull(pendingAlarm(task.id))
+            repo.scheduleTask(task.id, TaskEntity.PLACEMENT_SCHEDULED, date, "21:40")
+            assertEquals(true, repo.getTask(task.id)?.reminderEnabled)
+            val after = database.reminderDao().getAll().single { it.taskId == task.id }
+            assertEquals(before.id, after.id)
+            assertEquals(before.fireAtEpochMillis, after.fireAtEpochMillis)
+            assertEquals(app.ebbplanner.domain.reminders.ReminderKind.TaskStart.name, after.kind)
+            assertNotNull(pendingAlarm(task.id))
+        }
+
+    @Test
+    fun scheduleTask_unscheduledToScheduled_appliesDefaultOff() =
+        runTest {
+            val date = LocalDate.now().plusDays(1)
+            val (repo, _) = reminderAwareRepo(defaultReminders = false)
+            val task = repo.addQuickCapture("Note", date, TaskEntity.PLACEMENT_ANYTIME)
+            repo.scheduleTask(task.id, TaskEntity.PLACEMENT_SCHEDULED, date, "10:00")
+            assertEquals(false, repo.getTask(task.id)?.reminderEnabled)
+            assertTrue(database.reminderDao().getAll().none { it.taskId == task.id })
+        }
+
+    @Test
+    fun scheduleTask_unscheduledToScheduled_appliesDefaultOn() =
+        runTest {
+            val date = LocalDate.now().plusDays(1)
+            val (repo, _) = reminderAwareRepo(defaultReminders = true)
+            val task = repo.addQuickCapture("Note", date, TaskEntity.PLACEMENT_ANYTIME)
+            repo.scheduleTask(task.id, TaskEntity.PLACEMENT_SCHEDULED, date, "10:00")
+            assertEquals(true, repo.getTask(task.id)?.reminderEnabled)
+            assertEquals(1, database.reminderDao().getAll().count { it.taskId == task.id })
+            assertNotNull(pendingAlarm(task.id))
+        }
+
+    @Test
+    fun scheduleTask_timeChange_keepsReminderAndReschedulesAlarm() =
+        runTest {
+            val date = LocalDate.now().plusDays(1)
+            val (repo, _) = reminderAwareRepo(defaultReminders = false)
+            val task =
+                repo.addQuickCapture(
+                    title = "Call",
+                    date = date,
+                    placement = TaskEntity.PLACEMENT_SCHEDULED,
+                    startLocalTime = "21:40",
+                    reminderEnabled = true,
+                )
+            val before = database.reminderDao().getAll().single { it.taskId == task.id }
+            repo.scheduleTask(task.id, TaskEntity.PLACEMENT_SCHEDULED, date, "22:10")
+            assertEquals(true, repo.getTask(task.id)?.reminderEnabled)
+            val after = database.reminderDao().getAll().single { it.taskId == task.id }
+            assertEquals(app.ebbplanner.domain.reminders.ReminderKind.TaskStart.name, after.kind)
+            assertTrue(after.fireAtEpochMillis > before.fireAtEpochMillis)
+            assertNotNull(pendingAlarm(task.id))
+        }
+
+    @Test
+    fun scheduleTask_alreadyScheduledReminderOff_staysOffOnTimeChange() =
+        runTest {
+            val date = LocalDate.now().plusDays(1)
+            val (repo, _) = reminderAwareRepo(defaultReminders = true)
+            val task =
+                repo.addQuickCapture(
+                    title = "Call",
+                    date = date,
+                    placement = TaskEntity.PLACEMENT_SCHEDULED,
+                    startLocalTime = "21:40",
+                    reminderEnabled = false,
+                )
+            repo.scheduleTask(task.id, TaskEntity.PLACEMENT_SCHEDULED, date, "22:00")
+            assertEquals(false, repo.getTask(task.id)?.reminderEnabled)
+            assertTrue(database.reminderDao().getAll().none { it.taskId == task.id })
+        }
+
+    private fun reminderAwareRepo(defaultReminders: Boolean): Pair<TaskRepository, app.ebbplanner.reminders.ReminderScheduler> {
+        val context: Context = ApplicationProvider.getApplicationContext()
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+        val scheduler = app.ebbplanner.reminders.ReminderScheduler(context, alarmManager)
+        val grant =
+            mockk<app.ebbplanner.reminders.ExactAlarmGrant> {
+                coEvery { isGranted() } returns true
+            }
+        val sync =
+            app.ebbplanner.reminders.TaskReminderSync(
+                database.taskDao(),
+                database.reminderDao(),
+                scheduler,
+                grant,
+            )
+        val localPrefs = mockk<app.ebbplanner.data.preferences.UserPreferencesRepository>(relaxed = true)
+        every { localPrefs.remindersDefault } returns kotlinx.coroutines.flow.flowOf(defaultReminders)
+        val repo =
+            TaskRepository(
+                database.taskDao(),
+                database.dayPlanDao(),
+                database.subtaskDao(),
+                sync,
+                localPrefs,
+                mockk(relaxed = true),
+            )
+        return repo to scheduler
+    }
+
+    private fun pendingAlarm(taskId: String): android.app.PendingIntent? {
+        val context: Context = ApplicationProvider.getApplicationContext()
+        val intent =
+            android.content.Intent(context, app.ebbplanner.reminders.ReminderAlarmReceiver::class.java).apply {
+                putExtra(app.ebbplanner.reminders.ReminderAlarmReceiver.EXTRA_TASK_ID, taskId)
+            }
+        return android.app.PendingIntent.getBroadcast(
+            context,
+            app.ebbplanner.reminders.ReminderScheduler.alarmRequestCode(taskId),
+            intent,
+            android.app.PendingIntent.FLAG_NO_CREATE or android.app.PendingIntent.FLAG_IMMUTABLE,
+        )
+    }
 }

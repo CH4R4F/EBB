@@ -12,10 +12,10 @@ class ClockFormatTest {
     }
 
     @Test
-    fun minutesToClockDisplay_12h_zeroPads() {
-        assertEquals("09:00 AM", ClockFormat.minutesToClockDisplay(9 * 60, is24Hour = false))
+    fun minutesToClockDisplay_12h_noZeroPad() {
+        assertEquals("9:00 AM", ClockFormat.minutesToClockDisplay(9 * 60, is24Hour = false))
         assertEquals("12:00 AM", ClockFormat.minutesToClockDisplay(0, is24Hour = false))
         assertEquals("12:00 PM", ClockFormat.minutesToClockDisplay(12 * 60, is24Hour = false))
-        assertEquals("02:30 PM", ClockFormat.minutesToClockDisplay(14 * 60 + 30, is24Hour = false))
+        assertEquals("2:30 PM", ClockFormat.minutesToClockDisplay(14 * 60 + 30, is24Hour = false))
     }
 }
