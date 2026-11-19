@@ -57,7 +57,27 @@ fun InboxScreen(
         onSelectAll = viewModel::selectAllVisible,
         onMoveToToday = viewModel::moveSelectedToToday,
         onMoveToTomorrow = viewModel::moveSelectedToTomorrow,
-        onLetGo = viewModel::letGoSelected,
+        onLetGo = {
+            val ids = presentation.tasks.filter { it.selected }.map { it.id }
+            if (ids.isEmpty()) return@InboxScreenDesign
+            viewModel.letGoSelected()
+            scope.launch {
+                val message =
+                    resources.getQuantityString(
+                        R.plurals.inbox_let_go_snackbar,
+                        ids.size,
+                        ids.size,
+                    )
+                val result =
+                    snackbarHostState.showSnackbar(
+                        message = message,
+                        actionLabel = resources.getString(R.string.action_undo),
+                    )
+                if (result == SnackbarResult.ActionPerformed) {
+                    viewModel.undoLetGo(ids)
+                }
+            }
+        },
         onSetDuration = viewModel::setSelectedDuration,
         onSetEnergy = viewModel::setSelectedEnergy,
     )

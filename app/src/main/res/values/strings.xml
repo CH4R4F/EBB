@@ -108,6 +108,7 @@
     <string name="action_done">Done</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_show">Show</string>
+    <string name="action_undo">Undo</string>
     <string name="action_add_step">Add step</string>
     <string name="action_use_selection">Use selection</string>
     <plurals name="shift_plus_minutes">
@@ -156,7 +157,16 @@
     <string name="inbox_action_estimate">Estimate</string>
     <string name="inbox_action_energy">Energy</string>
     <string name="inbox_action_let_go">Let go</string>
+    <plurals name="inbox_let_go_snackbar">
+        <item quantity="one">Let go %d task</item>
+        <item quantity="other">Let go %d tasks</item>
+    </plurals>
+    <plurals name="inbox_let_go_confirm_title">
+        <item quantity="one">Let go %d task?</item>
+        <item quantity="other">Let go %d tasks?</item>
+    </plurals>
     <string name="inbox_select_all">Select all</string>
+    <string name="inbox_more_actions">More</string>
     <string name="inbox_energy_low">Low</string>
     <string name="inbox_energy_med">Med</string>
     <string name="inbox_energy_high">High</string>

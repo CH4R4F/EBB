@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,12 +43,23 @@ fun EbbConfirmButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    danger: Boolean = false,
     testTag: String = EBB_SHEET_CONFIRM_TAG,
 ) {
     val overflow = LocalTextOverflowReports.current
+    val colors =
+        if (danger) {
+            ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.onError,
+            )
+        } else {
+            ButtonDefaults.buttonColors()
+        }
     Button(
         onClick = onClick,
         enabled = enabled,
+        colors = colors,
         modifier =
             modifier
                 .defaultMinSize(minHeight = minTouch)
@@ -113,6 +126,7 @@ fun EbbSheetActions(
     confirmTestTag: String = EBB_SHEET_CONFIRM_TAG,
     cancelTestTag: String = EBB_SHEET_CANCEL_TAG,
     stacked: Boolean? = null,
+    danger: Boolean = false,
 ) {
     val fontScale = LocalConfiguration.current.fontScale
     val useStack = stacked ?: (fontScale >= 1.3f)
@@ -125,6 +139,7 @@ fun EbbSheetActions(
                 label = confirmLabel,
                 onClick = onConfirm,
                 enabled = confirmEnabled,
+                danger = danger,
                 testTag = confirmTestTag,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -153,6 +168,7 @@ fun EbbSheetActions(
                 label = confirmLabel,
                 onClick = onConfirm,
                 enabled = confirmEnabled,
+                danger = danger,
                 testTag = confirmTestTag,
             )
         }

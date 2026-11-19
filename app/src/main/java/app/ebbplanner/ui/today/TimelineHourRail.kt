@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbTypography
+import app.ebbplanner.ui.time.ClockFormat
 import kotlin.math.ceil
 import kotlin.math.max
 
@@ -22,7 +23,25 @@ private const val BADGE_START_PADDING_DP = 2f
 private const val BADGE_TEXT_HORIZONTAL_PADDING_DP = 12f
 private const val BADGE_RAIL_EXTRA_DP = 6f
 
-private val badgeWidthProbeTimes = listOf("00:00", "20:00", "88:88")
+fun timelineBadgeLabelSamples(is24Hour: Boolean): List<String> =
+    (0 until 24).flatMap { hour ->
+        listOf(
+            ClockFormat.minutesToClockCompact(hour * 60, is24Hour),
+            ClockFormat.minutesToClockCompact(hour * 60 + 59, is24Hour),
+        )
+    }.distinct()
+
+fun timelineHourLabelSamples(
+    compactHourLabels: Boolean,
+    is24Hour: Boolean,
+): List<String> =
+    if (compactHourLabels) {
+        (0..23).map { it.toString() }
+    } else {
+        (0..23).map { hour ->
+            ClockFormat.minutesToClockCompact(hour * 60, is24Hour)
+        }
+    }
 
 fun timelineNowBadgeTextStyle(): TextStyle =
     EbbTypography.labelS.copy(fontFeatureSettings = "tnum")
@@ -50,8 +69,9 @@ fun maxBadgeTextWidthDp(
     textMeasurer: TextMeasurer,
     density: Density,
     style: TextStyle = timelineNowBadgeTextStyle(),
+    is24Hour: Boolean = true,
 ): Dp =
-    badgeWidthProbeTimes.maxOf { sample ->
+    timelineBadgeLabelSamples(is24Hour).maxOf { sample ->
         measureTimelineTextWidthDp(textMeasurer, density, sample, style)
     }
 
@@ -60,12 +80,13 @@ fun measureTimelineHourRailWidthDp(
     density: Density,
     fontScale: Float,
     compactHourLabels: Boolean,
+    is24Hour: Boolean = true,
 ): Dp {
     val badgeStyle = timelineNowBadgeTextStyle()
     val hourStyle = timelineHourLabelTextStyle()
     val scaledDensity = Density(density.density, fontScale)
 
-    val badgeTextWidth = maxBadgeTextWidthDp(textMeasurer, scaledDensity, badgeStyle)
+    val badgeTextWidth = maxBadgeTextWidthDp(textMeasurer, scaledDensity, badgeStyle, is24Hour)
     val badgeRail =
         badgeTextWidth +
             BADGE_TEXT_HORIZONTAL_PADDING_DP.dp +
@@ -73,14 +94,8 @@ fun measureTimelineHourRailWidthDp(
             BADGE_SURFACE_INSET_DP.dp +
             BADGE_START_PADDING_DP.dp
 
-    val hourSamples =
-        if (compactHourLabels) {
-            listOf("9", "12", "88")
-        } else {
-            listOf("9:00", "12:00", "00:00")
-        }
     val hourTextWidth =
-        hourSamples.maxOf { sample ->
+        timelineHourLabelSamples(compactHourLabels, is24Hour).maxOf { sample ->
             measureTimelineTextWidthDp(textMeasurer, scaledDensity, sample, hourStyle)
         }
     val hourRail = hourTextWidth + EbbSpacing.s1
@@ -93,11 +108,12 @@ fun measureTimelineHourRailWidthDp(
 fun rememberTimelineHourRailWidth(
     compactHourLabels: Boolean,
     fontScale: Float,
+    is24Hour: Boolean = true,
 ): Dp {
     val textMeasurer = rememberTextMeasurer()
     val density = LocalDensity.current
-    return remember(textMeasurer, density, compactHourLabels, fontScale) {
-        measureTimelineHourRailWidthDp(textMeasurer, density, fontScale, compactHourLabels)
+    return remember(textMeasurer, density, compactHourLabels, fontScale, is24Hour) {
+        measureTimelineHourRailWidthDp(textMeasurer, density, fontScale, compactHourLabels, is24Hour)
     }
 }
 

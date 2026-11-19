@@ -11,6 +11,7 @@ import org.robolectric.RuntimeEnvironment
 fun robolectricTimelineHourRail(
     fontScale: Float,
     compactHourLabels: Boolean,
+    is24Hour: Boolean = true,
 ): Dp {
     val context = RuntimeEnvironment.getApplication()
     val resolver = createFontFamilyResolver(context)
@@ -22,14 +23,21 @@ fun robolectricTimelineHourRail(
             defaultDensity = density,
             defaultLayoutDirection = LayoutDirection.Ltr,
         )
-    return measureTimelineHourRailWidthDp(textMeasurer, density, fontScale, compactHourLabels)
+    return measureTimelineHourRailWidthDp(
+        textMeasurer,
+        density,
+        fontScale,
+        compactHourLabels,
+        is24Hour,
+    )
 }
 
 fun robolectricTimelineTrackWidth(
     screenWidthDp: Int,
     fontScale: Float,
     compactHourLabels: Boolean = false,
+    is24Hour: Boolean = true,
 ): Dp {
-    val rail = robolectricTimelineHourRail(fontScale, compactHourLabels)
+    val rail = robolectricTimelineHourRail(fontScale, compactHourLabels, is24Hour)
     return timelineTrackWidthDp(screenWidthDp.dp, rail)
 }

@@ -61,6 +61,14 @@ fun inboxMultiselect(): InboxPresentationState =
         tasks = baseTasks().map { it.copy(selected = it.id == "1" || it.id == "4") },
     )
 
+fun inboxMultiselectOne(): InboxPresentationState =
+    inboxPopulated().copy(
+        title = "1 selected",
+        visualMode = InboxVisualMode.Multiselect,
+        showFab = false,
+        tasks = baseTasks().map { it.copy(selected = it.id == "1") },
+    )
+
 fun inboxSwipeLeft(): InboxPresentationState =
     inboxPopulated().copy(
         visualMode = InboxVisualMode.SwipeLeft,

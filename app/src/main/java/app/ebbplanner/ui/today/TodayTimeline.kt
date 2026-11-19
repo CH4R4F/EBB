@@ -103,8 +103,9 @@ fun TodayTimeline(
             applyOverlapMetadata(state.blocks.filter { !it.isLifted })
         }
     val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
+    val is24Hour = ClockFormat.isSystem24Hour(LocalContext.current)
     val compactRail = state.compactHourRail || largeText
-    val hourRail = rememberTimelineHourRailWidth(compactRail, fontScale)
+    val hourRail = rememberTimelineHourRailWidth(compactRail, fontScale, is24Hour)
     val badgeHeight = nowBadgeHeightDp(layoutMetrics)
     val trackStart = hourRail + 4.dp
     val trackEnd = 8.dp
@@ -157,7 +158,7 @@ fun TodayTimeline(
                 } else if (compactRail) {
                     hour.toString()
                 } else {
-                    ClockFormat.minutesToClock(hour * 60)
+                    ClockFormat.minutesToClockCompact(hour * 60, is24Hour)
                 }
             HourRule(
                 label = label,
@@ -307,7 +308,7 @@ fun TodayTimeline(
 
         if (state.showNowLine && state.nowMinutes != null) {
             NowLineTimeBadge(
-                label = ClockFormat.minutesToClock(state.nowMinutes),
+                label = ClockFormat.minutesToClockCompact(state.nowMinutes, is24Hour),
                 y = timeMapping.y(state.nowMinutes),
                 hourRail = hourRail,
                 badgeHeight = badgeHeight,
@@ -541,6 +542,63 @@ internal fun timelineRingSlotTag(blockId: String): String = "timeline_ring_slot_
 
 internal fun timelineTaskDurationTag(blockId: String): String = "timeline_task_duration_$blockId"
 
+internal fun timelineTaskRangeTag(blockId: String): String = "timeline_task_range_$blockId"
+
+@Composable
+private fun TimelineRangeText(
+    block: TodayScheduledBlock,
+    style: androidx.compose.ui.text.TextStyle,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    val range = block.metaTimeRange ?: return
+    val is24Hour = ClockFormat.isSystem24Hour(LocalContext.current)
+    val overflowReports = LocalTextOverflowReports.current
+    val tag = timelineTaskRangeTag(block.id)
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier = modifier) {
+        val textMeasurer = androidx.compose.ui.text.rememberTextMeasurer()
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        val display =
+            androidx.compose.runtime.remember(
+                range,
+                block.startMinutes,
+                is24Hour,
+                maxWidth,
+                density,
+                textMeasurer,
+                style,
+            ) {
+                pickTimeRangeLabel(
+                    textMeasurer,
+                    density,
+                    range,
+                    block.startMinutes,
+                    is24Hour,
+                    maxWidth,
+                    style,
+                )
+            }
+        Text(
+            display,
+            style = style,
+            color = color,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Clip,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .testTag(tag),
+            onTextLayout = { layout ->
+                overflowReports?.put(
+                    tag,
+                    layout.didOverflowWidth || layout.isLineEllipsized(0),
+                )
+            },
+        )
+    }
+}
+
 @OptIn(
     androidx.compose.material3.ExperimentalMaterial3Api::class,
     androidx.compose.foundation.ExperimentalFoundationApi::class,
@@ -654,16 +712,24 @@ private fun ShortTaskRow(
             )
         }
         if (contentPlan.showDurationLine) {
-            val trailing = block.metaDuration ?: block.metaTimeRange
-            trailing?.let {
+            if (block.metaDuration != null) {
                 Text(
-                    it,
+                    block.metaDuration,
                     style = EbbTypography.labelM,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = textAlpha),
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    overflow = TextOverflow.Clip,
                     modifier = Modifier.testTag(timelineTaskDurationTag(block.id)),
                 )
+            } else {
+                block.metaTimeRange?.let {
+                    TimelineRangeText(
+                        block = block,
+                        style = EbbTypography.labelM,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = textAlpha),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         }
     }
@@ -714,13 +780,11 @@ private fun StandardTaskRow(
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
                         block.metaTimeRange?.let {
-                            Text(
-                                it,
+                            TimelineRangeText(
+                                block = block,
                                 style = EbbTypography.bodyM.copy(fontSize = 12.sp, lineHeight = 16.sp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = textAlpha),
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         }
                         Row(
@@ -756,23 +820,23 @@ private fun StandardTaskRow(
                     verticalAlignment = Alignment.Top,
                 ) {
                     block.metaTimeRange?.let {
-                        Text(
-                            it,
+                        TimelineRangeText(
+                            block = block,
                             style = EbbTypography.bodyM,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = textAlpha),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false),
+                            modifier = Modifier.weight(1f),
                         )
                     }
-                    block.metaDuration?.let {
-                        Text(
-                            it,
-                            style = EbbTypography.bodyM,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = textAlpha),
-                            maxLines = 1,
-                            modifier = Modifier.testTag(timelineTaskDurationTag(block.id)),
-                        )
+                    if (block.overlapLaneCount <= 1 || block.metaTimeRange == null) {
+                        block.metaDuration?.let {
+                            Text(
+                                it,
+                                style = EbbTypography.bodyM,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = textAlpha),
+                                maxLines = 1,
+                                modifier = Modifier.testTag(timelineTaskDurationTag(block.id)),
+                            )
+                        }
                     }
                     block.energyLevel?.let { EnergyBars(level = it) }
                     block.checklist?.let {

@@ -7,6 +7,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.ebbplanner.ui.theme.EbbTypography
+import app.ebbplanner.ui.time.ClockFormat
 
 fun timelineRingSlotWidth(metrics: TimelineLayoutMetrics): Dp =
     if (metrics.largeText) {
@@ -63,6 +64,34 @@ fun timeLeftPillLabelCandidates(fullLabel: String): List<String> {
     if (match == null) return listOf(fullLabel)
     val minutes = match.groupValues[1]
     return listOf(fullLabel, "${minutes}m left", "${minutes}m")
+}
+
+fun pickTimeRangeLabel(
+    textMeasurer: TextMeasurer,
+    density: Density,
+    rangeLabel: String,
+    startMinutes: Int,
+    is24Hour: Boolean,
+    maxTextWidth: Dp,
+    style: TextStyle,
+): String {
+    val startLabel = ClockFormat.minutesToClockDisplay(startMinutes, is24Hour)
+    val compactStart = ClockFormat.minutesToClockCompact(startMinutes, is24Hour)
+    if (maxTextWidth <= 0.dp) return compactStart
+    val maxPx = with(density) { maxTextWidth.toPx() }
+    val candidates = listOf(rangeLabel, startLabel, compactStart).distinct()
+    return candidates.firstOrNull { candidate ->
+        val layout =
+            textMeasurer.measure(
+                text = candidate,
+                style = style,
+                constraints = Constraints(maxWidth = maxPx.toInt().coerceAtLeast(0)),
+                maxLines = 1,
+                softWrap = false,
+                density = density,
+            )
+        !layout.didOverflowWidth && !layout.isLineEllipsized(0)
+    } ?: compactStart
 }
 
 fun pickTimeLeftPillLabel(

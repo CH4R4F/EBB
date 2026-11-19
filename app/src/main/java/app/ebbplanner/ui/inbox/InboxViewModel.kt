@@ -94,11 +94,18 @@ class InboxViewModel
             scheduleSelected(LocalDate.now().plusDays(1))
         }
 
-        fun letGoSelected() {
-            val ids = selectedIds.value
+        fun letGoSelected(onDone: (List<String>) -> Unit = {}) {
+            val ids = selectedIds.value.toList()
             viewModelScope.launch {
                 ids.forEach { taskRepository.deleteTask(it) }
                 selectedIds.value = emptySet()
+                onDone(ids)
+            }
+        }
+
+        fun undoLetGo(ids: Collection<String>) {
+            viewModelScope.launch {
+                ids.forEach { taskRepository.restoreDeletedTask(it) }
             }
         }
 

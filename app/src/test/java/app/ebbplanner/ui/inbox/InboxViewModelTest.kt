@@ -110,4 +110,45 @@ class InboxViewModelTest {
                 vm.presentation.first { it.visualMode == InboxVisualMode.Normal }.visualMode,
             )
         }
+
+    @Test
+    fun letGoThenUndo_restoresExactlyThoseTasks() =
+        runBlocking {
+            val keep =
+                repository.addQuickCapture(
+                    "Keep me",
+                    LocalDate.now(),
+                    TaskEntity.PLACEMENT_INBOX,
+                )
+            val gone =
+                repository.addQuickCapture(
+                    "Let me go",
+                    LocalDate.now(),
+                    TaskEntity.PLACEMENT_INBOX,
+                )
+            val extra =
+                repository.addQuickCapture(
+                    "Also go",
+                    LocalDate.now(),
+                    TaskEntity.PLACEMENT_INBOX,
+                )
+            val vm =
+                InboxViewModel(
+                    ApplicationProvider.getApplicationContext(),
+                    repository,
+                    prefs,
+                )
+            vm.enterMultiselect(gone.id)
+            vm.toggleSelected(extra.id)
+            vm.letGoSelected()
+            kotlinx.coroutines.delay(200)
+            assertEquals(null, repository.getTask(gone.id))
+            assertEquals(null, repository.getTask(extra.id))
+            assertEquals("Keep me", repository.getTask(keep.id)?.title)
+            vm.undoLetGo(listOf(gone.id, extra.id))
+            kotlinx.coroutines.delay(200)
+            assertEquals("Let me go", repository.getTask(gone.id)?.title)
+            assertEquals("Also go", repository.getTask(extra.id)?.title)
+            assertEquals("Keep me", repository.getTask(keep.id)?.title)
+        }
 }

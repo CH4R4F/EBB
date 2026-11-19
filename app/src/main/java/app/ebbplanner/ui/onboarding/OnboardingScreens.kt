@@ -45,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -63,6 +64,7 @@ import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTaskColors
 import app.ebbplanner.ui.theme.EbbTypography
+import app.ebbplanner.ui.time.ClockFormat
 
 @Composable
 private fun OnboardingScreenScaffold(
@@ -217,7 +219,7 @@ fun OnboardingDayShapeScreen(
             rememberTimePickerState(
                 initialHour = minutes / 60,
                 initialMinute = minutes % 60,
-                is24Hour = true,
+                is24Hour = ClockFormat.isSystem24Hour(LocalContext.current),
             )
         AlertDialog(
             onDismissRequest = { pickingWake = null },

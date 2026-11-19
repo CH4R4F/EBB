@@ -23,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -48,7 +49,7 @@ fun RoutineEditorScreen(
         rememberTimePickerState(
             initialHour = timeParts / 60,
             initialMinute = timeParts % 60,
-            is24Hour = true,
+            is24Hour = ClockFormat.isSystem24Hour(LocalContext.current),
         )
 
     Column(Modifier.fillMaxSize().padding(EbbSpacing.s4)) {

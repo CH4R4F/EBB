@@ -689,11 +689,7 @@ private fun RowScope.ShiftPreviewColumn(
             val hourLabels =
                 (0..6).map { index ->
                     val minutes = timelineStart + (SHIFT_TIMELINE_MINUTES * index / 6).toInt()
-                    if (is24Hour) {
-                        app.ebbplanner.ui.time.ClockFormat.minutesToClock(minutes)
-                    } else {
-                        app.ebbplanner.ui.time.ClockFormat.minutesToClockDisplay(minutes, is24Hour = false)
-                    }
+                    app.ebbplanner.ui.time.ClockFormat.minutesToClockDisplay(minutes, is24Hour)
                 }
             val hourStyle = timelineHourLabelTextStyle()
             val hourRail = rememberHourRailWidth(hourLabels, hourStyle)
@@ -845,11 +841,7 @@ private fun OverlapTimelineCard(
     val railLabels =
         listOf(0, 1, 2).map { index ->
             val minutes = windowStart + (windowSpan * index / 2)
-            if (is24Hour) {
-                app.ebbplanner.ui.time.ClockFormat.minutesToClock(minutes)
-            } else {
-                app.ebbplanner.ui.time.ClockFormat.minutesToClockDisplay(minutes, is24Hour = false)
-            }
+            app.ebbplanner.ui.time.ClockFormat.minutesToClockDisplay(minutes, is24Hour)
         }
     val overlapTop = minutesToY(maxOf(firstStartMinutes, secondStartMinutes))
     val overlapBottom = minutesToY(minOf(firstEnd, secondEnd))

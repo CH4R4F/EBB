@@ -9,8 +9,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import app.ebbplanner.R
 import app.ebbplanner.domain.capture.QuickCaptureParser
+import app.ebbplanner.ui.time.ClockFormat
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun OnboardingTryItRoute(
@@ -56,7 +56,11 @@ fun OnboardingTryItRoute(
                     dragTaskTitle = parsed.title.ifBlank { input.trim() }
                     val target = parsed.targetDate ?: today
                     val timed = parsed.startTime != null
-                    val timeLabel = parsed.startTime?.format(DateTimeFormatter.ofPattern("HH:mm")).orEmpty()
+                    val is24Hour = ClockFormat.isSystem24Hour(context)
+                    val timeLabel =
+                        parsed.startTime
+                            ?.let { ClockFormat.minutesToClockDisplay(it.hour * 60 + it.minute, is24Hour) }
+                            .orEmpty()
                     celebrationBody =
                         when {
                             target.isAfter(today) && timed ->

@@ -2,6 +2,7 @@
 
 package app.ebbplanner.ui.inbox
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -12,12 +13,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,6 +31,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
@@ -45,8 +51,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -54,6 +64,8 @@ import androidx.compose.ui.unit.sp
 import app.ebbplanner.R
 import app.ebbplanner.ui.components.EbbBottomNavigation
 import app.ebbplanner.ui.components.EbbCancelButton
+import app.ebbplanner.ui.components.EbbSheetActions
+import app.ebbplanner.ui.text.LocalTextOverflowReports
 import app.ebbplanner.ui.navigation.MainTab
 import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
@@ -71,6 +83,8 @@ const val INBOX_MULTISELECT_TOMORROW_TAG = "inbox_multiselect_tomorrow"
 const val INBOX_MULTISELECT_ESTIMATE_TAG = "inbox_multiselect_estimate"
 const val INBOX_MULTISELECT_ENERGY_TAG = "inbox_multiselect_energy"
 const val INBOX_MULTISELECT_LET_GO_TAG = "inbox_multiselect_let_go"
+const val INBOX_MULTISELECT_OVERFLOW_TAG = "inbox_multiselect_overflow"
+const val INBOX_LET_GO_CONFIRM_TAG = "inbox_let_go_confirm"
 
 fun inboxTaskTestTag(taskId: String): String = INBOX_TASK_TAG_PREFIX + taskId
 
@@ -98,6 +112,16 @@ fun InboxScreenDesign(
     val multiselect = state.visualMode == InboxVisualMode.Multiselect
     var showEstimateDialog by remember { mutableStateOf(false) }
     var showEnergyDialog by remember { mutableStateOf(false) }
+    var showLetGoConfirm by remember { mutableStateOf(false) }
+    val selectedCount = state.tasks.count { it.selected }
+    BackHandler(enabled = multiselect) { onMultiselectDone() }
+    val requestLetGo: () -> Unit = {
+        if (selectedCount > 1) {
+            showLetGoConfirm = true
+        } else {
+            onLetGo()
+        }
+    }
     Scaffold(
         modifier = modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0),
@@ -116,7 +140,7 @@ fun InboxScreenDesign(
                     onTomorrow = onMoveToTomorrow,
                     onEstimate = { showEstimateDialog = true },
                     onEnergy = { showEnergyDialog = true },
-                    onLetGo = onLetGo,
+                    onLetGo = requestLetGo,
                 )
             } else if (showBottomNav) {
                 EbbBottomNavigation(selected = MainTab.Inbox)
@@ -229,6 +253,16 @@ fun InboxScreenDesign(
             },
         )
     }
+    if (showLetGoConfirm) {
+        InboxLetGoConfirmDialog(
+            count = selectedCount,
+            onConfirm = {
+                showLetGoConfirm = false
+                onLetGo()
+            },
+            onDismiss = { showLetGoConfirm = false },
+        )
+    }
 }
 
 @Composable
@@ -288,6 +322,31 @@ private fun InboxMultiselectActionBar(
     onEnergy: () -> Unit,
     onLetGo: () -> Unit,
 ) {
+    val overflowReports = LocalTextOverflowReports.current
+    val largeText = LocalConfiguration.current.fontScale >= 1.3f
+    val today = stringResource(R.string.inbox_action_today)
+    val tomorrow = stringResource(R.string.inbox_action_tomorrow)
+    val estimate = stringResource(R.string.inbox_action_estimate)
+    val energy = stringResource(R.string.inbox_action_energy)
+    val letGo = stringResource(R.string.inbox_action_let_go)
+    val primary =
+        buildList {
+            add(Triple(INBOX_MULTISELECT_TODAY_TAG, "today" to today, onToday))
+            add(Triple(INBOX_MULTISELECT_TOMORROW_TAG, "event" to tomorrow, onTomorrow))
+            if (!largeText) {
+                add(Triple(INBOX_MULTISELECT_ESTIMATE_TAG, "schedule" to estimate, onEstimate))
+                add(Triple(INBOX_MULTISELECT_ENERGY_TAG, "battery_horiz_050" to energy, onEnergy))
+            }
+        }
+    val overflow =
+        buildList {
+            if (largeText) {
+                add(Triple(INBOX_MULTISELECT_ESTIMATE_TAG, "schedule" to estimate, onEstimate))
+                add(Triple(INBOX_MULTISELECT_ENERGY_TAG, "battery_horiz_050" to energy, onEnergy))
+            }
+            add(Triple(INBOX_MULTISELECT_LET_GO_TAG, "spa" to letGo, onLetGo))
+        }
+    var menuOpen by remember { mutableStateOf(false) }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainer,
@@ -297,39 +356,130 @@ private fun InboxMultiselectActionBar(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(80.dp)
-                    .padding(horizontal = EbbSpacing.s2),
-            horizontalArrangement = Arrangement.SpaceAround,
+                    .padding(horizontal = EbbSpacing.s2, vertical = EbbSpacing.s1),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            InboxActionButton(INBOX_MULTISELECT_TODAY_TAG, "today", stringResource(R.string.inbox_action_today), onToday)
-            InboxActionButton(INBOX_MULTISELECT_TOMORROW_TAG, "event", stringResource(R.string.inbox_action_tomorrow), onTomorrow)
-            InboxActionButton(INBOX_MULTISELECT_ESTIMATE_TAG, "schedule", stringResource(R.string.inbox_action_estimate), onEstimate)
-            InboxActionButton(INBOX_MULTISELECT_ENERGY_TAG, "battery_horiz_050", stringResource(R.string.inbox_action_energy), onEnergy)
-            InboxActionButton(INBOX_MULTISELECT_LET_GO_TAG, "spa", stringResource(R.string.inbox_action_let_go), onLetGo)
+            primary.forEach { (tag, iconLabel, onClick) ->
+                InboxActionButton(
+                    tag = tag,
+                    icon = iconLabel.first,
+                    label = iconLabel.second,
+                    onClick = onClick,
+                    overflowReports = overflowReports,
+                )
+            }
+            Box {
+                val moreLabel = stringResource(R.string.inbox_more_actions)
+                IconButton(
+                    onClick = { menuOpen = !menuOpen },
+                    modifier =
+                        Modifier
+                            .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+                            .size(48.dp)
+                            .testTag(INBOX_MULTISELECT_OVERFLOW_TAG)
+                            .semantics { contentDescription = moreLabel },
+                ) {
+                    EbbSymbol("more_vert", fontSize = 22.sp)
+                }
+                DropdownMenu(
+                    expanded = menuOpen,
+                    onDismissRequest = { menuOpen = false },
+                ) {
+                    overflow.forEach { (tag, iconLabel, onClick) ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    iconLabel.second,
+                                    style = EbbTypography.labelM,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Clip,
+                                    onTextLayout = { layout ->
+                                        overflowReports?.put(
+                                            tag,
+                                            layout.hasVisualOverflow || layout.isLineEllipsized(0),
+                                        )
+                                    },
+                                )
+                            },
+                            onClick = {
+                                menuOpen = false
+                                onClick()
+                            },
+                            leadingIcon = { EbbSymbol(iconLabel.first, fontSize = 22.sp) },
+                            modifier =
+                                Modifier
+                                    .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+                                    .heightIn(min = 48.dp)
+                                    .testTag(tag),
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun InboxActionButton(
+private fun RowScope.InboxActionButton(
     tag: String,
     icon: String,
     label: String,
     onClick: () -> Unit,
+    overflowReports: MutableMap<String, Boolean>?,
 ) {
     Column(
         modifier =
             Modifier
+                .weight(1f)
+                .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+                .heightIn(min = 48.dp)
                 .clickable(onClick = onClick)
                 .testTag(tag)
-                .padding(horizontal = 4.dp, vertical = 8.dp),
+                .padding(horizontal = 2.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         EbbSymbol(icon, fontSize = 22.sp)
-        Text(label, style = EbbTypography.labelM, maxLines = 1)
+        Text(
+            label,
+            style = EbbTypography.labelM,
+            maxLines = 2,
+            textAlign = TextAlign.Center,
+            overflow = TextOverflow.Clip,
+            onTextLayout = { layout ->
+                val clipped =
+                    layout.hasVisualOverflow ||
+                        (layout.lineCount > 0 && layout.isLineEllipsized(layout.lineCount - 1))
+                overflowReports?.put(tag, clipped)
+            },
+        )
     }
+}
+
+@Composable
+private fun InboxLetGoConfirmDialog(
+    count: Int,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag(INBOX_LET_GO_CONFIRM_TAG),
+        title = {
+            Text(
+                pluralStringResource(R.plurals.inbox_let_go_confirm_title, count, count),
+                style = EbbTypography.headlineM,
+            )
+        },
+        confirmButton = {
+            EbbSheetActions(
+                confirmLabel = stringResource(R.string.inbox_action_let_go),
+                onConfirm = onConfirm,
+                onCancel = onDismiss,
+                danger = true,
+            )
+        },
+    )
 }
 
 @Composable

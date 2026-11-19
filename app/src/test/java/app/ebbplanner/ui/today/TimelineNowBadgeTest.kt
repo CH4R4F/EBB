@@ -34,21 +34,31 @@ class TimelineNowBadgeTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun nowBadge_noVisualOverflow_scale100() = assertBadge(1f, 10 * 60 + 42, "10:42")
+    fun nowBadge_noVisualOverflow_scale100() = assertBadge(1f, 10 * 60 + 42, "10:42", is24Hour = true)
 
     @Test
-    fun nowBadge_noVisualOverflow_scale200() = assertBadge(2f, 15 * 60 + 47, "15:47")
+    fun nowBadge_noVisualOverflow_scale200() = assertBadge(2f, 15 * 60 + 47, "15:47", is24Hour = true)
+
+    @Test
+    fun nowBadge_12h_compact_scale200() = assertBadge(2f, 8 * 60 + 5, "8:05", is24Hour = false)
 
     private fun assertBadge(
         fontScale: Float,
         nowMin: Int,
         expectedPrefix: String,
+        is24Hour: Boolean,
     ) {
+        android.provider.Settings.System.putString(
+            androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+                .contentResolver,
+            android.provider.Settings.System.TIME_12_24,
+            if (is24Hour) "24" else "12",
+        )
         val today = LocalDate.of(2025, 11, 17)
         val state =
             TodayPresentationMapper
                 .from(
-                    TodayUiState(date = today, isLoading = false),
+                    TodayUiState(date = today, isLoading = false, is24Hour = is24Hour),
                     nowMin,
                     fontScale,
                 ).copy(showNowLine = true, nowMinutes = nowMin)
