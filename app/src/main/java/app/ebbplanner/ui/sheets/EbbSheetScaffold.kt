@@ -3,11 +3,8 @@
 package app.ebbplanner.ui.sheets
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,10 +24,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import app.ebbplanner.ui.components.EbbSheetActions
 import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
-import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTypography
 
 @Suppress("LongParameterList", "LongMethod")
@@ -135,6 +131,7 @@ private fun SheetGrabber() {
 }
 
 @Composable
+@Suppress("UNUSED_PARAMETER")
 fun SheetActions(
     doneLabel: String = "Done",
     doneLeadingIcon: String? = null,
@@ -144,47 +141,12 @@ fun SheetActions(
     doneEnabled: Boolean = true,
 ) {
     HorizontalDivider()
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = EbbSpacing.s2, vertical = EbbSpacing.s2),
-        horizontalArrangement = Arrangement.End,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            cancelLabel,
-            style = EbbTypography.labelL,
-            color = MaterialTheme.colorScheme.primary,
-            modifier =
-                Modifier
-                    .clickable(onClick = onCancelClick)
-                    .padding(horizontal = EbbSpacing.s3, vertical = 10.dp),
-        )
-        val doneColor =
-            if (doneEnabled) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-            }
-        Surface(
-            shape = EbbShapes.full,
-            color = doneColor,
-            modifier =
-                Modifier
-                    .padding(start = 8.dp)
-                    .then(if (doneEnabled) Modifier.clickable(onClick = onDoneClick) else Modifier),
-        ) {
-            Row(
-                Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                doneLeadingIcon?.let {
-                    EbbSymbol(it, fontSize = 20.sp, color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(end = 8.dp))
-                }
-                Text(
-                    doneLabel,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    style = EbbTypography.labelL,
-                )
-            }
-        }
-    }
+    EbbSheetActions(
+        confirmLabel = doneLabel,
+        onConfirm = onDoneClick,
+        onCancel = onCancelClick,
+        cancelLabel = cancelLabel,
+        confirmEnabled = doneEnabled,
+        modifier = Modifier.padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s2),
+    )
 }

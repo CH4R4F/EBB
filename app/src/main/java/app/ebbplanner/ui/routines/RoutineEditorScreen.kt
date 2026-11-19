@@ -1,3 +1,5 @@
+@file:Suppress("LongMethod")
+
 package app.ebbplanner.ui.routines
 
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +28,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.ebbplanner.R
 import app.ebbplanner.data.local.entity.RoutineEntity
+import app.ebbplanner.ui.components.EbbCancelButton
+import app.ebbplanner.ui.components.EbbConfirmButton
+import app.ebbplanner.ui.components.EbbSheetActions
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbTypography
 import app.ebbplanner.ui.time.ClockFormat
@@ -103,21 +108,19 @@ fun RoutineEditorScreen(
         state.saveError?.let { error ->
             Text(error, style = EbbTypography.bodyM, color = androidx.compose.material3.MaterialTheme.colorScheme.error)
         }
-        TextButton(
-            onClick = {
-                viewModel.save { deferred -> onClose(deferred) }
-            },
-            enabled = !state.saveInFlight,
+        EbbSheetActions(
+            confirmLabel =
+                if (state.saveInFlight) {
+                    stringResource(R.string.action_saving)
+                } else {
+                    stringResource(R.string.action_save)
+                },
+            onConfirm = { viewModel.save { deferred -> onClose(deferred) } },
+            onCancel = { onClose(false) },
+            confirmEnabled = !state.saveInFlight && state.title.isNotBlank(),
+            cancelEnabled = !state.saveInFlight,
             modifier = Modifier.padding(top = EbbSpacing.s4),
-        ) {
-            Text(
-                if (state.saveInFlight) stringResource(R.string.action_saving) else "Save",
-                style = EbbTypography.labelL,
-            )
-        }
-        TextButton(onClick = { onClose(false) }, enabled = !state.saveInFlight) {
-            Text("Cancel")
-        }
+        )
         if (!state.isNew) {
             TextButton(onClick = { viewModel.delete { onClose(false) } }) {
                 Text(stringResource(R.string.routine_delete))
@@ -129,20 +132,20 @@ fun RoutineEditorScreen(
         AlertDialog(
             onDismissRequest = { showTimePicker = false },
             confirmButton = {
-                TextButton(
+                EbbConfirmButton(
+                    label = stringResource(R.string.action_save),
                     onClick = {
                         val minutes = pickerState.hour * 60 + pickerState.minute
                         viewModel.setStartTime(ClockFormat.minutesToLocalTime(minutes))
                         showTimePicker = false
                     },
-                ) {
-                    Text(stringResource(R.string.action_save))
-                }
+                )
             },
             dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
-                    Text("Cancel")
-                }
+                EbbCancelButton(
+                    label = stringResource(R.string.action_cancel),
+                    onClick = { showTimePicker = false },
+                )
             },
             title = { Text("Start time") },
             text = { TimePicker(state = pickerState) },

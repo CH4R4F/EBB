@@ -50,6 +50,7 @@ import app.ebbplanner.domain.day.OverlapSituation
 import app.ebbplanner.domain.day.ShiftPreviewBlock
 import app.ebbplanner.ui.components.EbbHeroIllustration
 import app.ebbplanner.ui.components.EbbRadioDot
+import app.ebbplanner.ui.components.EbbSheetActions
 import app.ebbplanner.ui.onboarding.OnboardingAppPreview
 import app.ebbplanner.ui.sheets.EbbSheetScaffold
 import app.ebbplanner.ui.theme.EbbPalette
@@ -572,27 +573,18 @@ fun JumpToDateDesign(modifier: Modifier = Modifier) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                 )
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("Today", style = EbbTypography.labelL, color = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.weight(1f))
-                    Text(
-                        "Cancel",
-                        style = EbbTypography.labelL,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(end = 16.dp),
-                    )
-                    Surface(shape = EbbShapes.full, color = MaterialTheme.colorScheme.primary) {
-                        Text(
-                            "Go",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            style = EbbTypography.labelL,
-                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp),
-                        )
-                    }
-                }
+                Text(
+                    "Today",
+                    style = EbbTypography.labelL,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = EbbSpacing.s1),
+                )
+                EbbSheetActions(
+                    confirmLabel = "Go",
+                    onConfirm = {},
+                    onCancel = {},
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = EbbSpacing.s1),
+                )
             }
         }
     }

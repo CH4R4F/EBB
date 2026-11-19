@@ -35,7 +35,6 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
@@ -58,6 +57,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.ebbplanner.R
+import app.ebbplanner.ui.components.EbbCancelButton
+import app.ebbplanner.ui.components.EbbConfirmButton
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTaskColors
@@ -221,20 +222,20 @@ fun OnboardingDayShapeScreen(
         AlertDialog(
             onDismissRequest = { pickingWake = null },
             confirmButton = {
-                TextButton(
+                EbbConfirmButton(
+                    label = stringResource(R.string.action_save),
                     onClick = {
                         val total = pickerState.hour * 60 + pickerState.minute
                         if (pickingWake == true) onWakeChange(total) else onBedChange(total)
                         pickingWake = null
                     },
-                ) {
-                    Text(stringResource(R.string.action_save))
-                }
+                )
             },
             dismissButton = {
-                TextButton(onClick = { pickingWake = null }) {
-                    Text(stringResource(R.string.onboarding_not_now))
-                }
+                EbbCancelButton(
+                    label = stringResource(R.string.action_cancel),
+                    onClick = { pickingWake = null },
+                )
             },
             text = { TimePicker(state = pickerState) },
         )

@@ -6,7 +6,9 @@ import app.ebbplanner.data.calendar.CalendarEventsReader
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.data.repository.TaskRepository
-import app.ebbplanner.domain.capture.QuickCaptureParser
+import app.ebbplanner.domain.capture.QuickCaptureDraft
+import app.ebbplanner.domain.capture.QuickCaptureResolved
+import app.ebbplanner.domain.capture.resolveQuickCapture
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -115,35 +117,27 @@ class TodayViewModel
             selectedDate.value = selectedDate.value.minusDays(-1)
         }
 
-        fun captureTask(raw: String) {
-            if (raw.isBlank()) return
+        fun captureTask(
+            draft: QuickCaptureDraft,
+            onSaved: (TaskEntity, QuickCaptureResolved) -> Unit = { _, _ -> },
+        ) {
+            if (draft.raw.isBlank()) return
             viewModelScope.launch {
-                val parsed = QuickCaptureParser.parse(raw, selectedDate.value)
-                val date = parsed.targetDate ?: selectedDate.value
-                val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-                val start =
-                    parsed.startTime?.format(timeFormatter)
-                val placement =
-                    if (start != null) {
-                        TaskEntity.PLACEMENT_SCHEDULED
-                    } else {
-                        TaskEntity.PLACEMENT_ANYTIME
-                    }
+                val resolved = resolveQuickCapture(draft, selectedDate.value, QuickCaptureSaveTarget.Today)
+                if (resolved.title.isBlank()) return@launch
                 val remindersOn = userPreferencesRepository.remindersDefault.first()
                 val reminderEnabled =
-                    if (placement == TaskEntity.PLACEMENT_SCHEDULED && start != null) {
-                        remindersOn
-                    } else {
-                        false
-                    }
-                taskRepository.addQuickCapture(
-                    title = parsed.title,
-                    date = date,
-                    placement = placement,
-                    startLocalTime = start,
-                    durationMin = parsed.durationMin ?: TaskEntity.DEFAULT_DURATION_MIN,
-                    reminderEnabled = reminderEnabled,
-                )
+                    resolved.placement == TaskEntity.PLACEMENT_SCHEDULED && resolved.startLocalTime != null && remindersOn
+                val task =
+                    taskRepository.addQuickCapture(
+                        title = resolved.title,
+                        date = resolved.date,
+                        placement = resolved.placement,
+                        startLocalTime = resolved.startLocalTime,
+                        durationMin = resolved.durationMin,
+                        reminderEnabled = reminderEnabled,
+                    )
+                onSaved(task, resolved)
             }
         }
     }

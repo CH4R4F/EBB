@@ -2,10 +2,10 @@
 
 package app.ebbplanner.ui.taskdetail
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -15,13 +15,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Surface
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -34,20 +34,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.ebbplanner.R
 import app.ebbplanner.data.local.entity.TaskEntity
+import app.ebbplanner.ui.components.EbbCancelButton
+import app.ebbplanner.ui.components.EbbConfirmButton
+import app.ebbplanner.ui.components.EbbSheetActions
 import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
 import app.ebbplanner.ui.theme.EbbTaskColors
 import app.ebbplanner.ui.theme.EbbTypography
-import androidx.compose.ui.res.stringResource
-import app.ebbplanner.R
 import app.ebbplanner.ui.time.ClockFormat
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 
 private val durationPresets = listOf(5, 10, 15, 30, 45, 60, 90)
 private val colorOptions = listOf("slate", "lemon", "sky", "rose", "amber", "green")
@@ -76,6 +78,7 @@ fun TaskSheetHost(
                         onSaveReminder(it)
                         onDismiss()
                     },
+                    onCancel = onDismiss,
                 )
             TaskSheetType.Duration ->
                 DurationSheetPanel(
@@ -84,6 +87,7 @@ fun TaskSheetHost(
                         onSaveDuration(it)
                         onDismiss()
                     },
+                    onCancel = onDismiss,
                 )
             TaskSheetType.BreakDown ->
                 BreakDownSheetPanel(
@@ -93,6 +97,7 @@ fun TaskSheetHost(
                         onAddSubtask(it)
                         onDismiss()
                     },
+                    onCancel = onDismiss,
                 )
             TaskSheetType.Schedule ->
                 ScheduleSheetPanel(
@@ -102,6 +107,7 @@ fun TaskSheetHost(
                         onSaveSchedule(placement, date, time)
                         onDismiss()
                     },
+                    onCancel = onDismiss,
                 )
             TaskSheetType.ColorIcon ->
                 ColorIconSheetPanel(
@@ -111,6 +117,7 @@ fun TaskSheetHost(
                         onSaveColorIcon(color, icon)
                         onDismiss()
                     },
+                    onCancel = onDismiss,
                 )
         }
     }
@@ -120,6 +127,7 @@ fun TaskSheetHost(
 private fun ReminderSheetPanel(
     enabled: Boolean,
     onSave: (Boolean) -> Unit,
+    onCancel: () -> Unit = {},
 ) {
     var on by remember(enabled) { mutableStateOf(enabled) }
     Column(Modifier.padding(EbbSpacing.s4), verticalArrangement = Arrangement.spacedBy(EbbSpacing.s3)) {
@@ -128,9 +136,11 @@ private fun ReminderSheetPanel(
             Text("Remind at start", style = EbbTypography.bodyL)
             Switch(checked = on, onCheckedChange = { on = it })
         }
-        TextButton(onClick = { onSave(on) }, modifier = Modifier.align(Alignment.End)) {
-            Text("Save", style = EbbTypography.labelL)
-        }
+        EbbSheetActions(
+            confirmLabel = stringResource(R.string.action_save),
+            onConfirm = { onSave(on) },
+            onCancel = onCancel,
+        )
     }
 }
 
@@ -139,6 +149,7 @@ private fun ReminderSheetPanel(
 private fun DurationSheetPanel(
     selectedMin: Int,
     onSave: (Int) -> Unit,
+    onCancel: () -> Unit = {},
 ) {
     var selected by remember(selectedMin) { mutableIntStateOf(selectedMin) }
     Column(Modifier.padding(EbbSpacing.s4)) {
@@ -165,9 +176,11 @@ private fun DurationSheetPanel(
                 }
             }
         }
-        TextButton(onClick = { onSave(selected) }, modifier = Modifier.align(Alignment.End)) {
-            Text("Done", style = EbbTypography.labelL)
-        }
+        EbbSheetActions(
+            confirmLabel = stringResource(R.string.action_done),
+            onConfirm = { onSave(selected) },
+            onCancel = onCancel,
+        )
     }
 }
 
@@ -176,6 +189,7 @@ private fun BreakDownSheetPanel(
     taskTitle: String,
     existing: List<TaskSubtaskRow>,
     onAdd: (String) -> Unit,
+    onCancel: () -> Unit = {},
 ) {
     var draft by remember { mutableStateOf("") }
     Column(Modifier.padding(EbbSpacing.s4), verticalArrangement = Arrangement.spacedBy(EbbSpacing.s2)) {
@@ -191,22 +205,22 @@ private fun BreakDownSheetPanel(
             label = { Text("Tiny step") },
             singleLine = true,
         )
-        TextButton(
-            onClick = { if (draft.isNotBlank()) onAdd(draft.trim()) },
-            enabled = draft.isNotBlank(),
-            modifier = Modifier.align(Alignment.End),
-        ) {
-            Text("Add step", style = EbbTypography.labelL)
-        }
+        EbbSheetActions(
+            confirmLabel = "Add step",
+            onConfirm = { if (draft.isNotBlank()) onAdd(draft.trim()) },
+            onCancel = onCancel,
+            confirmEnabled = draft.isNotBlank(),
+        )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun ScheduleSheetPanel(
     taskTitle: String,
     suggestions: List<ScheduleSuggestion>,
     onSave: (String, LocalDate?, String?) -> Unit,
+    onCancel: () -> Unit = {},
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
@@ -220,21 +234,21 @@ private fun ScheduleSheetPanel(
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
-                TextButton(
+                EbbConfirmButton(
+                    label = stringResource(R.string.action_save),
                     onClick = {
                         dateState.selectedDateMillis?.let { millis ->
                             pickedDate = Instant.ofEpochMilli(millis).atZone(java.time.ZoneOffset.UTC).toLocalDate()
                         }
                         showDatePicker = false
                     },
-                ) {
-                    Text(stringResource(R.string.action_save))
-                }
+                )
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text(stringResource(R.string.onboarding_not_now))
-                }
+                EbbCancelButton(
+                    label = stringResource(R.string.action_cancel),
+                    onClick = { showDatePicker = false },
+                )
             },
         ) {
             DatePicker(state = dateState)
@@ -247,19 +261,19 @@ private fun ScheduleSheetPanel(
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showTimePicker = false },
             confirmButton = {
-                TextButton(
+                EbbConfirmButton(
+                    label = stringResource(R.string.action_save),
                     onClick = {
                         pickedTimeMinutes = timeState.hour * 60 + timeState.minute
                         showTimePicker = false
                     },
-                ) {
-                    Text(stringResource(R.string.action_save))
-                }
+                )
             },
             dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
-                    Text(stringResource(R.string.onboarding_not_now))
-                }
+                EbbCancelButton(
+                    label = stringResource(R.string.action_cancel),
+                    onClick = { showTimePicker = false },
+                )
             },
             text = { TimePicker(state = timeState) },
         )
@@ -277,29 +291,34 @@ private fun ScheduleSheetPanel(
                 },
             )
         }
-        Row(
-            Modifier.fillMaxWidth().padding(top = EbbSpacing.s2),
+        FlowRow(
+            modifier = Modifier.fillMaxWidth().padding(top = EbbSpacing.s2),
             horizontalArrangement = Arrangement.spacedBy(EbbSpacing.s2),
+            verticalArrangement = Arrangement.spacedBy(EbbSpacing.s1),
         ) {
-            TextButton(onClick = { showDatePicker = true }) {
-                Text("Pick date", style = EbbTypography.labelL)
-            }
-            TextButton(onClick = { showTimePicker = true }) {
-                Text("Pick time", style = EbbTypography.labelL)
-            }
-            TextButton(
-                onClick = {
-                    onSave(
-                        TaskEntity.PLACEMENT_SCHEDULED,
-                        pickedDate,
-                        ClockFormat.minutesToLocalTime(pickedTimeMinutes),
-                    )
-                },
-                modifier = Modifier.align(Alignment.CenterVertically),
-            ) {
-                Text("Use selection", style = EbbTypography.labelL)
-            }
+            FilterChip(
+                selected = false,
+                onClick = { showDatePicker = true },
+                label = { Text("Pick date", maxLines = 1, style = EbbTypography.labelM) },
+            )
+            FilterChip(
+                selected = false,
+                onClick = { showTimePicker = true },
+                label = { Text("Pick time", maxLines = 1, style = EbbTypography.labelM) },
+            )
         }
+        EbbSheetActions(
+            confirmLabel = "Use selection",
+            onConfirm = {
+                onSave(
+                    TaskEntity.PLACEMENT_SCHEDULED,
+                    pickedDate,
+                    ClockFormat.minutesToLocalTime(pickedTimeMinutes),
+                )
+            },
+            onCancel = onCancel,
+            modifier = Modifier.padding(top = EbbSpacing.s2),
+        )
     }
 }
 
@@ -329,6 +348,7 @@ private fun ColorIconSheetPanel(
     colorKey: String,
     iconKey: String,
     onSave: (String, String) -> Unit,
+    onCancel: () -> Unit = {},
 ) {
     var color by remember(colorKey) { mutableStateOf(colorKey) }
     var icon by remember(iconKey) { mutableStateOf(iconKey) }
@@ -388,8 +408,10 @@ private fun ColorIconSheetPanel(
                 }
             }
         }
-        TextButton(onClick = { onSave(color, icon) }, modifier = Modifier.align(Alignment.End)) {
-            Text("Save", style = EbbTypography.labelL)
-        }
+        EbbSheetActions(
+            confirmLabel = stringResource(R.string.action_save),
+            onConfirm = { onSave(color, icon) },
+            onCancel = onCancel,
+        )
     }
 }

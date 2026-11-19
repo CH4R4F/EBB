@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -12,10 +11,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import app.ebbplanner.R
-import kotlinx.coroutines.launch
-import androidx.compose.ui.platform.LocalContext
-import app.ebbplanner.reminders.FocusNotifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -23,6 +18,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import app.ebbplanner.R
 import app.ebbplanner.ui.components.EbbBottomNavigation
 import app.ebbplanner.ui.inbox.InboxScreen
 import app.ebbplanner.ui.navigation.AppRoutes
@@ -38,6 +34,7 @@ import app.ebbplanner.ui.settings.SettingsScreen
 import app.ebbplanner.ui.taskdetail.TaskSheetType
 import app.ebbplanner.ui.today.TodayScreen
 import app.ebbplanner.ui.week.WeekScreen
+import kotlinx.coroutines.launch
 
 @Suppress("LongMethod")
 @Composable
@@ -104,7 +101,9 @@ fun MainShell(
             composable(MainTab.Inbox.route) {
                 InboxScreen(onOpenTask = { id -> navController.navigate(AppRoutes.taskDetail(id)) })
             }
-            composable(MainTab.Week.route) { WeekScreen() }
+            composable(MainTab.Week.route) {
+                WeekScreen(onOpenTask = { id -> navController.navigate(AppRoutes.taskDetail(id)) })
+            }
             composable(MainTab.Routines.route) {
                 RoutinesScreen(
                     onCreateRoutine = { id -> navController.navigate(AppRoutes.routineEdit(id)) },

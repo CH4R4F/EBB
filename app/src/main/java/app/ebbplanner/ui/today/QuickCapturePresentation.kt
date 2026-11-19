@@ -21,6 +21,12 @@ data class QuickCapturePresentationState(
     val counterText: String? = null,
     val footerHint: String = "Saves to your Inbox · Enter adds another",
     val showKeyboardStub: Boolean = false,
+    val previewLabel: String? = null,
+    val destinationLabel: String = "",
+    val startTimeLabel: String? = null,
+    val selectedDurationMin: Int? = null,
+    val showTodayShortcuts: Boolean = false,
+    val saveEnabled: Boolean = false,
 )
 
 enum class QuickCaptureMode {

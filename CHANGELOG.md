@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Quick capture** — optional Start time and Duration controls (15/30/45/60/90 min plus custom), live preview chip of parsed times, and a destination line (`Timeline, today 18:00` / `Anytime (no time set)` / `Inbox`). From Today, Now and Next free slot chips make it easy to land on the timeline; no time still saves to Anytime. Placeholder hint: `Try: gym 18:00 45m`. After save, a snackbar says where the task went, with Show to open it.
+- **Sheet actions** — shared `EbbSheetActions` filled Save and outlined Cancel (48dp touch target, stacked at large font scales) used on Quick capture, task sheets, estimate/color pickers, routine editor, onboarding time dialogs, and other sheet/dialog confirm rows. No plain TextButton for primary sheet actions.
+
 ## [0.1.1] - 2026-11-18
 
 ### Fixed

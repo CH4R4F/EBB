@@ -10,10 +10,12 @@ import app.ebbplanner.data.calendar.CalendarEventsReader
 import app.ebbplanner.data.local.entity.TaskEntity
 import app.ebbplanner.data.preferences.UserPreferencesRepository
 import app.ebbplanner.data.repository.TaskRepository
-import app.ebbplanner.domain.capture.QuickCaptureParser
+import app.ebbplanner.domain.capture.QuickCaptureDraft
+import app.ebbplanner.domain.capture.QuickCaptureResolved
+import app.ebbplanner.domain.capture.resolveQuickCapture
 import app.ebbplanner.domain.routines.RoutineInstanceGenerator
 import app.ebbplanner.domain.time.WeekAnchor
-import app.ebbplanner.domain.time.WeekStart
+import app.ebbplanner.ui.today.QuickCaptureSaveTarget
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,6 +47,7 @@ class WeekViewModel
                 routineInstanceGenerator.ensureRollingWindow()
             }
         }
+
         private val weekStartDay = MutableStateFlow(UserPreferencesRepository.WEEK_START_USE_LOCALE)
         private val weekPageOffset = MutableStateFlow(0)
         private val weekStart = MutableStateFlow(WeekAnchor.weekStartForPage(LocalDate.now(), weekStartDay.value, 0))
@@ -163,27 +166,23 @@ class WeekViewModel
             captureDate.value = date
         }
 
-        fun captureTask(raw: String) {
-            if (raw.isBlank()) return
+        fun captureTask(
+            draft: QuickCaptureDraft,
+            onSaved: (TaskEntity, QuickCaptureResolved) -> Unit = { _, _ -> },
+        ) {
+            if (draft.raw.isBlank()) return
             viewModelScope.launch {
-                val date = captureDate.value
-                val parsed = QuickCaptureParser.parse(raw, date)
-                val targetDate = parsed.targetDate ?: date
-                val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-                val start = parsed.startTime?.format(timeFormatter)
-                val placement =
-                    if (start != null) {
-                        TaskEntity.PLACEMENT_SCHEDULED
-                    } else {
-                        TaskEntity.PLACEMENT_ANYTIME
-                    }
-                taskRepository.addQuickCapture(
-                    title = parsed.title,
-                    date = targetDate,
-                    placement = placement,
-                    startLocalTime = start,
-                    durationMin = parsed.durationMin ?: TaskEntity.DEFAULT_DURATION_MIN,
-                )
+                val resolved = resolveQuickCapture(draft, captureDate.value, QuickCaptureSaveTarget.Week)
+                if (resolved.title.isBlank()) return@launch
+                val task =
+                    taskRepository.addQuickCapture(
+                        title = resolved.title,
+                        date = resolved.date,
+                        placement = resolved.placement,
+                        startLocalTime = resolved.startLocalTime,
+                        durationMin = resolved.durationMin,
+                    )
+                onSaved(task, resolved)
             }
         }
 

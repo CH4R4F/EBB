@@ -106,6 +106,8 @@
     <string name="action_save">Save</string>
     <string name="action_saving">Saving…</string>
     <string name="action_done">Done</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_show">Show</string>
 
     <string name="tab_today">Today</string>
     <string name="tab_inbox">Inbox</string>
@@ -142,8 +144,8 @@
     </plurals>
 
     <string name="quick_capture_title">Quick capture</string>
-    <string name="quick_capture_hint">What\'s on your mind?</string>
-    <string name="quick_capture_add">Add</string>
+    <string name="quick_capture_hint">Try: gym 18:00 45m</string>
+    <string name="quick_capture_add">Save</string>
     <string name="quick_capture_estimate">Estimate</string>
     <string name="quick_capture_inbox">Inbox</string>
     <string name="quick_capture_energy">Energy</string>
@@ -152,6 +154,30 @@
     <string name="quick_capture_paste_prompt">Paste from clipboard?</string>
     <string name="quick_capture_footer_today">Saves to Today · Enter adds another</string>
     <string name="quick_capture_footer_inbox">Saves to your Inbox · Enter adds another</string>
+    <string name="quick_capture_start_time">Start time</string>
+    <string name="quick_capture_duration">Duration</string>
+    <string name="quick_capture_add_time">Add time</string>
+    <string name="quick_capture_clear_time">Clear time</string>
+    <string name="quick_capture_now">Now</string>
+    <string name="quick_capture_next_free">Next free slot</string>
+    <string name="quick_capture_custom_duration">Custom</string>
+    <string name="quick_capture_custom_duration_title">Duration (minutes)</string>
+    <string name="quick_capture_duration_min">%1$d min</string>
+    <string name="quick_capture_preview_cd">Parsed schedule, tap to edit time</string>
+    <string name="quick_capture_preview_time_duration">%1$s %2$s · %3$d min</string>
+    <string name="quick_capture_preview_time">%1$s %2$s</string>
+    <string name="quick_capture_preview_duration">%1$d min</string>
+    <string name="quick_capture_day_today">Today</string>
+    <string name="quick_capture_day_tomorrow">Tomorrow</string>
+    <string name="quick_capture_dest_timeline_today">Timeline, today %1$s</string>
+    <string name="quick_capture_dest_timeline_tomorrow">Timeline, tomorrow %1$s</string>
+    <string name="quick_capture_dest_timeline_date">Timeline, %1$s %2$s</string>
+    <string name="quick_capture_dest_anytime">Anytime (no time set)</string>
+    <string name="quick_capture_dest_inbox">Inbox</string>
+    <string name="quick_capture_dest_cd">Save destination</string>
+    <string name="quick_capture_saved_timeline">Saved to timeline at %1$s</string>
+    <string name="quick_capture_saved_anytime">Saved to Anytime</string>
+    <string name="quick_capture_saved_inbox">Saved to Inbox</string>
     <string name="inbox_search_hint">Search inbox</string>
     <string name="inbox_search_empty_message">No thoughts match your search.</string>
     <string name="inbox_filter_empty_message">No quick tasks right now. Try another filter.</string>

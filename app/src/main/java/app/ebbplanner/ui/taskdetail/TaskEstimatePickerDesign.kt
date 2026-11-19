@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -27,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.ebbplanner.ui.components.EbbSheetActions
 import app.ebbplanner.ui.theme.EbbShapes
 import app.ebbplanner.ui.theme.EbbSpacing
 import app.ebbplanner.ui.theme.EbbSymbol
@@ -95,7 +95,12 @@ private fun EstimatePickerSheet(
                 EstimatePickerMode.Custom -> CustomWheelBody(state, showBreakdown = false)
                 EstimatePickerMode.BigPrompt -> CustomWheelBody(state, showBreakdown = true)
             }
-            SheetActions(doneLabel = state.doneLabel)
+            EbbSheetActions(
+                confirmLabel = state.doneLabel,
+                onConfirm = {},
+                onCancel = {},
+                modifier = Modifier.padding(horizontal = EbbSpacing.s4, vertical = EbbSpacing.s2),
+            )
         }
     }
 }
@@ -315,38 +320,6 @@ private fun PresetChip(
                 EbbSymbol("check", fontSize = 16.sp)
             }
             Text(label, style = EbbTypography.labelL)
-        }
-    }
-}
-
-@Composable
-private fun SheetActions(doneLabel: String) {
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = EbbSpacing.s2, vertical = EbbSpacing.s2),
-        horizontalArrangement = Arrangement.End,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            "Cancel",
-            style = EbbTypography.labelL,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = EbbSpacing.s3, vertical = EbbSpacing.s2),
-        )
-        Surface(
-            shape = EbbShapes.full,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = EbbSpacing.s2),
-        ) {
-            Text(
-                doneLabel,
-                style = EbbTypography.labelL,
-                color = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
-            )
         }
     }
 }
