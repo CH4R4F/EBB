@@ -59,7 +59,7 @@ class QuickCaptureSheetTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    private val today = LocalDate.of(2026, 11, 19)
+    private val today = LocalDate.now()
 
     @Before
     fun use24HourClock() {
